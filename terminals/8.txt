@@ -1,0 +1,97 @@
+---
+pid: 14624
+cwd: "C:\users\sw1fa\onedrive\build\painterapps"
+command: "Set-Location C:\\users\\sw1fa\\onedrive\\build\\painterapps; npx vercel --prod --yes"
+started_at: 2026-06-13T01:42:21.008Z
+running_for_ms: 265007   
+---
+Vercel CLI 54.9.1 (Node.js 24.16.0)
+Retrieving project…
+Deploying steve-farrar-s-projects/painterapps
+Uploading [--------------------] (0.0B/2.1KB)
+Uploading [=====---------------] (563.0B/2.1KB)
+Uploading [===================-] (2.0KB/2.1KB)
+Uploading [====================] (2.1KB/2.1KB)
+https://painterapps-htquaxl7n-steve-farrar-s-projects.vercel.app  Inspect     https://vercel.com/steve-farrar-s-projects/painterapps/3HQjaRN1pCpJf98aXArS45LgYcBE
+▲ Production  https://painterapps-htquaxl7n-steve-farrar-s-projects.vercel.app
+Building…
+Running build in Washington, D.C., USA (East) – iad1
+Build machine configuration: 2 cores, 8 GB
+Retrieving list of deployment files...
+Downloading 146 deployment files...
+Downloading 146 deployment files...
+Restored build cache from previous deployment (Fb2xbeYHx1miypdcjVe6uH2kUsWi)
+Running "vercel build"
+Vercel CLI 54.12.2
+Installing dependencies...
+up to date in 1s
+149 packages are looking for funding
+run `npm fund` for details
+Detected Next.js version: 15.5.19
+Running "npm run build"
+> painterapps@0.1.0 build
+> node scripts/build.mjs
+▲ Next.js 15.5.19
+Creating an optimized production build ...
+<w> [webpack.cache.PackFileCacheStrategy] Serializing big strings (102kiB) impacts deserialization performance (consider using Buffer instead and decode when needed)
+<w> [webpack.cache.PackFileCacheStrategy] Serializing big strings (244kiB) impacts deserialization performance (consider using Buffer instead and decode when needed)
+✓ Compiled successfully in 14.4s
+Linting and checking validity of types ...
+./src/app/(auth)/login/page.tsx
+23:9  Warning: 'router' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+./src/components/quotes/QuoteBuilder.tsx
+289:6  Warning: React Hook useCallback has an unnecessary dependency: 'company.id'. Either exclude it or remove the dependency array.  react-hooks/exhaustive-deps
+info  - Need to disable some ESLint rules? Learn more here: https://nextjs.org/docs/app/api-reference/config/eslint#disabling-rules
+Collecting page data ...
+Generating static pages (0/24) ...
+Generating static pages (6/24)
+Generating static pages (12/24)
+Generating static pages (18/24)
+✓ Generating static pages (24/24)
+Finalizing page optimization ...
+Collecting build traces ...
+Route (app)                                 Size  First Load JS
+┌ ○ /                                    4.38 kB         115 kB
+├ ○ /_not-found                            999 B         103 kB
+├ ƒ /[slug]/quotes/[id]                  4.33 kB         117 kB
+├ ƒ /api/quotes/[id]/marketing-sheet       147 B         103 kB
+├ ƒ /api/quotes/[id]/send                  147 B         103 kB
+├ ƒ /api/stripe/webhook                    147 B         103 kB
+├ ƒ /app/billing                         3.61 kB         151 kB
+├ ƒ /app/customers                       7.97 kB         139 kB
+├ ƒ /app/dashboard                         832 B         107 kB
+├ ƒ /app/jobs                              832 B         107 kB
+├ ƒ /app/jobs/[id]                       6.57 kB         131 kB
+├ ƒ /app/onboarding                      7.01 kB         129 kB
+├ ƒ /app/profile                         2.96 kB         124 kB
+├ ƒ /app/quotes                            832 B         107 kB
+├ ƒ /app/quotes/[id]                       149 B         168 kB
+├ ƒ /app/quotes/new                        149 B         168 kB
+├ ƒ /app/reports                           832 B         107 kB
+├ ƒ /app/settings                        8.48 kB         134 kB
+├ ƒ /app/team                             5.9 kB         166 kB
+├ ƒ /auth/callback                         147 B         103 kB
+├ ○ /forgot-password                     2.87 kB         193 kB
+├ ○ /free-tools                            708 B         116 kB
+├ ○ /free-tools/build-sell-sheet           995 B         116 kB
+├ ○ /icon.svg                                0 B            0 B
+├ ○ /login                                5.4 kB         200 kB
+├ ○ /reset-password                      3.04 kB         193 kB
+└ ○ /signup                              3.78 kB         194 kB
++ First Load JS shared by all             102 kB
+├ chunks/1255-5c680abb9db89955.js      46.2 kB
+├ chunks/4bd1b696-f785427dddbba9fb.js  54.2 kB
+└ other shared chunks (total)          1.93 kB
+ƒ Middleware                             90.5 kB
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+Traced Next.js server files in: 71.057ms
+Created all serverless functions in: 435.616ms
+Collected static files (public/, static/, .next/static): 21.554ms
+Build Completed in /vercel/output [53s]
+Deploying outputs...
+▲ Production  https://painterapps-htquaxl7n-steve-farrar-s-projects.vercel.app
+Completing…
+▲ Aliased     https://painterapps.com
+
+✓ Ready in 2m
