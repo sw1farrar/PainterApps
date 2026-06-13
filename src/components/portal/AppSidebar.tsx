@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useState, useTransition } from "react";
 import {
   BarChart3,
   FileText,
@@ -36,29 +37,63 @@ type AppSidebarProps = {
 function NavLinks({
   navItems,
   onNavigate,
+  stagger = false,
 }: {
   navItems: NavItem[];
   onNavigate?: () => void;
+  stagger?: boolean;
 }) {
   const pathname = usePathname();
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
+  const [pendingHref, setPendingHref] = useState<string | null>(null);
+
+  useEffect(() => {
+    setPendingHref(null);
+  }, [pathname]);
+
+  const handleNavigate = (href: string) => {
+    if (href === pathname) {
+      onNavigate?.();
+      return;
+    }
+
+    setPendingHref(href);
+    startTransition(() => {
+      router.push(href);
+      onNavigate?.();
+    });
+  };
 
   return (
-    <nav className="flex flex-1 flex-col gap-1 px-3 py-4">
+    <nav
+      className={cn(
+        "flex flex-1 flex-col gap-1 px-3 py-4",
+        stagger && "portal-nav-stagger",
+      )}
+    >
       {navItems.map((item) => {
         const Icon = ICON_MAP[item.icon] ?? LayoutDashboard;
         const isActive =
           pathname === item.href || pathname.startsWith(`${item.href}/`);
+        const isNavigating = isPending && pendingHref === item.href;
 
         return (
           <Link
             key={item.href}
             href={item.href}
-            onClick={onNavigate}
+            prefetch={true}
+            onClick={(event) => {
+              event.preventDefault();
+              handleNavigate(item.href);
+            }}
+            aria-current={isActive ? "page" : undefined}
             className={cn(
-              "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+              "portal-nav-item nav-link-active flex min-h-11 items-center gap-3 rounded-lg border-l-2 px-3 py-2.5 text-sm font-medium transition-all duration-150 md:min-h-0",
               isActive
-                ? "bg-primary/15 text-blue-200"
-                : "text-muted-foreground hover:bg-accent hover:text-foreground",
+                ? "scale-[1.02] border-primary bg-primary/15 text-blue-200"
+                : "border-transparent text-muted-foreground hover:scale-[1.01] hover:bg-accent hover:text-foreground",
+              isNavigating && "pointer-events-none opacity-50",
             )}
           >
             <Icon className="h-4 w-4 shrink-0" />
@@ -76,6 +111,19 @@ export function AppSidebar({
   mobileOpen = false,
   onMobileOpenChange,
 }: AppSidebarProps) {
+  const pathname = usePathname();
+  const [staggerKey, setStaggerKey] = useState(0);
+
+  useEffect(() => {
+    onMobileOpenChange?.(false);
+  }, [pathname, onMobileOpenChange]);
+
+  useEffect(() => {
+    if (mobileOpen) {
+      setStaggerKey((key) => key + 1);
+    }
+  }, [mobileOpen]);
+
   const sidebarHeader = (
     <div className="flex items-center gap-3 border-b border-border px-5 py-5">
       <Logo size="sm" />
@@ -104,7 +152,9 @@ export function AppSidebar({
         >
           {sidebarHeader}
           <NavLinks
+            key={staggerKey}
             navItems={navItems}
+            stagger
             onNavigate={() => onMobileOpenChange?.(false)}
           />
         </SheetContent>

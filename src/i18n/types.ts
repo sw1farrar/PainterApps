@@ -7,6 +7,9 @@ export type Messages = {
     getEarlyAccess: string;
     backToFreeTools: string;
     homeAria: string;
+    menuTitle: string;
+    openMenuAria: string;
+    languageLabel: string;
   };
   home: {
     badge: string;

@@ -1,5 +1,6 @@
 "use client";
 
+import { NavigationProgress } from "@/components/NavigationProgress";
 import { LanguageProvider } from "@/providers/LanguageProvider";
 
 export default function AppProviders({
@@ -7,5 +8,10 @@ export default function AppProviders({
 }: {
   children: React.ReactNode;
 }) {
-  return <LanguageProvider>{children}</LanguageProvider>;
+  return (
+    <LanguageProvider>
+      <NavigationProgress />
+      {children}
+    </LanguageProvider>
+  );
 }

@@ -468,3 +468,120 @@ body {
   animation: fade-up 0.65s ease-out 0.4s forwards;
   opacity: 0;
 }
+
+.nav-link-active {
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease;
+}
+
+@keyframes page-enter {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.page-enter {
+  animation: page-enter 0.2s ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page-enter {
+    animation: none;
+  }
+}
+
+@keyframes skeleton-shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.skeleton-shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(22, 42, 74, 0.45) 25%,
+    rgba(43, 108, 184, 0.2) 50%,
+    rgba(22, 42, 74, 0.45) 75%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.5s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton-shimmer {
+    animation: none;
+    background: rgba(22, 42, 74, 0.45);
+  }
+}
+
+.scroll-bleed-x {
+  margin-inline: -1rem;
+  padding-inline: 1rem;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+@media (min-width: 640px) {
+  .scroll-bleed-x {
+    margin-inline: 0;
+    padding-inline: 0;
+    overflow-x: visible;
+  }
+}
+
+@keyframes portal-nav-item-in {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .portal-nav-stagger .portal-nav-item {
+    opacity: 0;
+    animation: portal-nav-item-in 0.22s ease-out forwards;
+  }
+
+  .portal-nav-stagger .portal-nav-item:nth-child(1) {
+    animation-delay: 0ms;
+  }
+
+  .portal-nav-stagger .portal-nav-item:nth-child(2) {
+    animation-delay: 45ms;
+  }
+
+  .portal-nav-stagger .portal-nav-item:nth-child(3) {
+    animation-delay: 90ms;
+  }
+
+  .portal-nav-stagger .portal-nav-item:nth-child(4) {
+    animation-delay: 135ms;
+  }
+
+  .portal-nav-stagger .portal-nav-item:nth-child(5) {
+    animation-delay: 180ms;
+  }
+
+  .portal-nav-stagger .portal-nav-item:nth-child(6) {
+    animation-delay: 225ms;
+  }
+
+  .portal-nav-stagger .portal-nav-item:nth-child(7) {
+    animation-delay: 270ms;
+  }
+
+  .portal-nav-stagger .portal-nav-item:nth-child(8) {
+    animation-delay: 315ms;
+  }
+}

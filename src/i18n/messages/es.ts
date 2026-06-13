@@ -7,6 +7,9 @@ export const es: Messages = {
     getEarlyAccess: "Solicitar acceso anticipado",
     backToFreeTools: "← Herramientas gratis",
     homeAria: "Inicio de PainterApps",
+    menuTitle: "Menú",
+    openMenuAria: "Abrir menú de navegación",
+    languageLabel: "Idioma",
   },
   home: {
     badge: "HECHO PARA PINTORES",

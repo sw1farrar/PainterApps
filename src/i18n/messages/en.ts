@@ -7,6 +7,9 @@ export const en: Messages = {
     getEarlyAccess: "Get early access",
     backToFreeTools: "← Free Tools",
     homeAria: "PainterApps home",
+    menuTitle: "Menu",
+    openMenuAria: "Open navigation menu",
+    languageLabel: "Language",
   },
   home: {
     badge: "BUILT FOR PAINTERS",

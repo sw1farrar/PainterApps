@@ -3,6 +3,7 @@
 import Link from "next/link";
 import LanguageToggle from "@/components/LanguageToggle";
 import Logo from "@/components/Logo";
+import MarketingMobileNav from "@/components/MarketingMobileNav";
 import PageShell from "@/components/PageShell";
 import { useLanguage } from "@/providers/LanguageProvider";
 
@@ -39,17 +40,23 @@ export default function Header({ variant = "marketing" }: HeaderProps) {
           <Logo size="md" />
         </Link>
 
-        <div className="flex items-center gap-4 sm:gap-6 lg:gap-8">
+        <div className="flex items-center gap-3 sm:gap-6 lg:gap-8">
           <Link href="/free-tools" className="type-link hidden sm:inline">
             {nav.freeTools}
           </Link>
           <Link href="/login" className="type-link hidden md:inline">
             {nav.signIn}
           </Link>
-          <LanguageToggle />
-          <button className="btn-rugged px-4 py-2 text-sm sm:px-5 sm:py-2.5 lg:px-6 lg:py-3">
+          <div className="hidden md:block">
+            <LanguageToggle />
+          </div>
+          <Link
+            href="/signup"
+            className="btn-rugged hidden px-4 py-2 text-sm sm:px-5 sm:py-2.5 md:inline-flex lg:px-6 lg:py-3"
+          >
             {nav.getEarlyAccess}
-          </button>
+          </Link>
+          <MarketingMobileNav />
         </div>
       </PageShell>
     </header>

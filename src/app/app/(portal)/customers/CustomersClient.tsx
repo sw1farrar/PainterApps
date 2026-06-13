@@ -5,6 +5,7 @@ import { Mail, MapPin, Pencil, Phone, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { AppDrawer } from "@/components/portal/AppDrawer";
+import { PageHeader } from "@/components/portal/PageHeader";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -113,24 +114,20 @@ export function CustomersClient({ customers }: CustomersClientProps) {
   }
 
   return (
-    <>
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="font-display text-2xl text-white md:text-3xl">
-            Customers
-          </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Manage your client list and contact details.
-          </p>
-        </div>
-        <Button onClick={openCreateDrawer}>
-          <Plus className="h-4 w-4" />
-          Add customer
-        </Button>
-      </div>
+    <div className="min-w-0 space-y-6">
+      <PageHeader
+        title="Customers"
+        description="Manage your client list and contact details."
+        actions={
+          <Button onClick={openCreateDrawer}>
+            <Plus className="h-4 w-4" />
+            Add customer
+          </Button>
+        }
+      />
 
       {envError ? (
-        <Card className="mt-6 border-destructive/40 bg-destructive/10">
+        <Card className="border-destructive/40 bg-destructive/10">
           <CardContent className="pt-6">
             <p className="text-sm text-destructive">{envError}</p>
           </CardContent>
@@ -138,7 +135,7 @@ export function CustomersClient({ customers }: CustomersClientProps) {
       ) : null}
 
       {customers.length === 0 ? (
-        <Card className="mt-6 border-border bg-card/80 backdrop-blur-sm">
+        <Card className="border-border bg-card/80 backdrop-blur-sm">
           <CardHeader>
             <CardTitle>No customers yet</CardTitle>
             <CardDescription>
@@ -153,7 +150,7 @@ export function CustomersClient({ customers }: CustomersClientProps) {
           </CardContent>
         </Card>
       ) : (
-        <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        <div className="grid min-w-0 gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {customers.map((customer) => (
             <Card
               key={customer.id}
@@ -190,21 +187,21 @@ export function CustomersClient({ customers }: CustomersClientProps) {
               </CardHeader>
               <CardContent className="space-y-2 text-sm text-muted-foreground">
                 {customer.email ? (
-                  <p className="flex items-center gap-2">
+                  <p className="flex min-w-0 items-center gap-2">
                     <Mail className="h-3.5 w-3.5 shrink-0" />
-                    {customer.email}
+                    <span className="truncate">{customer.email}</span>
                   </p>
                 ) : null}
                 {customer.phone ? (
-                  <p className="flex items-center gap-2">
+                  <p className="flex min-w-0 items-center gap-2">
                     <Phone className="h-3.5 w-3.5 shrink-0" />
-                    {customer.phone}
+                    <span className="truncate">{customer.phone}</span>
                   </p>
                 ) : null}
                 {customer.address ? (
-                  <p className="flex items-center gap-2">
+                  <p className="flex min-w-0 items-center gap-2">
                     <MapPin className="h-3.5 w-3.5 shrink-0" />
-                    {customer.address}
+                    <span className="truncate">{customer.address}</span>
                   </p>
                 ) : null}
                 <Badge variant="outline" className="mt-2">
@@ -287,6 +284,6 @@ export function CustomersClient({ customers }: CustomersClientProps) {
           </div>
         </div>
       </AppDrawer>
-    </>
+    </div>
   );
 }

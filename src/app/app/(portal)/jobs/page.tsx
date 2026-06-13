@@ -2,6 +2,7 @@ import Link from "next/link";
 import { format } from "date-fns";
 import { HardHat } from "lucide-react";
 
+import { PageHeader } from "@/components/portal/PageHeader";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -57,21 +58,17 @@ export default async function JobsPage() {
   const activeCount = jobRows.filter((job) => job.status !== "completed").length;
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <p className="type-eyebrow">Jobs</p>
-          <h1 className="font-display mt-1 text-2xl text-white md:text-3xl">
-            Active Jobs
-          </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {activeCount} in progress · {jobRows.length} total
-          </p>
-        </div>
-        <Button variant="outline" asChild>
-          <Link href="/app/quotes">View quotes</Link>
-        </Button>
-      </div>
+    <div className="min-w-0 space-y-6">
+      <PageHeader
+        eyebrow="Jobs"
+        title="Active Jobs"
+        description={`${activeCount} in progress · ${jobRows.length} total`}
+        actions={
+          <Button variant="outline" asChild>
+            <Link href="/app/quotes">View quotes</Link>
+          </Button>
+        }
+      />
 
       {!jobRows.length ? (
         <Card className="border-border bg-card/80 backdrop-blur-sm">
@@ -92,7 +89,7 @@ export default async function JobsPage() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-4">
+        <div className="grid min-w-0 gap-4">
           {jobRows.map((job) => {
             const customer = job.customers;
             const quote = job.quotes;

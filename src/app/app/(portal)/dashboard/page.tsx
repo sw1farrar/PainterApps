@@ -9,6 +9,7 @@ import {
   Users,
 } from "lucide-react";
 
+import { PageHeader } from "@/components/portal/PageHeader";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -169,18 +170,18 @@ export default async function DashboardPage() {
   ];
 
   return (
-    <div className="space-y-8">
-      <div>
-        <h1 className="font-display text-2xl text-white md:text-3xl">
-          Dashboard
-        </h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Welcome back
-          {session.profile.full_name ? `, ${session.profile.full_name}` : ""}.
-          Here&apos;s what&apos;s happening at{" "}
-          <span className="text-foreground">{session.company?.name}</span>.
-        </p>
-      </div>
+    <div className="min-w-0 space-y-8">
+      <PageHeader
+        title="Dashboard"
+        description={
+          <>
+            Welcome back
+            {session.profile.full_name ? `, ${session.profile.full_name}` : ""}.
+            Here&apos;s what&apos;s happening at{" "}
+            <span className="text-foreground">{session.company?.name}</span>.
+          </>
+        }
+      />
 
       {envError ? (
         <Card className="border-destructive/40 bg-destructive/10">
@@ -198,7 +199,7 @@ export default async function DashboardPage() {
         </Card>
       ) : null}
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid min-w-0 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {stats.map((stat) => (
           <Card
             key={stat.label}
@@ -220,40 +221,56 @@ export default async function DashboardPage() {
         ))}
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid min-w-0 gap-4 lg:grid-cols-2">
         <Card className="border-border bg-card/80 backdrop-blur-sm">
           <CardHeader>
             <CardTitle>Recent quotes</CardTitle>
             <CardDescription>Latest proposal activity.</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-2">
+          <CardContent>
             {recentQuotes.length === 0 ? (
               <p className="text-sm text-muted-foreground">No quotes yet.</p>
             ) : (
-              recentQuotes.map((item) => (
-                <Link
-                  key={item.id}
-                  href={`/app/quotes/${item.id}`}
-                  className="flex items-center justify-between rounded-lg border border-border bg-muted/10 px-3 py-2.5 transition-colors hover:border-primary/40"
-                >
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-medium text-foreground">
-                      {item.customers?.name ?? "Customer"}
-                    </p>
-                    <p className="truncate text-xs text-muted-foreground">
-                      {item.job_address}
-                    </p>
-                  </div>
-                  <div className="ml-3 shrink-0 text-right">
-                    <Badge variant="secondary" className="capitalize">
-                      {item.status}
-                    </Badge>
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      {format(new Date(item.updated_at), "MMM d")}
-                    </p>
-                  </div>
-                </Link>
-              ))
+              <div className="scroll-bleed-x">
+                <table className="w-full min-w-[28rem] text-sm">
+                  <thead>
+                    <tr className="border-b border-border text-left text-xs text-muted-foreground">
+                      <th className="pb-2 pr-4 font-medium">Customer</th>
+                      <th className="pb-2 pr-4 font-medium">Address</th>
+                      <th className="pb-2 pr-4 font-medium">Status</th>
+                      <th className="pb-2 font-medium">Updated</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {recentQuotes.map((item) => (
+                      <tr
+                        key={item.id}
+                        className="border-b border-border/50 last:border-0"
+                      >
+                        <td className="py-2.5 pr-4">
+                          <Link
+                            href={`/app/quotes/${item.id}`}
+                            className="font-medium text-foreground transition-colors hover:text-blue-200"
+                          >
+                            {item.customers?.name ?? "Customer"}
+                          </Link>
+                        </td>
+                        <td className="max-w-[12rem] truncate py-2.5 pr-4 text-muted-foreground">
+                          {item.job_address}
+                        </td>
+                        <td className="py-2.5 pr-4">
+                          <Badge variant="secondary" className="capitalize">
+                            {item.status}
+                          </Badge>
+                        </td>
+                        <td className="whitespace-nowrap py-2.5 text-muted-foreground">
+                          {format(new Date(item.updated_at), "MMM d")}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             )}
           </CardContent>
         </Card>
@@ -263,34 +280,48 @@ export default async function DashboardPage() {
             <CardTitle>Recent jobs</CardTitle>
             <CardDescription>Work created from accepted quotes.</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-2">
+          <CardContent>
             {recentJobs.length === 0 ? (
               <p className="text-sm text-muted-foreground">No jobs yet.</p>
             ) : (
-              recentJobs.map((item) => (
-                <Link
-                  key={item.id}
-                  href={`/app/jobs/${item.id}`}
-                  className="flex items-center justify-between rounded-lg border border-border bg-muted/10 px-3 py-2.5 transition-colors hover:border-primary/40"
-                >
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-medium text-foreground">
-                      {item.customers?.name ?? "Customer"}
-                    </p>
-                    <p className="text-xs capitalize text-muted-foreground">
-                      {item.status}
-                    </p>
-                  </div>
-                  <div className="ml-3 shrink-0 text-right">
-                    <p className="text-sm font-semibold text-foreground">
-                      {formatCurrency(item.selling_price)}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {format(new Date(item.created_at), "MMM d")}
-                    </p>
-                  </div>
-                </Link>
-              ))
+              <div className="scroll-bleed-x">
+                <table className="w-full min-w-[28rem] text-sm">
+                  <thead>
+                    <tr className="border-b border-border text-left text-xs text-muted-foreground">
+                      <th className="pb-2 pr-4 font-medium">Customer</th>
+                      <th className="pb-2 pr-4 font-medium">Status</th>
+                      <th className="pb-2 pr-4 font-medium">Value</th>
+                      <th className="pb-2 font-medium">Started</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {recentJobs.map((item) => (
+                      <tr
+                        key={item.id}
+                        className="border-b border-border/50 last:border-0"
+                      >
+                        <td className="py-2.5 pr-4">
+                          <Link
+                            href={`/app/jobs/${item.id}`}
+                            className="font-medium text-foreground transition-colors hover:text-blue-200"
+                          >
+                            {item.customers?.name ?? "Customer"}
+                          </Link>
+                        </td>
+                        <td className="py-2.5 pr-4 capitalize text-muted-foreground">
+                          {item.status}
+                        </td>
+                        <td className="whitespace-nowrap py-2.5 pr-4 font-semibold text-foreground">
+                          {formatCurrency(item.selling_price)}
+                        </td>
+                        <td className="whitespace-nowrap py-2.5 text-muted-foreground">
+                          {format(new Date(item.created_at), "MMM d")}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             )}
           </CardContent>
         </Card>
