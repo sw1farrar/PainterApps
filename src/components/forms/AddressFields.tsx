@@ -1,5 +1,6 @@
 "use client";
 
+import { AddressAutocompleteInput } from "@/components/forms/AddressAutocompleteInput";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -49,12 +50,21 @@ export function AddressFields({
           {line1Label}
           {req}
         </Label>
-        <Input
+        <AddressAutocompleteInput
           id={`${idPrefix}-address`}
           value={value.address ?? ""}
-          onChange={(e) => set("address", e.target.value)}
-          placeholder="123 Oak Street"
-          autoComplete="address-line1"
+          placeholder="Start typing street address…"
+          onValueChange={(next) => set("address", next)}
+          onAddressSelect={(address) =>
+            onChange({
+              ...value,
+              address: address.address ?? "",
+              address_line2: address.address_line2 ?? value.address_line2 ?? "",
+              city: address.city ?? "",
+              state: address.state ?? "",
+              zip: address.zip ?? "",
+            })
+          }
         />
       </div>
 
