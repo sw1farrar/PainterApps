@@ -2,6 +2,8 @@
 
 import * as React from "react";
 
+import { PASSWORD_MANAGER_SHELL_PROPS } from "@/lib/forms/password-manager";
+
 const PasswordManagerContext = React.createContext(false);
 
 export function useSuppressPasswordManager() {
@@ -40,7 +42,11 @@ export function PasswordManagerProvider({
           />
         </div>
       ) : null}
-      {children}
+      {suppress ? (
+        <div {...PASSWORD_MANAGER_SHELL_PROPS}>{children}</div>
+      ) : (
+        children
+      )}
     </PasswordManagerContext.Provider>
   );
 }

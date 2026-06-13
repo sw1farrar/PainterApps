@@ -12,14 +12,24 @@ export type TextareaProps = React.ComponentProps<"textarea"> & {
 
 const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
   (
-    { className, allowPasswordManager = false, autoComplete, ...props },
+    {
+      className,
+      allowPasswordManager = false,
+      autoComplete: autoCompleteProp,
+      readOnly,
+      onFocus,
+      ...props
+    },
     ref,
   ) => {
     const suppressPasswordManager = useSuppressPasswordManager();
-    const ignoreProps =
-      suppressPasswordManager && !allowPasswordManager
-        ? getPasswordManagerIgnoreProps(autoComplete)
-        : { autoComplete };
+    const shouldSuppress = suppressPasswordManager && !allowPasswordManager;
+    const [fieldReady, setFieldReady] = React.useState(!shouldSuppress);
+
+    const handleFocus = (event: React.FocusEvent<HTMLTextAreaElement>) => {
+      if (shouldSuppress) setFieldReady(true);
+      onFocus?.(event);
+    };
 
     return (
       <textarea
@@ -28,8 +38,12 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
           className,
         )}
         ref={ref}
-        {...ignoreProps}
+        readOnly={shouldSuppress && !fieldReady ? true : readOnly}
+        onFocus={handleFocus}
         {...props}
+        {...(shouldSuppress
+          ? getPasswordManagerIgnoreProps()
+          : { autoComplete: autoCompleteProp })}
       />
     );
   },

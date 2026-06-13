@@ -2,6 +2,7 @@
 
 import * as React from "react";
 
+import { PASSWORD_MANAGER_SHELL_PROPS } from "@/lib/forms/password-manager";
 import { cn } from "@/lib/utils";
 import {
   Sheet,
@@ -47,7 +48,12 @@ export function AppDrawer({
           ) : null}
         </SheetHeader>
 
-        <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5">{children}</div>
+        <div
+          className="min-h-0 flex-1 overflow-y-auto px-6 py-5"
+          {...PASSWORD_MANAGER_SHELL_PROPS}
+        >
+          {children}
+        </div>
 
         {footer ? (
           <SheetFooter className="shrink-0 border-t border-border px-6 py-4 sm:justify-start">

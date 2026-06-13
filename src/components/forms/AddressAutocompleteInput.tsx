@@ -192,7 +192,6 @@ export function AddressAutocompleteInput({
         value={value}
         onChange={(event) => onValueChange(event.target.value)}
         placeholder={placeholder}
-        autoComplete="address-line1"
         disabled={disabled}
       />
     );
@@ -210,7 +209,6 @@ export function AddressAutocompleteInput({
           }}
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
-          autoComplete="off"
           disabled={disabled || resolving}
           aria-autocomplete="list"
           aria-expanded={open}

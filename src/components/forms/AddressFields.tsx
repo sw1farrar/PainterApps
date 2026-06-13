@@ -76,7 +76,7 @@ export function AddressFields({
             value={value.address_line2 ?? ""}
             onChange={(e) => set("address_line2", e.target.value)}
             placeholder="Unit 4B"
-            autoComplete="address-line2"
+
           />
         </div>
       ) : null}
@@ -92,7 +92,7 @@ export function AddressFields({
             value={value.city ?? ""}
             onChange={(e) => set("city", e.target.value)}
             placeholder="Austin"
-            autoComplete="address-level2"
+
           />
         </div>
         <div className="space-y-2 sm:col-span-1">
@@ -126,7 +126,7 @@ export function AddressFields({
             value={value.zip ?? ""}
             onChange={(e) => set("zip", e.target.value)}
             placeholder="78701"
-            autoComplete="postal-code"
+
             inputMode="numeric"
           />
         </div>
