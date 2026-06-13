@@ -1,0 +1,21 @@
+---
+pid: 5804
+cwd: "C:\build\painterapps"
+command: "npm run build"
+started_at: 2026-06-12T04:17:23.101Z
+running_for_ms: 43990014 
+---
+
+> painterapps@0.1.0 build
+> next build
+
+   ▲ Next.js 15.5.19
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully in 3.2s
+   Linting and checking validity of types ...
+   Collecting page data ...
+unhandledRejection [Error [PageNotFoundError]: Cannot find module for page: /_document] {
+  type: 'PageNotFoundError',
+  code: 'ENOENT'
+}

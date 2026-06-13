@@ -1,0 +1,148 @@
+---
+pid: 440
+cwd: "C:\build\painterapps"
+command: "npm run dev"
+started_at: 2026-06-12T04:27:09.829Z
+running_for_ms: 43460008 
+---
+
+> painterapps@0.1.0 dev
+> node scripts/dev.mjs
+
+Starting Next.js dev server on http://localhost:3000
+(node:26112) [DEP0190] DeprecationWarning: Passing args to a child process with shell option true can lead to security vulnerabilities, as the arguments are not escaped, only concatenated.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+Tip: run `npm run build` safely while dev is running (uses separate .next-build folder).
+   ▲ Next.js 15.5.19
+   - Local:        http://localhost:3000
+   - Network:      http://192.168.1.32:3000
+
+ ✓ Starting...
+ ✓ Ready in 1249ms
+ ⚠ Fast Refresh had to perform a full reload. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+ ○ Compiling /free-tools ...
+ ✓ Compiled /free-tools in 2.1s (698 modules)
+ GET /free-tools 200 in 2339ms
+ ⚠ Fast Refresh had to perform a full reload. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+ GET /free-tools 200 in 45ms
+ ✓ Compiled /icon.svg in 724ms (676 modules)
+ ✓ Compiled in 1ms (434 modules)
+ ✓ Compiled in 126ms (679 modules)
+ GET /sw.js 404 in 874ms
+ GET /icon.svg?797579869d0c14f6 200 in 491ms
+ GET /free-tools 200 in 454ms
+ ✓ Compiled in 356ms (259 modules)
+ GET /free-tools 200 in 22ms
+ ✓ Compiled in 423ms (679 modules)
+ GET /sw.js 404 in 177ms
+ GET /free-tools 200 in 29ms
+ ✓ Compiled in 111ms (693 modules)
+ GET /free-tools 200 in 35ms
+ ✓ Compiled in 354ms (259 modules)
+ GET /free-tools 200 in 23ms
+ ✓ Compiled in 346ms (259 modules)
+ GET /free-tools 200 in 22ms
+ ✓ Compiled in 354ms (259 modules)
+ GET /free-tools 200 in 23ms
+ ✓ Compiled in 351ms (259 modules)
+ GET /free-tools 200 in 22ms
+ ✓ Compiled in 344ms (259 modules)
+ GET /free-tools 200 in 22ms
+ ✓ Compiled in 340ms (259 modules)
+ GET /free-tools 200 in 19ms
+ ✓ Compiled / in 359ms (698 modules)
+ GET / 200 in 493ms
+ GET /free-tools 200 in 28ms
+ ✓ Compiled in 341ms (260 modules)
+ GET /free-tools 200 in 20ms
+ ✓ Compiled in 348ms (260 modules)
+ GET /free-tools 200 in 21ms
+ ✓ Compiled in 352ms (260 modules)
+ GET /free-tools 200 in 20ms
+ ✓ Compiled in 365ms (260 modules)
+ GET /free-tools 200 in 19ms
+ ✓ Compiled in 376ms (260 modules)
+ GET /free-tools 200 in 21ms
+ ✓ Compiled in 378ms (260 modules)
+ GET /free-tools 200 in 20ms
+ ✓ Compiled in 377ms (260 modules)
+ GET /free-tools 200 in 21ms
+ ✓ Compiled in 384ms (260 modules)
+ GET /free-tools 200 in 19ms
+ ✓ Compiled in 372ms (260 modules)
+ GET /free-tools 200 in 18ms
+ ✓ Compiled in 355ms (260 modules)
+ GET /free-tools 200 in 20ms
+ ✓ Compiled in 350ms (260 modules)
+ GET /free-tools 200 in 19ms
+ ✓ Compiled in 342ms (260 modules)
+ GET /free-tools 200 in 19ms
+ ✓ Compiled in 344ms (260 modules)
+ GET /free-tools 200 in 19ms
+ ✓ Compiled in 342ms (260 modules)
+ ○ Compiling /_error ...
+ ✓ Compiled /_error in 1053ms (1045 modules)
+ GET /free-tools 404 in 1400ms
+ ⨯ [Error: ENOENT: no such file or directory, open 'C:\Build\PainterApps\.next\server\app\free-tools\page.js'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Build\\PainterApps\\.next\\server\\app\\free-tools\\page.js',
+  page: '/free-tools'
+}
+ GET /free-tools 500 in 318ms
+ ⨯ [Error: ENOENT: no such file or directory, open 'C:\Build\PainterApps\.next\server\app\free-tools\page.js'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Build\\PainterApps\\.next\\server\\app\\free-tools\\page.js',
+  page: '/free-tools'
+}
+ GET /free-tools 500 in 247ms
+ ⨯ [Error: ENOENT: no such file or directory, open 'C:\Build\PainterApps\.next\server\app\free-tools\page.js'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Build\\PainterApps\\.next\\server\\app\\free-tools\\page.js',
+  page: '/free-tools'
+}
+ ✓ Compiled in 352ms (413 modules)
+ GET /free-tools 500 in 242ms
+ ⨯ [Error: ENOENT: no such file or directory, open 'C:\Build\PainterApps\.next\server\app\free-tools\page.js'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Build\\PainterApps\\.next\\server\\app\\free-tools\\page.js',
+  page: '/free-tools'
+}
+ GET /free-tools 500 in 249ms
+ ⨯ [Error: ENOENT: no such file or directory, open 'C:\Build\PainterApps\.next\server\app\free-tools\page.js'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Build\\PainterApps\\.next\\server\\app\\free-tools\\page.js',
+  page: '/free-tools'
+}
+ GET /free-tools 500 in 245ms
+ ✓ Compiled in 355ms (413 modules)
+ ✓ Compiled in 353ms (413 modules)
+ ✓ Compiled in 348ms (413 modules)
+ ⨯ [Error: ENOENT: no such file or directory, open 'C:\Build\PainterApps\.next\server\app\_not-found\page.js'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Build\\PainterApps\\.next\\server\\app\\_not-found\\page.js'
+}
+ ✓ Compiled in 715ms (413 modules)
+ GET /sw.js 500 in 1001ms
+ ✓ Compiled in 378ms (413 modules)
+ ✓ Compiled in 350ms (413 modules)
+ ✓ Compiled in 381ms (413 modules)
+ ✓ Compiled in 396ms (413 modules)
+ ✓ Compiled in 373ms (413 modules)
+ ✓ Compiled in 383ms (413 modules)
+ ✓ Compiled in 388ms (413 modules)
+ ✓ Compiled in 382ms (413 modules)
+ ✓ Compiled in 390ms (413 modules)
+ ✓ Compiled in 382ms (413 modules)
+

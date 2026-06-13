@@ -1,0 +1,468 @@
+---
+pid: 1648
+cwd: "C:\build\painterapps"
+command: "npm run dev"
+started_at: 2026-06-12T04:15:28.492Z
+running_for_ms: 44165002 
+---
+
+> painterapps@0.1.0 dev
+> next dev
+
+   ▲ Next.js 15.5.19
+   - Local:        http://localhost:3000
+   - Network:      http://192.168.1.32:3000
+
+ ✓ Starting...
+ ✓ Ready in 1344ms
+ ⚠ Fast Refresh had to perform a full reload due to a runtime error.
+ ○ Compiling / ...
+ ⚠ Fast Refresh had to perform a full reload due to a runtime error.
+ ✓ Compiled /_not-found in 2.1s (652 modules)
+ GET / 200 in 308ms
+ GET /sw.js 404 in 1169ms
+ GET / 200 in 212ms
+ ⚠ Fast Refresh had to perform a full reload due to a runtime error.
+ GET / 200 in 216ms
+ GET / 200 in 47ms
+ GET /sw.js 404 in 24ms
+ ✓ Compiled in 91ms (259 modules)
+ GET / 200 in 28ms
+ GET /sw.js 404 in 42ms
+ ✓ Compiled in 58ms (259 modules)
+ GET / 200 in 23ms
+ ✓ Compiled in 60ms (259 modules)
+ GET / 200 in 23ms
+ ✓ Compiled in 45ms (259 modules)
+ GET / 200 in 29ms
+ ✓ Compiled in 51ms (259 modules)
+ GET / 200 in 22ms
+ GET / 200 in 88ms
+ GET /sw.js 404 in 38ms
+ GET / 200 in 65ms
+ GET /sw.js 404 in 48ms
+ GET / 200 in 80ms
+ GET /sw.js 404 in 77ms
+ ✓ Compiled in 144ms (259 modules)
+ GET / 200 in 63ms
+ GET / 200 in 33ms
+ ✓ Compiled in 394ms (673 modules)
+ GET / 200 in 144ms
+ GET / 200 in 27ms
+ ✓ Compiled /icon.svg in 124ms (431 modules)
+ GET /icon.svg?797579869d0c14f6 200 in 211ms
+ GET /icon.svg?797579869d0c14f6 200 in 5ms
+ ✓ Compiled in 311ms (691 modules)
+ GET / 200 in 93ms
+ GET / 200 in 28ms
+ ✓ Compiled in 69ms (255 modules)
+ ⨯ [Error: ENOENT: no such file or directory, open 'C:\Build\PainterApps\.next\routes-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Build\\PainterApps\\.next\\routes-manifest.json',
+  page: '/'
+}
+ ○ Compiling /_error ...
+ ✓ Compiled /_error in 816ms (1019 modules)
+ ⨯ [Error: ENOENT: no such file or directory, open 'C:\Build\PainterApps\.next\routes-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Build\\PainterApps\\.next\\routes-manifest.json'
+}
+[Error: ENOENT: no such file or directory, open 'C:\Build\PainterApps\.next\routes-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Build\\PainterApps\\.next\\routes-manifest.json',
+  page: '/'
+}
+ GET / 500 in 2831ms
+ ⨯ [Error: ENOENT: no such file or directory, open 'C:\Build\PainterApps\.next\routes-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Build\\PainterApps\\.next\\routes-manifest.json'
+}
+ GET / 500 in 258ms
+[Error: ENOENT: no such file or directory, open 'C:\Build\PainterApps\.next\routes-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Build\\PainterApps\\.next\\routes-manifest.json'
+}
+ ⨯ Error: Cannot find module './331.js'
+Require stack:
+- C:\Build\PainterApps\.next\server\webpack-runtime.js
+- C:\Build\PainterApps\.next\server\pages\_document.js
+- C:\Build\PainterApps\node_modules\next\dist\server\require.js
+- C:\Build\PainterApps\node_modules\next\dist\server\load-components.js
+- C:\Build\PainterApps\node_modules\next\dist\build\utils.js
+- C:\Build\PainterApps\node_modules\next\dist\build\swc\options.js
+- C:\Build\PainterApps\node_modules\next\dist\build\swc\index.js
+- C:\Build\PainterApps\node_modules\next\dist\build\next-config-ts\transpile-config.js
+- C:\Build\PainterApps\node_modules\next\dist\server\config.js
+- C:\Build\PainterApps\node_modules\next\dist\server\next.js
+- C:\Build\PainterApps\node_modules\next\dist\server\lib\start-server.js
+    at <unknown> (C:\Build\PainterApps\.next\server\app\page.js:2:56663)
+    at Object.<anonymous> (C:\Build\PainterApps\.next\server\app\page.js:2:56712) {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [Array],
+  page: '/'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open 'C:\Build\PainterApps\.next\routes-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Build\\PainterApps\\.next\\routes-manifest.json'
+}
+Error: Cannot find module './331.js'
+Require stack:
+- C:\Build\PainterApps\.next\server\webpack-runtime.js
+- C:\Build\PainterApps\.next\server\pages\_document.js
+- C:\Build\PainterApps\node_modules\next\dist\server\require.js
+- C:\Build\PainterApps\node_modules\next\dist\server\load-components.js
+- C:\Build\PainterApps\node_modules\next\dist\build\utils.js
+- C:\Build\PainterApps\node_modules\next\dist\build\swc\options.js
+- C:\Build\PainterApps\node_modules\next\dist\build\swc\index.js
+- C:\Build\PainterApps\node_modules\next\dist\build\next-config-ts\transpile-config.js
+- C:\Build\PainterApps\node_modules\next\dist\server\config.js
+- C:\Build\PainterApps\node_modules\next\dist\server\next.js
+- C:\Build\PainterApps\node_modules\next\dist\server\lib\start-server.js
+    at <unknown> (C:\Build\PainterApps\.next\server\app\page.js:2:56663)
+    at Object.<anonymous> (C:\Build\PainterApps\.next\server\app\page.js:2:56712) {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [Array],
+  page: '/'
+}
+ GET / 500 in 558ms
+ ⨯ [Error: ENOENT: no such file or directory, open 'C:\Build\PainterApps\.next\routes-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Build\\PainterApps\\.next\\routes-manifest.json'
+}
+ GET / 500 in 270ms
+[Error: ENOENT: no such file or directory, open 'C:\Build\PainterApps\.next\routes-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Build\\PainterApps\\.next\\routes-manifest.json'
+}
+ ⨯ Error: Cannot find module './331.js'
+Require stack:
+- C:\Build\PainterApps\.next\server\webpack-runtime.js
+- C:\Build\PainterApps\.next\server\pages\_document.js
+- C:\Build\PainterApps\node_modules\next\dist\server\require.js
+- C:\Build\PainterApps\node_modules\next\dist\server\load-components.js
+- C:\Build\PainterApps\node_modules\next\dist\build\utils.js
+- C:\Build\PainterApps\node_modules\next\dist\build\swc\options.js
+- C:\Build\PainterApps\node_modules\next\dist\build\swc\index.js
+- C:\Build\PainterApps\node_modules\next\dist\build\next-config-ts\transpile-config.js
+- C:\Build\PainterApps\node_modules\next\dist\server\config.js
+- C:\Build\PainterApps\node_modules\next\dist\server\next.js
+- C:\Build\PainterApps\node_modules\next\dist\server\lib\start-server.js
+    at <unknown> (C:\Build\PainterApps\.next\server\app\page.js:2:56663)
+    at Object.<anonymous> (C:\Build\PainterApps\.next\server\app\page.js:2:56712) {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [Array],
+  page: '/'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open 'C:\Build\PainterApps\.next\routes-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Build\\PainterApps\\.next\\routes-manifest.json'
+}
+Error: Cannot find module './331.js'
+Require stack:
+- C:\Build\PainterApps\.next\server\webpack-runtime.js
+- C:\Build\PainterApps\.next\server\pages\_document.js
+- C:\Build\PainterApps\node_modules\next\dist\server\require.js
+- C:\Build\PainterApps\node_modules\next\dist\server\load-components.js
+- C:\Build\PainterApps\node_modules\next\dist\build\utils.js
+- C:\Build\PainterApps\node_modules\next\dist\build\swc\options.js
+- C:\Build\PainterApps\node_modules\next\dist\build\swc\index.js
+- C:\Build\PainterApps\node_modules\next\dist\build\next-config-ts\transpile-config.js
+- C:\Build\PainterApps\node_modules\next\dist\server\config.js
+- C:\Build\PainterApps\node_modules\next\dist\server\next.js
+- C:\Build\PainterApps\node_modules\next\dist\server\lib\start-server.js
+    at <unknown> (C:\Build\PainterApps\.next\server\app\page.js:2:56663)
+    at Object.<anonymous> (C:\Build\PainterApps\.next\server\app\page.js:2:56712) {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [Array],
+  page: '/'
+}
+ GET / 500 in 516ms
+ ⨯ [Error: ENOENT: no such file or directory, open 'C:\Build\PainterApps\.next\routes-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Build\\PainterApps\\.next\\routes-manifest.json'
+}
+ GET / 500 in 248ms
+[Error: ENOENT: no such file or directory, open 'C:\Build\PainterApps\.next\routes-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Build\\PainterApps\\.next\\routes-manifest.json'
+}
+ ⨯ Error: Cannot find module './331.js'
+Require stack:
+- C:\Build\PainterApps\.next\server\webpack-runtime.js
+- C:\Build\PainterApps\.next\server\pages\_document.js
+- C:\Build\PainterApps\node_modules\next\dist\server\require.js
+- C:\Build\PainterApps\node_modules\next\dist\server\load-components.js
+- C:\Build\PainterApps\node_modules\next\dist\build\utils.js
+- C:\Build\PainterApps\node_modules\next\dist\build\swc\options.js
+- C:\Build\PainterApps\node_modules\next\dist\build\swc\index.js
+- C:\Build\PainterApps\node_modules\next\dist\build\next-config-ts\transpile-config.js
+- C:\Build\PainterApps\node_modules\next\dist\server\config.js
+- C:\Build\PainterApps\node_modules\next\dist\server\next.js
+- C:\Build\PainterApps\node_modules\next\dist\server\lib\start-server.js
+    at <unknown> (C:\Build\PainterApps\.next\server\app\page.js:2:56663)
+    at Object.<anonymous> (C:\Build\PainterApps\.next\server\app\page.js:2:56712) {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [Array],
+  page: '/'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open 'C:\Build\PainterApps\.next\routes-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Build\\PainterApps\\.next\\routes-manifest.json'
+}
+Error: Cannot find module './331.js'
+Require stack:
+- C:\Build\PainterApps\.next\server\webpack-runtime.js
+- C:\Build\PainterApps\.next\server\pages\_document.js
+- C:\Build\PainterApps\node_modules\next\dist\server\require.js
+- C:\Build\PainterApps\node_modules\next\dist\server\load-components.js
+- C:\Build\PainterApps\node_modules\next\dist\build\utils.js
+- C:\Build\PainterApps\node_modules\next\dist\build\swc\options.js
+- C:\Build\PainterApps\node_modules\next\dist\build\swc\index.js
+- C:\Build\PainterApps\node_modules\next\dist\build\next-config-ts\transpile-config.js
+- C:\Build\PainterApps\node_modules\next\dist\server\config.js
+- C:\Build\PainterApps\node_modules\next\dist\server\next.js
+- C:\Build\PainterApps\node_modules\next\dist\server\lib\start-server.js
+    at <unknown> (C:\Build\PainterApps\.next\server\app\page.js:2:56663)
+    at Object.<anonymous> (C:\Build\PainterApps\.next\server\app\page.js:2:56712) {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [Array],
+  page: '/'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open 'C:\Build\PainterApps\.next\routes-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Build\\PainterApps\\.next\\routes-manifest.json'
+}
+ GET / 500 in 517ms
+[Error: ENOENT: no such file or directory, open 'C:\Build\PainterApps\.next\routes-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Build\\PainterApps\\.next\\routes-manifest.json'
+}
+ ⨯ Error: Cannot find module './331.js'
+Require stack:
+- C:\Build\PainterApps\.next\server\webpack-runtime.js
+- C:\Build\PainterApps\.next\server\pages\_document.js
+- C:\Build\PainterApps\node_modules\next\dist\server\require.js
+- C:\Build\PainterApps\node_modules\next\dist\server\load-components.js
+- C:\Build\PainterApps\node_modules\next\dist\build\utils.js
+- C:\Build\PainterApps\node_modules\next\dist\build\swc\options.js
+- C:\Build\PainterApps\node_modules\next\dist\build\swc\index.js
+- C:\Build\PainterApps\node_modules\next\dist\build\next-config-ts\transpile-config.js
+- C:\Build\PainterApps\node_modules\next\dist\server\config.js
+- C:\Build\PainterApps\node_modules\next\dist\server\next.js
+- C:\Build\PainterApps\node_modules\next\dist\server\lib\start-server.js
+    at <unknown> (C:\Build\PainterApps\.next\server\app\page.js:2:56663)
+    at Object.<anonymous> (C:\Build\PainterApps\.next\server\app\page.js:2:56712) {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [Array],
+  page: '/'
+}
+ GET / 500 in 251ms
+ ⨯ [Error: ENOENT: no such file or directory, open 'C:\Build\PainterApps\.next\routes-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Build\\PainterApps\\.next\\routes-manifest.json'
+}
+Error: Cannot find module './331.js'
+Require stack:
+- C:\Build\PainterApps\.next\server\webpack-runtime.js
+- C:\Build\PainterApps\.next\server\pages\_document.js
+- C:\Build\PainterApps\node_modules\next\dist\server\require.js
+- C:\Build\PainterApps\node_modules\next\dist\server\load-components.js
+- C:\Build\PainterApps\node_modules\next\dist\build\utils.js
+- C:\Build\PainterApps\node_modules\next\dist\build\swc\options.js
+- C:\Build\PainterApps\node_modules\next\dist\build\swc\index.js
+- C:\Build\PainterApps\node_modules\next\dist\build\next-config-ts\transpile-config.js
+- C:\Build\PainterApps\node_modules\next\dist\server\config.js
+- C:\Build\PainterApps\node_modules\next\dist\server\next.js
+- C:\Build\PainterApps\node_modules\next\dist\server\lib\start-server.js
+    at <unknown> (C:\Build\PainterApps\.next\server\app\page.js:2:56663)
+    at Object.<anonymous> (C:\Build\PainterApps\.next\server\app\page.js:2:56712) {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [Array],
+  page: '/'
+}
+ GET / 500 in 519ms
+ ⨯ [Error: ENOENT: no such file or directory, open 'C:\Build\PainterApps\.next\routes-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Build\\PainterApps\\.next\\routes-manifest.json'
+}
+ GET / 500 in 248ms
+[Error: ENOENT: no such file or directory, open 'C:\Build\PainterApps\.next\routes-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Build\\PainterApps\\.next\\routes-manifest.json'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open 'C:\Build\PainterApps\.next\server\app-paths-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Build\\PainterApps\\.next\\server\\app-paths-manifest.json',
+  page: '/'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open 'C:\Build\PainterApps\.next\server\pages-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Build\\PainterApps\\.next\\server\\pages-manifest.json'
+}
+[Error: ENOENT: no such file or directory, open 'C:\Build\PainterApps\.next\server\app-paths-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Build\\PainterApps\\.next\\server\\app-paths-manifest.json',
+  page: '/'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open 'C:\Build\PainterApps\.next\server\pages-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Build\\PainterApps\\.next\\server\\pages-manifest.json'
+}
+ GET / 500 in 71ms
+ GET / 500 in 24ms
+ GET / 500 in 122ms
+ GET / 500 in 28ms
+[Error: ENOENT: no such file or directory, open 'C:\Build\PainterApps\.next\routes-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Build\\PainterApps\\.next\\routes-manifest.json'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open 'C:\Build\PainterApps\.next\server\app-paths-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Build\\PainterApps\\.next\\server\\app-paths-manifest.json',
+  page: '/'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open 'C:\Build\PainterApps\.next\server\pages-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Build\\PainterApps\\.next\\server\\pages-manifest.json'
+}
+[Error: ENOENT: no such file or directory, open 'C:\Build\PainterApps\.next\server\app-paths-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Build\\PainterApps\\.next\\server\\app-paths-manifest.json',
+  page: '/'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open 'C:\Build\PainterApps\.next\server\pages-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Build\\PainterApps\\.next\\server\\pages-manifest.json'
+}
+[Error: ENOENT: no such file or directory, open 'C:\Build\PainterApps\.next\routes-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Build\\PainterApps\\.next\\routes-manifest.json'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open 'C:\Build\PainterApps\.next\server\app-paths-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Build\\PainterApps\\.next\\server\\app-paths-manifest.json',
+  page: '/'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open 'C:\Build\PainterApps\.next\server\pages-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Build\\PainterApps\\.next\\server\\pages-manifest.json'
+}
+ GET / 500 in 74ms
+ GET / 500 in 29ms
+[Error: ENOENT: no such file or directory, open 'C:\Build\PainterApps\.next\server\app-paths-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Build\\PainterApps\\.next\\server\\app-paths-manifest.json',
+  page: '/'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open 'C:\Build\PainterApps\.next\server\pages-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Build\\PainterApps\\.next\\server\\pages-manifest.json'
+}
+[Error: ENOENT: no such file or directory, open 'C:\Build\PainterApps\.next\routes-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Build\\PainterApps\\.next\\routes-manifest.json'
+}
+ ✓ Compiled /_not-found in 114ms (1024 modules)
+ GET /sw.js 500 in 176ms
+ ⨯ [Error: ENOENT: no such file or directory, open 'C:\Build\PainterApps\.next\server\next-font-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Build\\PainterApps\\.next\\server\\next-font-manifest.json'
+}
+ GET /sw.js 500 in 20ms
+[Error: ENOENT: no such file or directory, open 'C:\Build\PainterApps\.next\routes-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Build\\PainterApps\\.next\\routes-manifest.json'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open 'C:\Build\PainterApps\.next\server\next-font-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Build\\PainterApps\\.next\\server\\next-font-manifest.json'
+}
+[Error: ENOENT: no such file or directory, open 'C:\Build\PainterApps\.next\routes-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Build\\PainterApps\\.next\\routes-manifest.json'
+}
+ ✓ Compiled in 149ms (412 modules)
+ ✓ Compiled in 83ms (412 modules)
+ ✓ Compiled in 76ms (407 modules)
+ ✓ Compiled in 67ms (407 modules)
+ ✓ Compiled in 92ms (407 modules)
+ ✓ Compiled in 86ms (407 modules)
+ ✓ Compiled in 117ms (407 modules)
+ ✓ Compiled in 98ms (407 modules)
+ ✓ Compiled in 88ms (407 modules)
+ ✓ Compiled in 90ms (407 modules)
+ ✓ Compiled in 98ms (407 modules)
+ ✓ Compiled in 84ms (407 modules)
+

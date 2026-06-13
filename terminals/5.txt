@@ -1,0 +1,33 @@
+---
+pid: 9600
+cwd: "C:\build\painterapps"
+command: "npm run dev"
+started_at: 2026-06-12T04:28:05.148Z
+running_for_ms: 43404996 
+---
+
+> painterapps@0.1.0 dev
+> node scripts/dev.mjs
+
+Starting Next.js dev server on http://localhost:3000
+Tip: run `npm run build` safely while dev is running (uses separate .next-build folder).
+   ▲ Next.js 15.5.19
+   - Local:        http://localhost:3000
+   - Network:      http://192.168.1.32:3000
+
+ ✓ Starting...
+ ✓ Ready in 1263ms
+ ⚠ Fast Refresh had to perform a full reload. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+ ○ Compiling /free-tools ...
+ ✓ Compiled /free-tools in 728ms (671 modules)
+ ⚠ Fast Refresh had to perform a full reload. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+ GET /free-tools 200 in 1002ms
+ GET /free-tools 200 in 117ms
+ ✓ Compiled in 382ms (255 modules)
+ ✓ Compiled /_not-found in 173ms (676 modules)
+ GET /sw.js 404 in 272ms
+ ✓ Compiled /icon.svg in 179ms (434 modules)
+ GET /icon.svg?797579869d0c14f6 200 in 276ms
+ ✓ Compiled in 424ms (259 modules)
+ GET /free-tools 200 in 53ms
+
