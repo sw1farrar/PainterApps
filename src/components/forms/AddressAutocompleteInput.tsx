@@ -227,25 +227,25 @@ export function AddressAutocompleteInput({
         <ul
           id={`${id}-suggestions`}
           role="listbox"
-          className="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-md border border-border bg-popover p-1 text-popover-foreground shadow-md"
+          className="absolute z-[100] mt-1 max-h-60 w-full overflow-auto rounded-md border border-border bg-popover p-1 text-popover-foreground shadow-xl ring-1 ring-black/20"
         >
           {suggestions.map((suggestion, index) => (
             <li key={suggestion.placeId} role="option" aria-selected={activeIndex === index}>
               <button
                 type="button"
                 className={cn(
-                  "flex w-full items-start gap-2 rounded-sm px-3 py-2 text-left text-sm transition-colors hover:bg-muted",
-                  activeIndex === index && "bg-muted",
+                  "flex w-full items-start gap-2 rounded-sm px-3 py-2.5 text-left text-sm text-popover-foreground transition-colors hover:bg-accent hover:text-accent-foreground",
+                  activeIndex === index && "bg-accent text-accent-foreground",
                 )}
                 onMouseDown={(event) => event.preventDefault()}
                 onClick={() => void selectSuggestion(suggestion)}
               >
-                <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
-                <span>{suggestion.label}</span>
+                <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-blue-300" />
+                <span className="leading-snug">{suggestion.label}</span>
               </button>
             </li>
           ))}
-          <li className="px-3 py-1.5 text-[10px] text-muted-foreground">
+          <li className="border-t border-border px-3 py-1.5 text-[10px] text-muted-foreground">
             Powered by Google
           </li>
         </ul>

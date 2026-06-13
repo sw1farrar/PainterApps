@@ -25,6 +25,8 @@
   --color-foreground: #eef1f5;
   --color-card: #0a1428;
   --color-card-foreground: #eef1f5;
+  --color-popover: #0f1e38;
+  --color-popover-foreground: #eef1f5;
   --color-primary: #2b6cb8;
   --color-primary-foreground: #ffffff;
   --color-secondary: #0f1e38;
@@ -46,6 +48,8 @@
 .text-foreground { color: var(--color-foreground); }
 .bg-card { background-color: var(--color-card); }
 .text-card-foreground { color: var(--color-card-foreground); }
+.bg-popover { background-color: var(--color-popover); }
+.text-popover-foreground { color: var(--color-popover-foreground); }
 .bg-primary { background-color: var(--color-primary); }
 .text-primary-foreground { color: var(--color-primary-foreground); }
 .bg-secondary { background-color: var(--color-secondary); }
