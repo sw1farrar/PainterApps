@@ -254,9 +254,9 @@ export function TeamClient({
       >
         <div className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="invite-email">Email</Label>
+            <Label htmlFor="invite-contact">Email</Label>
             <Input
-              id="invite-email"
+              id="invite-contact"
               type="email"
               value={inviteEmail}
               onChange={(e) => setInviteEmail(e.target.value)}

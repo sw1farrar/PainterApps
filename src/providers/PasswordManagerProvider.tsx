@@ -2,6 +2,7 @@
 
 import * as React from "react";
 
+import { ExtensionBlocker } from "@/components/forms/ExtensionBlocker";
 import { PASSWORD_MANAGER_SHELL_PROPS } from "@/lib/forms/password-manager";
 
 const PasswordManagerContext = React.createContext(false);
@@ -28,25 +29,22 @@ export function PasswordManagerProvider({
         >
           <input
             type="text"
-            name="prevent_autofill"
+            name="pa_decoy_x7k"
             tabIndex={-1}
             autoComplete="off"
             readOnly
           />
-          <input
-            type="password"
-            name="prevent_autofill_pw"
-            tabIndex={-1}
-            autoComplete="new-password"
-            readOnly
-          />
         </div>
       ) : null}
-      {suppress ? (
-        <div {...PASSWORD_MANAGER_SHELL_PROPS}>{children}</div>
-      ) : (
-        children
-      )}
+      <ExtensionBlocker active={suppress}>
+        {suppress ? (
+          <div className="portal-autofill-blocked" {...PASSWORD_MANAGER_SHELL_PROPS}>
+            {children}
+          </div>
+        ) : (
+          children
+        )}
+      </ExtensionBlocker>
     </PasswordManagerContext.Provider>
   );
 }

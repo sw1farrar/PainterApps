@@ -258,9 +258,9 @@ export function OnboardingWizard({ company: initialCompany }: OnboardingWizardPr
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
+                  <Label htmlFor="company-contact">Email</Label>
                   <Input
-                    id="email"
+                    id="company-contact"
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}

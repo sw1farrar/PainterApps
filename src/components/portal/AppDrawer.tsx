@@ -48,12 +48,13 @@ export function AppDrawer({
           ) : null}
         </SheetHeader>
 
-        <div
+        <form
           className="min-h-0 flex-1 overflow-y-auto px-6 py-5"
+          onSubmit={(event) => event.preventDefault()}
           {...PASSWORD_MANAGER_SHELL_PROPS}
         >
           {children}
-        </div>
+        </form>
 
         {footer ? (
           <SheetFooter className="shrink-0 border-t border-border px-6 py-4 sm:justify-start">

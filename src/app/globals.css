@@ -71,6 +71,31 @@
   min-height: 100dvh;
 }
 
+.portal-autofill-blocked [data-lastpass-icon-root],
+.portal-autofill-blocked [data-lastpass-root],
+.portal-autofill-blocked div[id^="__lp"],
+.portal-autofill-blocked iframe[src*="lastpass"],
+.portal-autofill-blocked [class*="com-1password"],
+.portal-autofill-blocked [class*="OnePassword"],
+.portal-autofill-blocked bitwarden-field,
+.portal-autofill-blocked [data-dashlanecreated],
+.portal-autofill-blocked #dashlane-infield-tooltip,
+.portal-autofill-blocked [data-protonpass-role],
+.portal-autofill-blocked [data-keeper-root],
+.portal-autofill-blocked .keeper-fill-interface,
+.portal-autofill-blocked .pm-suppressed-field::-webkit-credentials-auto-fill-button,
+.portal-autofill-blocked .pm-suppressed-field::-webkit-strong-password-auto-fill-button {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  max-width: 0 !important;
+  max-height: 0 !important;
+  overflow: hidden !important;
+}
+
 html {
   scroll-behavior: smooth;
 }

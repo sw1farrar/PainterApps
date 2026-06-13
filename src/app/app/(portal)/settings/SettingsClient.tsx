@@ -231,10 +231,10 @@ export function SettingsClient({ company, upgradeRules }: SettingsClientProps) {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="settings-email">Email</Label>
-                  <Input
-                    id="settings-email"
-                    type="email"
+                    <Label htmlFor="settings-contact">Email</Label>
+                    <Input
+                      id="settings-contact"
+                      type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                   />

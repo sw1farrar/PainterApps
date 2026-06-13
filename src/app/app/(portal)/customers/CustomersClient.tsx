@@ -283,10 +283,10 @@ export function CustomersClient({ customers }: CustomersClientProps) {
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="customer-email">Email</Label>
-              <Input
-                id="customer-email"
-                type="email"
+                <Label htmlFor="customer-contact">Email</Label>
+                <Input
+                  id="customer-contact"
+                  type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="jane@example.com"
