@@ -12,6 +12,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { formatAddress, formatJobAddress } from "@/lib/address";
 import { requireOnboarded } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
 import { formatCurrency } from "@/lib/utils";
@@ -78,7 +79,7 @@ export default async function JobDetailPage({ params }: PageProps) {
               {customer?.name ?? "Job"}
             </h1>
             <p className="mt-1 text-sm text-muted-foreground">
-              {quote?.job_address ?? "No job address"}
+              {quote ? formatJobAddress(quote) : "No job address"}
             </p>
           </div>
         </div>
@@ -145,10 +146,10 @@ export default async function JobDetailPage({ params }: PageProps) {
                 {customer.phone}
               </p>
             ) : null}
-            {customer?.address ? (
+            {customer && formatAddress(customer) ? (
               <p className="flex items-center gap-2">
                 <MapPin className="h-4 w-4 shrink-0" />
-                {customer.address}
+                {formatAddress(customer)}
               </p>
             ) : null}
           </CardContent>

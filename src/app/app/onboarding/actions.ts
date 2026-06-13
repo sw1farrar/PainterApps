@@ -26,6 +26,10 @@ export async function saveCompanyInfo(data: {
   name: string;
   logoUrl?: string;
   address?: string;
+  address_line2?: string;
+  city?: string;
+  state?: string;
+  zip?: string;
   phone?: string;
   email?: string;
 }): Promise<ActionResult<{ companyId: string }>> {
@@ -44,6 +48,10 @@ export async function saveCompanyInfo(data: {
     slug: slugify(data.name),
     logo_url: normalizeLogoUrl(data.logoUrl),
     address: data.address?.trim() || null,
+    address_line2: data.address_line2?.trim() || null,
+    city: data.city?.trim() || null,
+    state: data.state?.trim() || null,
+    zip: data.zip?.trim() || null,
     phone: data.phone?.trim() || null,
     email: data.email?.trim() || null,
     onboarding_complete: false,

@@ -11,6 +11,7 @@ import { createNotification } from "@/lib/notifications/create";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireOnboarded } from "@/lib/auth/session";
+import { formatJobAddress } from "@/lib/address";
 import { formatCurrency } from "@/lib/utils";
 import type {
   LineItemType,
@@ -36,11 +37,44 @@ async function getCompanyId() {
   return company.id;
 }
 
-export async function createQuote(input: {
-  customer_id: string;
+type JobAddressInput = {
   job_address: string;
-  before_photos: string[];
-}): Promise<ActionResult<{ id: string }>> {
+  job_address_line2?: string | null;
+  job_city?: string | null;
+  job_state?: string | null;
+  job_zip?: string | null;
+};
+
+function normalizeJobAddressInput(
+  input: Partial<JobAddressInput>,
+): Partial<JobAddressInput> {
+  const normalized: Partial<JobAddressInput> = { ...input };
+
+  if (input.job_address !== undefined) {
+    normalized.job_address = input.job_address.trim();
+  }
+  if (input.job_address_line2 !== undefined) {
+    normalized.job_address_line2 = input.job_address_line2?.trim() || null;
+  }
+  if (input.job_city !== undefined) {
+    normalized.job_city = input.job_city?.trim() || null;
+  }
+  if (input.job_state !== undefined) {
+    normalized.job_state = input.job_state?.trim() || null;
+  }
+  if (input.job_zip !== undefined) {
+    normalized.job_zip = input.job_zip?.trim() || null;
+  }
+
+  return normalized;
+}
+
+export async function createQuote(
+  input: JobAddressInput & {
+    customer_id: string;
+    before_photos: string[];
+  },
+): Promise<ActionResult<{ id: string }>> {
   try {
     const companyId = await getCompanyId();
     const supabase = await createClient();
@@ -50,7 +84,11 @@ export async function createQuote(input: {
       .insert({
         company_id: companyId,
         customer_id: input.customer_id,
-        job_address: input.job_address,
+        job_address: input.job_address.trim(),
+        job_address_line2: input.job_address_line2?.trim() || null,
+        job_city: input.job_city?.trim() || null,
+        job_state: input.job_state?.trim() || null,
+        job_zip: input.job_zip?.trim() || null,
         before_photos: input.before_photos,
         status: "draft",
       })
@@ -71,9 +109,8 @@ export async function createQuote(input: {
 
 export async function updateQuote(
   quoteId: string,
-  input: {
+  input: Partial<JobAddressInput> & {
     customer_id?: string;
-    job_address?: string;
     before_photos?: string[];
     status?: "draft" | "sent" | "accepted" | "declined";
   },
@@ -84,7 +121,10 @@ export async function updateQuote(
 
     const { error } = await supabase
       .from("quotes")
-      .update({ ...input, updated_at: new Date().toISOString() })
+      .update({
+        ...normalizeJobAddressInput(input),
+        updated_at: new Date().toISOString(),
+      })
       .eq("id", quoteId)
       .eq("company_id", companyId);
 
@@ -281,7 +321,7 @@ export async function sendQuote(quoteId: string): Promise<ActionResult> {
       companyId,
       type: "quote_sent",
       title: `Quote sent to ${customer?.name ?? "customer"}`,
-      body: quote.job_address,
+      body: formatJobAddress(quote),
       href: `/app/quotes/${quoteId}`,
     });
 
@@ -393,7 +433,7 @@ export async function acceptQuote(
       companyId: quote.company_id,
       type: "quote_accepted",
       title: `${customer.name} accepted a quote`,
-      body: `${tierLabels[tier]} · ${quote.job_address}`,
+      body: `${tierLabels[tier]} · ${formatJobAddress(quote)}`,
       href: `/app/quotes/${quoteId}`,
     });
 
@@ -407,7 +447,7 @@ export async function acceptQuote(
       const template = quoteAcceptedEmail({
         customerName: customer.name,
         companyName: company.name,
-        jobAddress: quote.job_address,
+        jobAddress: formatJobAddress(quote),
         tierLabel: tierLabels[tier],
         price: formatCurrency(tierData?.price ?? 0),
         quoteUrl,
@@ -485,14 +525,14 @@ export async function declineQuote(
       companyId: quote.company_id,
       type: "quote_declined",
       title: `${customer.name} declined a quote`,
-      body: quote.job_address,
+      body: formatJobAddress(quote),
       href: `/app/quotes/${quoteId}`,
     });
 
     if (company?.email) {
       const template = quoteDeclinedEmail({
         customerName: customer.name,
-        jobAddress: quote.job_address,
+        jobAddress: formatJobAddress(quote),
         quoteUrl,
       });
       await sendEmail({
@@ -546,6 +586,10 @@ export async function duplicateQuote(
         company_id: companyId,
         customer_id: source.customer_id,
         job_address: source.job_address,
+        job_address_line2: source.job_address_line2,
+        job_city: source.job_city,
+        job_state: source.job_state,
+        job_zip: source.job_zip,
         before_photos: source.before_photos ?? [],
         status: "draft",
       })

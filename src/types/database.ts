@@ -15,6 +15,10 @@ export type Company = {
   slug: string;
   logo_url: string | null;
   address: string | null;
+  address_line2: string | null;
+  city: string | null;
+  state: string | null;
+  zip: string | null;
   phone: string | null;
   email: string | null;
   tax_rate: number;
@@ -46,6 +50,11 @@ export type Customer = {
   email: string | null;
   phone: string | null;
   address: string | null;
+  address_line2: string | null;
+  city: string | null;
+  state: string | null;
+  zip: string | null;
+  notes: string | null;
   portal_token: string;
   created_at: string;
 };
@@ -55,6 +64,10 @@ export type Quote = {
   company_id: string;
   customer_id: string;
   job_address: string;
+  job_address_line2: string | null;
+  job_city: string | null;
+  job_state: string | null;
+  job_zip: string | null;
   status: QuoteStatus;
   before_photos: string[];
   accepted_tier: QuoteTierName | null;
@@ -153,7 +166,7 @@ export type Database = {
     Tables: {
       companies: {
         Row: Company;
-        Insert: InsertOf<Company, "id" | "created_at" | "logo_url" | "address" | "phone" | "email" | "tax_rate" | "labor_rates" | "material_markup" | "overhead_pct" | "default_margins" | "coverage_sqft_per_gallon" | "onboarding_complete" | "stripe_customer_id" | "stripe_subscription_id" | "subscription_status">;
+        Insert: InsertOf<Company, "id" | "created_at" | "logo_url" | "address" | "address_line2" | "city" | "state" | "zip" | "phone" | "email" | "tax_rate" | "labor_rates" | "material_markup" | "overhead_pct" | "default_margins" | "coverage_sqft_per_gallon" | "onboarding_complete" | "stripe_customer_id" | "stripe_subscription_id" | "subscription_status">;
         Update: Partial<Company>;
         Relationships: [];
       };
@@ -172,6 +185,11 @@ export type Database = {
           email?: string | null;
           phone?: string | null;
           address?: string | null;
+          address_line2?: string | null;
+          city?: string | null;
+          state?: string | null;
+          zip?: string | null;
+          notes?: string | null;
           portal_token?: string;
           created_at?: string;
         };
@@ -180,7 +198,7 @@ export type Database = {
       };
       quotes: {
         Row: Quote;
-        Insert: InsertOf<Quote, "id" | "status" | "before_photos" | "accepted_tier" | "created_at" | "updated_at">;
+        Insert: InsertOf<Quote, "id" | "status" | "before_photos" | "accepted_tier" | "job_address_line2" | "job_city" | "job_state" | "job_zip" | "created_at" | "updated_at">;
         Update: Partial<Quote>;
         Relationships: [
           {

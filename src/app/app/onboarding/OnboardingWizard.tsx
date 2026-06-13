@@ -4,6 +4,7 @@ import * as React from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
+import { AddressFields } from "@/components/forms/AddressFields";
 import Logo from "@/components/Logo";
 import { Button } from "@/components/ui/button";
 import {
@@ -16,6 +17,7 @@ import {
 import { ImageUpload } from "@/components/storage/ImageUpload";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { toAddressInput, type AddressFields as AddressValue } from "@/lib/address";
 import { ONBOARDING_DEFAULTS } from "@/lib/onboarding/defaults";
 import { getSupabaseEnvError } from "@/lib/supabase/env";
 import type { Company, QuoteTierName } from "@/types/database";
@@ -48,7 +50,13 @@ export function OnboardingWizard({ company: initialCompany }: OnboardingWizardPr
   const [companyId, setCompanyId] = React.useState(initialCompany?.id ?? "");
   const [name, setName] = React.useState(initialCompany?.name ?? "");
   const [logoUrl, setLogoUrl] = React.useState(initialCompany?.logo_url ?? "");
-  const [address, setAddress] = React.useState(initialCompany?.address ?? "");
+  const [addressFields, setAddressFields] = React.useState<AddressValue>({
+    address: initialCompany?.address ?? "",
+    address_line2: initialCompany?.address_line2 ?? "",
+    city: initialCompany?.city ?? "",
+    state: initialCompany?.state ?? "",
+    zip: initialCompany?.zip ?? "",
+  });
   const [phone, setPhone] = React.useState(initialCompany?.phone ?? "");
   const [email, setEmail] = React.useState(initialCompany?.email ?? "");
 
@@ -99,7 +107,7 @@ export function OnboardingWizard({ company: initialCompany }: OnboardingWizardPr
     const result = await saveCompanyInfo({
       name,
       logoUrl,
-      address,
+      ...toAddressInput(addressFields),
       phone,
       email,
     });
@@ -233,15 +241,12 @@ export function OnboardingWizard({ company: initialCompany }: OnboardingWizardPr
                 uploadDisabled={!companyId}
                 uploadDisabledMessage="Click Continue once to create your company, then upload your logo."
               />
-              <div className="space-y-2">
-                <Label htmlFor="address">Address</Label>
-                <Input
-                  id="address"
-                  value={address}
-                  onChange={(e) => setAddress(e.target.value)}
-                  placeholder="123 Main St, City, ST"
-                />
-              </div>
+              <AddressFields
+                idPrefix="onboarding-company"
+                value={addressFields}
+                onChange={setAddressFields}
+                line1Label="Business street address"
+              />
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="phone">Phone</Label>

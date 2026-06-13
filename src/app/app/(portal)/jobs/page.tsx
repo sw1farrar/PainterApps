@@ -12,6 +12,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { formatJobAddress, type JobAddressFields } from "@/lib/address";
 import { requireOnboarded } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
 import { formatCurrency } from "@/lib/utils";
@@ -39,7 +40,7 @@ export default async function JobsPage() {
   const { data: jobs } = await supabase
     .from("jobs")
     .select(
-      "id, status, tier, selling_price, created_at, customers(name), quotes(job_address)",
+      "id, status, tier, selling_price, created_at, customers(name), quotes(job_address, job_address_line2, job_city, job_state, job_zip)",
     )
     .eq("company_id", company!.id)
     .order("created_at", { ascending: false });
@@ -51,7 +52,7 @@ export default async function JobsPage() {
     selling_price: number;
     created_at: string;
     customers: { name: string } | null;
-    quotes: { job_address: string } | null;
+    quotes: JobAddressFields | null;
   };
 
   const jobRows = (jobs ?? []) as unknown as JobListRow[];
@@ -114,7 +115,7 @@ export default async function JobsPage() {
                         </Badge>
                       </div>
                       <p className="truncate text-sm text-muted-foreground">
-                        {quote?.job_address ?? "No job address"}
+                        {quote ? formatJobAddress(quote) : "No job address"}
                       </p>
                       <p className="text-xs text-muted-foreground">
                         Started {format(new Date(job.created_at), "MMM d, yyyy")}

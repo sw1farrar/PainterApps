@@ -6,17 +6,38 @@ import { requireOnboarded } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
 import { getSupabaseEnvError } from "@/lib/supabase/env";
 
+export type CustomerInput = {
+  name: string;
+  email?: string;
+  phone?: string;
+  address?: string;
+  address_line2?: string;
+  city?: string;
+  state?: string;
+  zip?: string;
+  notes?: string;
+};
+
 export type ActionResult = {
   success: boolean;
   error?: string;
 };
 
-export async function createCustomer(data: {
-  name: string;
-  email?: string;
-  phone?: string;
-  address?: string;
-}): Promise<ActionResult> {
+function normalizeCustomerInput(data: CustomerInput) {
+  return {
+    name: data.name.trim(),
+    email: data.email?.trim() || null,
+    phone: data.phone?.trim() || null,
+    address: data.address?.trim() || null,
+    address_line2: data.address_line2?.trim() || null,
+    city: data.city?.trim() || null,
+    state: data.state?.trim() || null,
+    zip: data.zip?.trim() || null,
+    notes: data.notes?.trim() || null,
+  };
+}
+
+export async function createCustomer(data: CustomerInput): Promise<ActionResult> {
   const envError = getSupabaseEnvError();
   if (envError) return { success: false, error: envError };
 
@@ -36,10 +57,7 @@ export async function createCustomer(data: {
 
   const { error } = await supabase.from("customers").insert({
     company_id: companyId,
-    name: data.name.trim(),
-    email: data.email?.trim() || null,
-    phone: data.phone?.trim() || null,
-    address: data.address?.trim() || null,
+    ...normalizeCustomerInput(data),
     portal_token: portalToken,
   });
 
@@ -51,12 +69,7 @@ export async function createCustomer(data: {
 
 export async function updateCustomer(
   id: string,
-  data: {
-    name: string;
-    email?: string;
-    phone?: string;
-    address?: string;
-  },
+  data: CustomerInput,
 ): Promise<ActionResult> {
   const envError = getSupabaseEnvError();
   if (envError) return { success: false, error: envError };
@@ -75,12 +88,7 @@ export async function updateCustomer(
   const supabase = await createClient();
   const { error } = await supabase
     .from("customers")
-    .update({
-      name: data.name.trim(),
-      email: data.email?.trim() || null,
-      phone: data.phone?.trim() || null,
-      address: data.address?.trim() || null,
-    })
+    .update(normalizeCustomerInput(data))
     .eq("id", id)
     .eq("company_id", companyId);
 

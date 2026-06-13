@@ -19,6 +19,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { formatJobAddress, type JobAddressFields } from "@/lib/address";
 import { filterNavByRole } from "@/lib/auth/roles";
 import { requireOnboarded } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
@@ -42,13 +43,12 @@ export default async function DashboardPage() {
   let revenue = 0;
   let margin = 0;
   let queryError: string | null = null;
-  let recentQuotes: {
+  let recentQuotes: (JobAddressFields & {
     id: string;
-    job_address: string;
     status: string;
     updated_at: string;
     customers: { name: string } | null;
-  }[] = [];
+  })[] = [];
   let recentJobs: {
     id: string;
     status: string;
@@ -89,7 +89,9 @@ export default async function DashboardPage() {
           .eq("status", "accepted"),
         supabase
           .from("quotes")
-          .select("id, job_address, status, updated_at, customers(name)")
+          .select(
+            "id, job_address, job_address_line2, job_city, job_state, job_zip, status, updated_at, customers(name)",
+          )
           .eq("company_id", companyId)
           .order("updated_at", { ascending: false })
           .limit(5),
@@ -256,7 +258,7 @@ export default async function DashboardPage() {
                           </Link>
                         </td>
                         <td className="max-w-[12rem] truncate py-2.5 pr-4 text-muted-foreground">
-                          {item.job_address}
+                          {formatJobAddress(item)}
                         </td>
                         <td className="py-2.5 pr-4">
                           <Badge variant="secondary" className="capitalize">

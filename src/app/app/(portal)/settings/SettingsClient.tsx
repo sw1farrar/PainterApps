@@ -3,6 +3,7 @@
 import * as React from "react";
 import { toast } from "sonner";
 
+import { AddressFields } from "@/components/forms/AddressFields";
 import { ImageUpload } from "@/components/storage/ImageUpload";
 import { Button } from "@/components/ui/button";
 import {
@@ -15,6 +16,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { toAddressInput, type AddressFields as AddressValue } from "@/lib/address";
 import { ONBOARDING_DEFAULTS } from "@/lib/onboarding/defaults";
 import { getSupabaseEnvError } from "@/lib/supabase/env";
 import type { Company, QuoteTierName, QuoteUpgradeRules } from "@/types/database";
@@ -43,7 +45,13 @@ export function SettingsClient({ company, upgradeRules }: SettingsClientProps) {
 
   const [name, setName] = React.useState(company.name);
   const [logoUrl, setLogoUrl] = React.useState(company.logo_url ?? "");
-  const [address, setAddress] = React.useState(company.address ?? "");
+  const [addressFields, setAddressFields] = React.useState<AddressValue>({
+    address: company.address ?? "",
+    address_line2: company.address_line2 ?? "",
+    city: company.city ?? "",
+    state: company.state ?? "",
+    zip: company.zip ?? "",
+  });
   const [phone, setPhone] = React.useState(company.phone ?? "");
   const [email, setEmail] = React.useState(company.email ?? "");
 
@@ -91,7 +99,7 @@ export function SettingsClient({ company, upgradeRules }: SettingsClientProps) {
     const result = await updateCompanySettings({
       name,
       logoUrl,
-      address,
+      ...toAddressInput(addressFields),
       phone,
       email,
     });
@@ -207,14 +215,12 @@ export function SettingsClient({ company, upgradeRules }: SettingsClientProps) {
                 onUploaded={setLogoUrl}
                 onClear={() => setLogoUrl("")}
               />
-              <div className="space-y-2">
-                <Label htmlFor="settings-address">Address</Label>
-                <Input
-                  id="settings-address"
-                  value={address}
-                  onChange={(e) => setAddress(e.target.value)}
-                />
-              </div>
+              <AddressFields
+                idPrefix="settings-company"
+                value={addressFields}
+                onChange={setAddressFields}
+                line1Label="Business street address"
+              />
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="settings-phone">Phone</Label>

@@ -4,6 +4,7 @@ import * as React from "react";
 import { Mail, MapPin, Pencil, Phone, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
+import { AddressFields } from "@/components/forms/AddressFields";
 import { AppDrawer } from "@/components/portal/AppDrawer";
 import { PageHeader } from "@/components/portal/PageHeader";
 import { Badge } from "@/components/ui/badge";
@@ -17,13 +18,29 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { EMPTY_ADDRESS, formatAddress, toAddressInput } from "@/lib/address";
 import { getSupabaseEnvError } from "@/lib/supabase/env";
 import type { Customer } from "@/types/database";
-import { createCustomer, deleteCustomer, updateCustomer } from "./actions";
+import {
+  createCustomer,
+  deleteCustomer,
+  updateCustomer,
+  type CustomerInput,
+} from "./actions";
 
 type CustomersClientProps = {
   customers: Customer[];
 };
+
+function customerToAddress(customer: Customer) {
+  return {
+    address: customer.address ?? "",
+    address_line2: customer.address_line2 ?? "",
+    city: customer.city ?? "",
+    state: customer.state ?? "",
+    zip: customer.zip ?? "",
+  };
+}
 
 export function CustomersClient({ customers }: CustomersClientProps) {
   const [drawerOpen, setDrawerOpen] = React.useState(false);
@@ -36,7 +53,8 @@ export function CustomersClient({ customers }: CustomersClientProps) {
   const [name, setName] = React.useState("");
   const [email, setEmail] = React.useState("");
   const [phone, setPhone] = React.useState("");
-  const [address, setAddress] = React.useState("");
+  const [addressFields, setAddressFields] = React.useState(EMPTY_ADDRESS);
+  const [notes, setNotes] = React.useState("");
 
   const envError = getSupabaseEnvError();
   const isEditing = editingCustomer !== null;
@@ -45,7 +63,8 @@ export function CustomersClient({ customers }: CustomersClientProps) {
     setName("");
     setEmail("");
     setPhone("");
-    setAddress("");
+    setAddressFields(EMPTY_ADDRESS);
+    setNotes("");
     setEditingCustomer(null);
   }
 
@@ -59,7 +78,8 @@ export function CustomersClient({ customers }: CustomersClientProps) {
     setName(customer.name);
     setEmail(customer.email ?? "");
     setPhone(customer.phone ?? "");
-    setAddress(customer.address ?? "");
+    setAddressFields(customerToAddress(customer));
+    setNotes(customer.notes ?? "");
     setDrawerOpen(true);
   }
 
@@ -69,15 +89,18 @@ export function CustomersClient({ customers }: CustomersClientProps) {
       return;
     }
 
+    const payload: CustomerInput = {
+      name,
+      email,
+      phone,
+      ...toAddressInput(addressFields),
+      notes,
+    };
+
     setLoading(true);
     const result = isEditing
-      ? await updateCustomer(editingCustomer.id, {
-          name,
-          email,
-          phone,
-          address,
-        })
-      : await createCustomer({ name, email, phone, address });
+      ? await updateCustomer(editingCustomer.id, payload)
+      : await createCustomer(payload);
     setLoading(false);
 
     if (!result.success) {
@@ -151,65 +174,69 @@ export function CustomersClient({ customers }: CustomersClientProps) {
         </Card>
       ) : (
         <div className="grid min-w-0 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          {customers.map((customer) => (
-            <Card
-              key={customer.id}
-              className="border-border bg-card/80 backdrop-blur-sm"
-            >
-              <CardHeader className="flex flex-row items-start justify-between space-y-0">
-                <div>
-                  <CardTitle className="text-base">{customer.name}</CardTitle>
-                  <CardDescription>
-                    Added {new Date(customer.created_at).toLocaleDateString()}
-                  </CardDescription>
-                </div>
-                <div className="flex items-center gap-1">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="text-muted-foreground hover:text-foreground"
-                    onClick={() => openEditDrawer(customer)}
-                    aria-label={`Edit ${customer.name}`}
-                  >
-                    <Pencil className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="text-muted-foreground hover:text-destructive"
-                    onClick={() => handleDelete(customer.id, customer.name)}
-                    disabled={deletingId === customer.id}
-                    aria-label={`Delete ${customer.name}`}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-2 text-sm text-muted-foreground">
-                {customer.email ? (
-                  <p className="flex min-w-0 items-center gap-2">
-                    <Mail className="h-3.5 w-3.5 shrink-0" />
-                    <span className="truncate">{customer.email}</span>
-                  </p>
-                ) : null}
-                {customer.phone ? (
-                  <p className="flex min-w-0 items-center gap-2">
-                    <Phone className="h-3.5 w-3.5 shrink-0" />
-                    <span className="truncate">{customer.phone}</span>
-                  </p>
-                ) : null}
-                {customer.address ? (
-                  <p className="flex min-w-0 items-center gap-2">
-                    <MapPin className="h-3.5 w-3.5 shrink-0" />
-                    <span className="truncate">{customer.address}</span>
-                  </p>
-                ) : null}
-                <Badge variant="outline" className="mt-2">
-                  Portal ready
-                </Badge>
-              </CardContent>
-            </Card>
-          ))}
+          {customers.map((customer) => {
+            const formattedAddress = formatAddress(customer);
+
+            return (
+              <Card
+                key={customer.id}
+                className="border-border bg-card/80 backdrop-blur-sm"
+              >
+                <CardHeader className="flex flex-row items-start justify-between space-y-0">
+                  <div>
+                    <CardTitle className="text-base">{customer.name}</CardTitle>
+                    <CardDescription>
+                      Added {new Date(customer.created_at).toLocaleDateString()}
+                    </CardDescription>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="text-muted-foreground hover:text-foreground"
+                      onClick={() => openEditDrawer(customer)}
+                      aria-label={`Edit ${customer.name}`}
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="text-muted-foreground hover:text-destructive"
+                      onClick={() => handleDelete(customer.id, customer.name)}
+                      disabled={deletingId === customer.id}
+                      aria-label={`Delete ${customer.name}`}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-2 text-sm text-muted-foreground">
+                  {customer.email ? (
+                    <p className="flex min-w-0 items-center gap-2">
+                      <Mail className="h-3.5 w-3.5 shrink-0" />
+                      <span className="truncate">{customer.email}</span>
+                    </p>
+                  ) : null}
+                  {customer.phone ? (
+                    <p className="flex min-w-0 items-center gap-2">
+                      <Phone className="h-3.5 w-3.5 shrink-0" />
+                      <span className="truncate">{customer.phone}</span>
+                    </p>
+                  ) : null}
+                  {formattedAddress ? (
+                    <p className="flex min-w-0 items-start gap-2">
+                      <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                      <span>{formattedAddress}</span>
+                    </p>
+                  ) : null}
+                  <Badge variant="outline" className="mt-2">
+                    Portal ready
+                  </Badge>
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
       )}
 
@@ -254,34 +281,35 @@ export function CustomersClient({ customers }: CustomersClientProps) {
               placeholder="Jane Smith"
             />
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="customer-email">Email</Label>
-            <Input
-              id="customer-email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="jane@example.com"
-            />
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="customer-email">Email</Label>
+              <Input
+                id="customer-email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="jane@example.com"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="customer-phone">Phone</Label>
+              <Input
+                id="customer-phone"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder="(555) 123-4567"
+              />
+            </div>
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="customer-phone">Phone</Label>
-            <Input
-              id="customer-phone"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              placeholder="(555) 123-4567"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="customer-address">Address</Label>
-            <Input
-              id="customer-address"
-              value={address}
-              onChange={(e) => setAddress(e.target.value)}
-              placeholder="123 Oak St"
-            />
-          </div>
+          <AddressFields
+            idPrefix="customer"
+            value={addressFields}
+            onChange={setAddressFields}
+            showNotes
+            notes={notes}
+            onNotesChange={setNotes}
+          />
         </div>
       </AppDrawer>
     </div>

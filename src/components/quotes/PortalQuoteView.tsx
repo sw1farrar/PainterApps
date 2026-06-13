@@ -12,6 +12,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { formatJobAddress } from "@/lib/address";
 import { formatCurrency, isAbsoluteHttpUrl } from "@/lib/utils";
 import type { Quote, QuoteTier, QuoteTierName } from "@/types/database";
 
@@ -102,7 +103,8 @@ export function PortalQuoteView({
             Your Painting Quote
           </h1>
           <p className="text-muted-foreground">
-            Hi {customerName} — review your options for {quote.job_address}
+            Hi {customerName} — review your options for{" "}
+            {formatJobAddress(quote)}
           </p>
           {(companyPhone || companyEmail) && (
             <div className="flex flex-wrap items-center justify-center gap-4 text-sm text-muted-foreground">

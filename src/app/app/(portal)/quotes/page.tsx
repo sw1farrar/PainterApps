@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { format } from "date-fns";
 import { Plus } from "lucide-react";
+import { formatJobAddress, type JobAddressFields } from "@/lib/address";
 import { requireOnboarded } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
 import { formatCurrency } from "@/lib/utils";
@@ -32,14 +33,13 @@ export default async function QuotesPage() {
   const { data: quotes } = await supabase
     .from("quotes")
     .select(
-      "id, job_address, status, created_at, updated_at, customers(name), quote_tiers(price, tier)",
+      "id, job_address, job_address_line2, job_city, job_state, job_zip, status, created_at, updated_at, customers(name), quote_tiers(price, tier)",
     )
     .eq("company_id", company!.id)
     .order("updated_at", { ascending: false });
 
-  type QuoteListRow = {
+  type QuoteListRow = JobAddressFields & {
     id: string;
-    job_address: string;
     status: QuoteStatus;
     created_at: string;
     updated_at: string;
@@ -113,7 +113,7 @@ export default async function QuotesPage() {
                           </Badge>
                         </div>
                         <p className="truncate text-sm text-muted-foreground">
-                          {quote.job_address}
+                          {formatJobAddress(quote)}
                         </p>
                         <p className="text-xs text-muted-foreground">
                           Updated{" "}

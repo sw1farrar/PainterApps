@@ -6,6 +6,7 @@ import {
   View,
   StyleSheet,
 } from "@react-pdf/renderer";
+import { formatJobAddress } from "@/lib/address";
 import { isAbsoluteHttpUrl } from "@/lib/utils";
 import type {
   Company,
@@ -155,7 +156,7 @@ export function MarketingSheetDocument({
           <Text style={styles.subtitle}>
             Painting Proposal for {customer.name}
           </Text>
-          <Text style={styles.subtitle}>{quote.job_address}</Text>
+          <Text style={styles.subtitle}>{formatJobAddress(quote)}</Text>
         </View>
 
         <Text style={styles.sectionTitle}>Choose Your Package</Text>

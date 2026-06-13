@@ -14,6 +14,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
+import { AddressFields } from "@/components/forms/AddressFields";
 import { AppDrawer } from "@/components/portal/AppDrawer";
 import { PhotoGalleryUpload } from "@/components/storage/PhotoGalleryUpload";
 import { Badge } from "@/components/ui/badge";
@@ -58,6 +59,10 @@ import {
   estimateGallons,
   lineItemsSubtotal,
 } from "@/lib/quotes/pricing";
+import {
+  hasMinimumJobAddress,
+  type JobAddressFields,
+} from "@/lib/address";
 import { formatCurrency } from "@/lib/utils";
 import type {
   Company,
@@ -163,7 +168,13 @@ export function QuoteBuilder({
   const [status, setStatus] = useState(quote?.status ?? "draft");
 
   const [customerId, setCustomerId] = useState(quote?.customer_id ?? "");
-  const [jobAddress, setJobAddress] = useState(quote?.job_address ?? "");
+  const [jobAddress, setJobAddress] = useState<JobAddressFields>(() => ({
+    job_address: quote?.job_address ?? "",
+    job_address_line2: quote?.job_address_line2 ?? "",
+    job_city: quote?.job_city ?? "",
+    job_state: quote?.job_state ?? "",
+    job_zip: quote?.job_zip ?? "",
+  }));
   const [beforePhotos, setBeforePhotos] = useState<string[]>(
     quote?.before_photos ?? [],
   );
@@ -267,14 +278,17 @@ export function QuoteBuilder({
 
   const ensureQuote = useCallback(async (): Promise<string | null> => {
     if (quoteId) return quoteId;
-    if (!customerId || !jobAddress.trim()) {
-      setError("Select a customer and enter a job address.");
+    if (!customerId || !hasMinimumJobAddress(jobAddress)) {
+      setError(
+        "Select a customer and enter the full job address (street, city, state, ZIP).",
+      );
       return null;
     }
 
     const result = await createQuote({
       customer_id: customerId,
-      job_address: jobAddress.trim(),
+      ...jobAddress,
+      job_address: jobAddress.job_address.trim(),
       before_photos: beforePhotos,
     });
 
@@ -295,7 +309,8 @@ export function QuoteBuilder({
 
     const result = await updateQuote(id, {
       customer_id: customerId,
-      job_address: jobAddress.trim(),
+      ...jobAddress,
+      job_address: jobAddress.job_address.trim(),
       before_photos: beforePhotos,
     });
 
@@ -555,13 +570,49 @@ export function QuoteBuilder({
                 </Select>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="job-address">Job Address</Label>
-                <Input
-                  id="job-address"
-                  value={jobAddress}
-                  onChange={(e) => setJobAddress(e.target.value)}
-                  placeholder="123 Main St, City, ST"
+              <div className="space-y-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <Label>Job site address</Label>
+                  {selectedCustomer ? (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() =>
+                        setJobAddress({
+                          job_address: selectedCustomer.address ?? "",
+                          job_address_line2:
+                            selectedCustomer.address_line2 ?? "",
+                          job_city: selectedCustomer.city ?? "",
+                          job_state: selectedCustomer.state ?? "",
+                          job_zip: selectedCustomer.zip ?? "",
+                        })
+                      }
+                    >
+                      Use customer address
+                    </Button>
+                  ) : null}
+                </div>
+                <AddressFields
+                  idPrefix="job"
+                  value={{
+                    address: jobAddress.job_address,
+                    address_line2: jobAddress.job_address_line2 ?? "",
+                    city: jobAddress.job_city ?? "",
+                    state: jobAddress.job_state ?? "",
+                    zip: jobAddress.job_zip ?? "",
+                  }}
+                  onChange={(value) =>
+                    setJobAddress({
+                      job_address: value.address ?? "",
+                      job_address_line2: value.address_line2 ?? "",
+                      job_city: value.city ?? "",
+                      job_state: value.state ?? "",
+                      job_zip: value.zip ?? "",
+                    })
+                  }
+                  line1Label="Job street address"
+                  required
                 />
               </div>
 

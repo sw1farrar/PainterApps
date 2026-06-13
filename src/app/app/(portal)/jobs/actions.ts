@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 
+import { formatJobAddress, type JobAddressFields } from "@/lib/address";
 import { requireOnboarded } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
 import { getSupabaseEnvError } from "@/lib/supabase/env";
@@ -38,7 +39,9 @@ export async function updateJobStatus(
 
   const { data: job } = await supabase
     .from("jobs")
-    .select("id, customers(name), quotes(job_address)")
+    .select(
+      "id, customers(name), quotes(job_address, job_address_line2, job_city, job_state, job_zip)",
+    )
     .eq("id", jobId)
     .eq("company_id", companyId)
     .single();
@@ -54,14 +57,14 @@ export async function updateJobStatus(
   if (status === "completed" && job) {
     type JobNotifyRow = {
       customers: { name: string } | null;
-      quotes: { job_address: string } | null;
+      quotes: JobAddressFields | null;
     };
     const row = job as unknown as JobNotifyRow;
     await createNotification({
       companyId,
       type: "job_completed",
       title: `Job completed — ${row.customers?.name ?? "Customer"}`,
-      body: row.quotes?.job_address ?? undefined,
+      body: row.quotes ? formatJobAddress(row.quotes) : undefined,
       href: `/app/jobs/${jobId}`,
     });
   }
