@@ -1,21 +1,45 @@
+"use client";
+
 import * as React from "react";
 
+import { getPasswordManagerIgnoreProps } from "@/lib/forms/password-manager";
+import { useSuppressPasswordManager } from "@/providers/PasswordManagerProvider";
 import { cn } from "@/lib/utils";
 
-const Input = React.forwardRef<HTMLInputElement, React.ComponentProps<"input">>(
-  ({ className, type, ...props }, ref) => {
+export type InputProps = React.ComponentProps<"input"> & {
+  allowPasswordManager?: boolean;
+};
+
+const Input = React.forwardRef<HTMLInputElement, InputProps>(
+  (
+    {
+      className,
+      type,
+      allowPasswordManager = false,
+      autoComplete,
+      ...props
+    },
+    ref,
+  ) => {
+    const suppressPasswordManager = useSuppressPasswordManager();
+    const ignoreProps =
+      suppressPasswordManager && !allowPasswordManager
+        ? getPasswordManagerIgnoreProps(autoComplete)
+        : { autoComplete };
+
     return (
       <input
         type={type}
         className={cn(
           "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50",
-          className
+          className,
         )}
         ref={ref}
+        {...ignoreProps}
         {...props}
       />
     );
-  }
+  },
 );
 Input.displayName = "Input";
 
