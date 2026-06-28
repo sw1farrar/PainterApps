@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 
-import { requireOnboarded } from "@/lib/auth/session";
+import { isSiteAdmin, requireOnboarded } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
 import { TeamClient } from "./TeamClient";
 
@@ -11,8 +11,12 @@ export default async function TeamPage() {
     redirect("/app/dashboard");
   }
 
+  if (!session.company) {
+    redirect(isSiteAdmin(session) ? "/app/admin" : "/app/dashboard");
+  }
+
   const supabase = await createClient();
-  const companyId = session.company!.id;
+  const companyId = session.company.id;
 
   const [membersResult, invitesResult] = await Promise.all([
     supabase

@@ -4,9 +4,11 @@ import { randomUUID } from "crypto";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
+import { DEFAULT_COMPANY_FEATURES } from "@/lib/auth/company-features";
 import { requireSession } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
 import { getSupabaseEnvError } from "@/lib/supabase/env";
+import { normalizePhoneForStorage } from "@/lib/phone";
 import { normalizeLogoUrl } from "@/lib/utils";
 import type { QuoteTierName } from "@/types/database";
 
@@ -52,9 +54,10 @@ export async function saveCompanyInfo(data: {
     city: data.city?.trim() || null,
     state: data.state?.trim() || null,
     zip: data.zip?.trim() || null,
-    phone: data.phone?.trim() || null,
+    phone: normalizePhoneForStorage(data.phone),
     email: data.email?.trim() || null,
     onboarding_complete: false,
+    enabled_features: DEFAULT_COMPANY_FEATURES,
   };
 
   let companyId = session.company?.id;

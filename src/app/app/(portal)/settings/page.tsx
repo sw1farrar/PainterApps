@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 
-import { requireOnboarded } from "@/lib/auth/session";
+import { isSiteAdmin, requireOnboarded } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
 import { SettingsClient } from "./SettingsClient";
 
@@ -11,16 +11,20 @@ export default async function SettingsPage() {
     redirect("/app/dashboard");
   }
 
+  if (!session.company) {
+    redirect(isSiteAdmin(session) ? "/app/admin" : "/app/dashboard");
+  }
+
   const supabase = await createClient();
   const { data: upgradeRules } = await supabase
     .from("quote_upgrade_rules")
     .select("*")
-    .eq("company_id", session.company!.id)
+    .eq("company_id", session.company.id)
     .maybeSingle();
 
   return (
     <SettingsClient
-      company={session.company!}
+      company={session.company}
       upgradeRules={upgradeRules}
     />
   );

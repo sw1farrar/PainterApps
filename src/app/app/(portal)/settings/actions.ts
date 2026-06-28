@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { requireOnboarded } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
 import { getSupabaseEnvError } from "@/lib/supabase/env";
+import { normalizePhoneForStorage } from "@/lib/phone";
 import { normalizeLogoUrl } from "@/lib/utils";
 import type { QuoteTierName } from "@/types/database";
 
@@ -31,6 +32,10 @@ export async function updateCompanySettings(data: {
     return { success: false, error: "Only admins can update company settings." };
   }
 
+  if (!session.company?.id) {
+    return { success: false, error: "No company is linked to this account." };
+  }
+
   if (!data.name.trim()) {
     return { success: false, error: "Company name is required." };
   }
@@ -46,10 +51,10 @@ export async function updateCompanySettings(data: {
       city: data.city?.trim() || null,
       state: data.state?.trim() || null,
       zip: data.zip?.trim() || null,
-      phone: data.phone?.trim() || null,
+      phone: normalizePhoneForStorage(data.phone),
       email: data.email?.trim() || null,
     })
-    .eq("id", session.company!.id);
+    .eq("id", session.company.id);
 
   if (error) return { success: false, error: error.message };
 
@@ -73,6 +78,10 @@ export async function updatePricingSettings(data: {
     return { success: false, error: "Only admins can update pricing." };
   }
 
+  if (!session.company?.id) {
+    return { success: false, error: "No company is linked to this account." };
+  }
+
   const supabase = await createClient();
   const { error } = await supabase
     .from("companies")
@@ -83,7 +92,7 @@ export async function updatePricingSettings(data: {
       coverage_sqft_per_gallon: data.coverageSqftPerGallon,
       labor_rates: data.laborRates,
     })
-    .eq("id", session.company!.id);
+    .eq("id", session.company.id);
 
   if (error) return { success: false, error: error.message };
 
@@ -104,8 +113,12 @@ export async function updateUpgradeSettings(data: {
     return { success: false, error: "Only admins can update upgrade rules." };
   }
 
+  if (!session.company?.id) {
+    return { success: false, error: "No company is linked to this account." };
+  }
+
   const supabase = await createClient();
-  const companyId = session.company!.id;
+  const companyId = session.company.id;
 
   const { data: existing } = await supabase
     .from("quote_upgrade_rules")

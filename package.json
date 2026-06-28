@@ -7,7 +7,17 @@
     "dev:clean": "node scripts/dev.mjs --clean",
     "build": "node scripts/build.mjs",
     "start": "cross-env NEXT_DIST_DIR=.next-build next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "test:xai": "node scripts/test-xai.mjs",
+    "verify:sell-sheet": "node scripts/verify-sell-sheet-display-parity.mjs",
+    "verify:product-catalog": "node scripts/verify-product-catalog-enrichment.mjs && node scripts/verify-product-discovery-enrichment-parity.mjs",
+    "verify:product-catalog:enrich": "node scripts/verify-product-catalog-enrichment.mjs --enrich-one",
+    "verify:product-enrichment-flow": "npx tsx scripts/probe-product-enrichment-flow.mjs",
+    "db:migrate:018": "node scripts/apply-migration-018.mjs",
+    "db:migrate:019": "node scripts/apply-migration-019.mjs",
+    "db:migrate:020": "node scripts/apply-migration-020.mjs",
+    "db:migrate:021": "node scripts/apply-migration-021.mjs",
+    "sync:manufacturer-logos": "npx tsx scripts/sync-manufacturer-logos.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.4.0",
@@ -31,6 +41,7 @@
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-hook-form": "^7.78.0",
+    "server-only": "^0.0.1",
     "sonner": "^2.0.7",
     "stripe": "^22.2.0",
     "tailwind-merge": "^3.6.0",
@@ -39,11 +50,13 @@
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.8",
     "@types/node": "^22.15.21",
+    "@types/pg": "^8.20.0",
     "@types/react": "^19.1.6",
     "@types/react-dom": "^19.1.5",
     "cross-env": "^10.1.0",
     "eslint": "^9.27.0",
     "eslint-config-next": "^15.3.3",
+    "pg": "^8.22.0",
     "tailwindcss": "^4.1.8",
     "typescript": "^5.8.3"
   }

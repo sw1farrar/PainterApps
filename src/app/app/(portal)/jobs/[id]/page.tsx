@@ -13,6 +13,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { formatAddress, formatJobAddress } from "@/lib/address";
+import { formatPhoneDisplay } from "@/lib/phone";
 import { requireOnboarded } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
 import { formatCurrency } from "@/lib/utils";
@@ -143,7 +144,7 @@ export default async function JobDetailPage({ params }: PageProps) {
             {customer?.phone ? (
               <p className="flex items-center gap-2">
                 <Phone className="h-4 w-4 shrink-0" />
-                {customer.phone}
+                {formatPhoneDisplay(customer.phone)}
               </p>
             ) : null}
             {customer && formatAddress(customer) ? (

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Source_Sans_3 } from "next/font/google";
-import { Toaster } from "sonner";
+import { AppToaster } from "@/components/AppToaster";
 import AppProviders from "@/providers/AppProviders";
 import "./globals.css";
 
@@ -30,15 +30,7 @@ export default function RootLayout({
       >
         <AppProviders>
           {children}
-          <Toaster
-            position="top-right"
-            toastOptions={{
-              classNames: {
-                toast: "bg-card border-border text-foreground",
-                description: "text-muted-foreground",
-              },
-            }}
-          />
+          <AppToaster />
         </AppProviders>
       </body>
     </html>

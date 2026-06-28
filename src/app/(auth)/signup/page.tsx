@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 
+import { PhoneInput } from "@/components/forms/PhoneInput";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -15,20 +16,32 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  buildLoginHref,
+  buildVerifyEmailHref,
+  sanitizeLoginRedirect,
+} from "@/lib/auth/login-redirect";
+import { isCompletePhoneNumber } from "@/lib/phone";
 import { createClient } from "@/lib/supabase/client";
 import { getSupabaseEnvError } from "@/lib/supabase/env";
-import { acceptInviteAfterSignup, loadInvitePreview } from "./actions";
+import {
+  acceptInviteAfterSignup,
+  loadInvitePreview,
+  provisionCompanyAfterSignup,
+} from "./actions";
 
 function SignupForm() {
   const searchParams = useSearchParams();
   const inviteToken = searchParams.get("invite") ?? "";
+  const returnTo = sanitizeLoginRedirect(searchParams.get("next"));
   const envError = getSupabaseEnvError();
 
+  const [companyName, setCompanyName] = React.useState("");
   const [fullName, setFullName] = React.useState("");
   const [email, setEmail] = React.useState("");
+  const [phone, setPhone] = React.useState("");
   const [password, setPassword] = React.useState("");
   const [loading, setLoading] = React.useState(false);
-  const [confirmationSent, setConfirmationSent] = React.useState(false);
   const [inviteCompany, setInviteCompany] = React.useState<string | null>(null);
   const [inviteInvalid, setInviteInvalid] = React.useState(false);
 
@@ -54,8 +67,23 @@ function SignupForm() {
       return;
     }
 
-    if (inviteInvalid) {
+    if (inviteToken && inviteInvalid) {
       toast.error("This invite link is invalid or expired.");
+      return;
+    }
+
+    if (!inviteToken && !companyName.trim()) {
+      toast.error("Company name is required.");
+      return;
+    }
+
+    if (!fullName.trim()) {
+      toast.error("Your name is required.");
+      return;
+    }
+
+    if (!inviteToken && !isCompletePhoneNumber(phone)) {
+      toast.error("Enter a valid 10-digit phone number.");
       return;
     }
 
@@ -66,15 +94,22 @@ function SignupForm() {
 
     setLoading(true);
     const supabase = createClient();
-    const callbackUrl = inviteToken
-      ? `${window.location.origin}/auth/callback?invite=${inviteToken}`
-      : `${window.location.origin}/auth/callback`;
+
+    const callbackParams = new URLSearchParams();
+    if (inviteToken) callbackParams.set("invite", inviteToken);
+    if (returnTo) callbackParams.set("next", returnTo);
+    const callbackQuery = callbackParams.toString();
+    const callbackUrl = `${window.location.origin}/auth/callback${callbackQuery ? `?${callbackQuery}` : ""}`;
 
     const { data, error } = await supabase.auth.signUp({
       email: email.trim(),
       password,
       options: {
-        data: { full_name: fullName.trim() },
+        data: {
+          full_name: fullName.trim(),
+          company_name: inviteToken ? inviteCompany ?? "" : companyName.trim(),
+          phone: inviteToken ? "" : phone.trim(),
+        },
         emailRedirectTo: callbackUrl,
       },
     });
@@ -92,27 +127,34 @@ function SignupForm() {
           toast.error(inviteResult.error);
           return;
         }
-        window.location.href = "/app/dashboard";
+        window.location.href = returnTo ?? "/app/dashboard";
       } else {
-        window.location.href = "/app/onboarding";
+        const provisioned = await provisionCompanyAfterSignup();
+        if (!provisioned.success) {
+          toast.error(provisioned.error);
+          return;
+        }
+        window.location.href = returnTo ?? "/app/onboarding";
       }
       return;
     }
 
-    setConfirmationSent(true);
-    toast.success("Check your email to confirm your account.");
+    toast.success("Check your email for a confirmation code.");
+    window.location.href = buildVerifyEmailHref(email.trim(), returnTo);
   }
+
+  const loginHref = buildLoginHref(returnTo);
 
   return (
     <Card className="border-border bg-card/80 backdrop-blur-sm">
       <CardHeader>
         <CardTitle className="font-display text-2xl text-white">
-          {inviteCompany ? `Join ${inviteCompany}` : "Create account"}
+          {inviteCompany ? `Join ${inviteCompany}` : "Create free account"}
         </CardTitle>
         <CardDescription>
           {inviteCompany
             ? "Create your account to accept the team invite."
-            : "Start your free PainterApps portal for quotes and job management."}
+            : "Enter your company details, then confirm your email with the code we send you."}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -129,62 +171,78 @@ function SignupForm() {
           </p>
         ) : null}
 
-        {confirmationSent ? (
-          <p className="rounded-lg border border-border bg-muted/50 px-4 py-3 text-sm text-muted-foreground">
-            We sent a confirmation link to <strong>{email}</strong>. Click the
-            link in your email to finish setting up your account.
-          </p>
-        ) : (
-          <form onSubmit={handleSignup} className="space-y-4">
+        <form onSubmit={handleSignup} className="space-y-4">
+          {!inviteToken ? (
             <div className="space-y-2">
-              <Label htmlFor="signup-name">Full name</Label>
+              <Label htmlFor="signup-company">Company name</Label>
               <Input
-                id="signup-name"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                placeholder="John Smith"
+                id="signup-company"
+                value={companyName}
+                onChange={(e) => setCompanyName(e.target.value)}
+                placeholder="Acme Painting Co."
                 required
               />
             </div>
+          ) : null}
+          <div className="space-y-2">
+            <Label htmlFor="signup-name">Your name</Label>
+            <Input
+              id="signup-name"
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+              placeholder="John Smith"
+              required
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="signup-email">Email</Label>
+            <Input
+              id="signup-email"
+              type="email"
+              autoComplete="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="you@company.com"
+              readOnly={Boolean(inviteToken && inviteCompany)}
+              required
+            />
+          </div>
+          {!inviteToken ? (
             <div className="space-y-2">
-              <Label htmlFor="signup-email">Email</Label>
-              <Input
-                id="signup-email"
-                type="email"
-                autoComplete="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@company.com"
-                readOnly={Boolean(inviteToken && inviteCompany)}
+              <Label htmlFor="signup-phone">Phone number</Label>
+              <PhoneInput
+                id="signup-phone"
+                value={phone}
+                onChange={setPhone}
                 required
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="signup-password">Password</Label>
-              <Input
-                id="signup-password"
-                type="password"
-                autoComplete="new-password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="At least 8 characters"
-                minLength={8}
-                required
-              />
-            </div>
-            <Button
-              type="submit"
-              className="w-full"
-              disabled={loading || inviteInvalid}
-            >
-              {loading ? "Creating account…" : "Create account"}
-            </Button>
-          </form>
-        )}
+          ) : null}
+          <div className="space-y-2">
+            <Label htmlFor="signup-password">Password</Label>
+            <Input
+              id="signup-password"
+              type="password"
+              autoComplete="new-password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="At least 8 characters"
+              minLength={8}
+              required
+            />
+          </div>
+          <Button
+            type="submit"
+            className="w-full"
+            disabled={loading || inviteInvalid}
+          >
+            {loading ? "Creating account…" : "Create account"}
+          </Button>
+        </form>
 
         <p className="mt-6 text-center text-sm text-muted-foreground">
           Already have an account?{" "}
-          <Link href="/login" className="text-primary hover:underline">
+          <Link href={loginHref} className="text-primary hover:underline">
             Sign in
           </Link>
         </p>

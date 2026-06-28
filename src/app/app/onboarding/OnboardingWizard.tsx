@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
 import { AddressFields } from "@/components/forms/AddressFields";
+import { PhoneInput } from "@/components/forms/PhoneInput";
 import Logo from "@/components/Logo";
 import { Button } from "@/components/ui/button";
 import {
@@ -19,6 +20,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toAddressInput, type AddressFields as AddressValue } from "@/lib/address";
 import { ONBOARDING_DEFAULTS } from "@/lib/onboarding/defaults";
+import { formatPhoneDisplay } from "@/lib/phone";
 import { getSupabaseEnvError } from "@/lib/supabase/env";
 import type { Company, QuoteTierName } from "@/types/database";
 import {
@@ -57,7 +59,9 @@ export function OnboardingWizard({ company: initialCompany }: OnboardingWizardPr
     state: initialCompany?.state ?? "",
     zip: initialCompany?.zip ?? "",
   });
-  const [phone, setPhone] = React.useState(initialCompany?.phone ?? "");
+  const [phone, setPhone] = React.useState(
+    formatPhoneDisplay(initialCompany?.phone),
+  );
   const [email, setEmail] = React.useState(initialCompany?.email ?? "");
 
   const [taxRate, setTaxRate] = React.useState(
@@ -183,7 +187,7 @@ export function OnboardingWizard({ company: initialCompany }: OnboardingWizardPr
   }
 
   return (
-    <div className="mx-auto flex min-h-[100dvh] max-w-2xl flex-col justify-center px-4 py-10">
+    <div className="mx-auto flex min-h-full max-w-2xl flex-col justify-center px-4 py-10">
       <div className="mb-8 flex flex-col items-center gap-3 text-center">
         <Logo size="md" />
         <h1 className="font-display text-2xl text-white md:text-3xl">
@@ -218,8 +222,8 @@ export function OnboardingWizard({ company: initialCompany }: OnboardingWizardPr
             <CardHeader>
               <CardTitle>Company information</CardTitle>
               <CardDescription>
-                Tell us about your painting business. Upload a logo or paste an
-                image URL.
+                Tell us about your painting business and upload your company
+                logo.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -235,11 +239,12 @@ export function OnboardingWizard({ company: initialCompany }: OnboardingWizardPr
               <ImageUpload
                 label="Company logo"
                 description="Shown in your portal and customer quote pages."
+                companyId={companyId}
                 currentUrl={logoUrl}
                 onUploaded={setLogoUrl}
                 onClear={() => setLogoUrl("")}
                 uploadDisabled={!companyId}
-                uploadDisabledMessage="Click Continue once to create your company, then upload your logo."
+                uploadDisabledMessage="Click Continue once to create your company, then upload a logo."
               />
               <AddressFields
                 idPrefix="onboarding-company"
@@ -250,12 +255,7 @@ export function OnboardingWizard({ company: initialCompany }: OnboardingWizardPr
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="phone">Phone</Label>
-                  <Input
-                    id="phone"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    placeholder="(555) 123-4567"
-                  />
+                  <PhoneInput id="phone" value={phone} onChange={setPhone} />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="company-contact">Email</Label>

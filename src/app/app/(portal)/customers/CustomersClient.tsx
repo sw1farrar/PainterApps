@@ -5,6 +5,7 @@ import { Mail, MapPin, Pencil, Phone, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { AddressFields } from "@/components/forms/AddressFields";
+import { PhoneInput } from "@/components/forms/PhoneInput";
 import { AppDrawer } from "@/components/portal/AppDrawer";
 import { PageHeader } from "@/components/portal/PageHeader";
 import { Badge } from "@/components/ui/badge";
@@ -19,6 +20,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { EMPTY_ADDRESS, formatAddress, toAddressInput } from "@/lib/address";
+import { formatPhoneDisplay } from "@/lib/phone";
 import { getSupabaseEnvError } from "@/lib/supabase/env";
 import type { Customer } from "@/types/database";
 import {
@@ -77,7 +79,7 @@ export function CustomersClient({ customers }: CustomersClientProps) {
     setEditingCustomer(customer);
     setName(customer.name);
     setEmail(customer.email ?? "");
-    setPhone(customer.phone ?? "");
+    setPhone(formatPhoneDisplay(customer.phone));
     setAddressFields(customerToAddress(customer));
     setNotes(customer.notes ?? "");
     setDrawerOpen(true);
@@ -221,7 +223,9 @@ export function CustomersClient({ customers }: CustomersClientProps) {
                   {customer.phone ? (
                     <p className="flex min-w-0 items-center gap-2">
                       <Phone className="h-3.5 w-3.5 shrink-0" />
-                      <span className="truncate">{customer.phone}</span>
+                      <span className="truncate">
+                        {formatPhoneDisplay(customer.phone)}
+                      </span>
                     </p>
                   ) : null}
                   {formattedAddress ? (
@@ -294,11 +298,10 @@ export function CustomersClient({ customers }: CustomersClientProps) {
             </div>
             <div className="space-y-2">
               <Label htmlFor="customer-phone">Phone</Label>
-              <Input
+              <PhoneInput
                 id="customer-phone"
                 value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                placeholder="(555) 123-4567"
+                onChange={setPhone}
               />
             </div>
           </div>

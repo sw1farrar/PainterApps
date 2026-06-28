@@ -4,6 +4,7 @@ import * as React from "react";
 import { toast } from "sonner";
 
 import { AddressFields } from "@/components/forms/AddressFields";
+import { PhoneInput } from "@/components/forms/PhoneInput";
 import { ImageUpload } from "@/components/storage/ImageUpload";
 import { Button } from "@/components/ui/button";
 import {
@@ -18,6 +19,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toAddressInput, type AddressFields as AddressValue } from "@/lib/address";
 import { ONBOARDING_DEFAULTS } from "@/lib/onboarding/defaults";
+import { formatPhoneDisplay } from "@/lib/phone";
 import { getSupabaseEnvError } from "@/lib/supabase/env";
 import type { Company, QuoteTierName, QuoteUpgradeRules } from "@/types/database";
 import {
@@ -52,7 +54,7 @@ export function SettingsClient({ company, upgradeRules }: SettingsClientProps) {
     state: company.state ?? "",
     zip: company.zip ?? "",
   });
-  const [phone, setPhone] = React.useState(company.phone ?? "");
+  const [phone, setPhone] = React.useState(formatPhoneDisplay(company.phone));
   const [email, setEmail] = React.useState(company.email ?? "");
 
   const [taxRate, setTaxRate] = React.useState(String(company.tax_rate));
@@ -211,6 +213,7 @@ export function SettingsClient({ company, upgradeRules }: SettingsClientProps) {
               </div>
               <ImageUpload
                 label="Company logo"
+                companyId={company.id}
                 currentUrl={logoUrl}
                 onUploaded={setLogoUrl}
                 onClear={() => setLogoUrl("")}
@@ -224,10 +227,10 @@ export function SettingsClient({ company, upgradeRules }: SettingsClientProps) {
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="settings-phone">Phone</Label>
-                  <Input
+                  <PhoneInput
                     id="settings-phone"
                     value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
+                    onChange={setPhone}
                   />
                 </div>
                 <div className="space-y-2">

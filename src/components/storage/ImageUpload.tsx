@@ -1,22 +1,23 @@
 "use client";
 
 import * as React from "react";
-import { ImagePlus, Loader2, X } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { ImageIcon, ImagePlus, Loader2, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { uploadCompanyLogo } from "@/lib/storage/actions";
+import { uploadCompanyLogoClient } from "@/lib/storage/upload-company-logo-client";
+import { getSupabaseEnvError } from "@/lib/supabase/env";
 import { isAbsoluteHttpUrl } from "@/lib/utils";
 
 type ImageUploadProps = {
   label: string;
   description?: string;
+  companyId: string;
   currentUrl?: string | null;
   onUploaded: (url: string) => void;
   onClear?: () => void;
-  allowUrlFallback?: boolean;
   disabled?: boolean;
   uploadDisabled?: boolean;
   uploadDisabledMessage?: string;
@@ -25,59 +26,68 @@ type ImageUploadProps = {
 export function ImageUpload({
   label,
   description,
+  companyId,
   currentUrl,
   onUploaded,
   onClear,
-  allowUrlFallback = true,
   disabled = false,
   uploadDisabled = false,
   uploadDisabledMessage = "Save your company name first, then upload a logo.",
 }: ImageUploadProps) {
+  const router = useRouter();
   const inputRef = React.useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = React.useState(false);
-  const [urlFallback, setUrlFallback] = React.useState(
-    currentUrl && !currentUrl.includes("/storage/v1/object/public/")
-      ? currentUrl
-      : "",
-  );
 
   const previewUrl = isAbsoluteHttpUrl(currentUrl) ? currentUrl : null;
+  const hasLogo = Boolean(previewUrl);
 
   async function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    setUploading(true);
-    const formData = new FormData();
-    formData.append("file", file);
-
-    const result = await uploadCompanyLogo(formData);
-    setUploading(false);
-
-    if (inputRef.current) inputRef.current.value = "";
-
-    if (!result.success) {
-      toast.error(result.error);
+    const envError = getSupabaseEnvError();
+    if (envError) {
+      toast.error(envError);
       return;
     }
 
-    onUploaded(result.data.url);
-    setUrlFallback("");
-    toast.success("Image uploaded.");
+    if (!companyId) {
+      toast.error(uploadDisabledMessage);
+      return;
+    }
+
+    setUploading(true);
+
+    try {
+      const result = await uploadCompanyLogoClient(file, companyId);
+      if (!result.success) {
+        toast.error(result.error);
+        return;
+      }
+
+      onUploaded(result.url);
+      router.refresh();
+      toast.success("Logo uploaded");
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Failed to upload logo.",
+      );
+    } finally {
+      setUploading(false);
+      if (inputRef.current) inputRef.current.value = "";
+    }
   }
 
-  function handleUrlApply() {
-    if (!isAbsoluteHttpUrl(urlFallback)) {
-      toast.error("Enter a valid http:// or https:// image URL.");
+  function handlePickFile() {
+    if (uploadDisabled) {
+      toast.error(uploadDisabledMessage);
       return;
     }
-
-    onUploaded(urlFallback.trim());
-    toast.success("Image URL saved.");
+    inputRef.current?.click();
   }
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-2">
       <div className="space-y-1">
         <Label>{label}</Label>
         {description ? (
@@ -85,90 +95,73 @@ export function ImageUpload({
         ) : null}
       </div>
 
-      {previewUrl ? (
-        <div className="flex items-center gap-4 rounded-lg border border-border bg-muted/20 p-3">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={previewUrl}
-            alt="Upload preview"
-            className="h-16 w-16 rounded-md border border-border object-cover"
+      <div className="flex flex-wrap items-center gap-4 rounded-lg border border-border bg-muted/15 p-4">
+        <button
+          type="button"
+          onClick={handlePickFile}
+          disabled={disabled || uploading}
+          className="group relative flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-dashed border-border bg-muted/30 transition hover:border-primary/40 hover:bg-muted/50 disabled:pointer-events-none disabled:opacity-50"
+          aria-label={hasLogo ? "Change company logo" : "Upload company logo"}
+        >
+          {hasLogo ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              key={previewUrl}
+              src={previewUrl!}
+              alt="Company logo"
+              className="h-full w-full object-contain p-2"
+            />
+          ) : (
+            <ImageIcon className="h-8 w-8 text-muted-foreground transition group-hover:text-foreground" />
+          )}
+        </button>
+
+        <div className="flex min-w-0 flex-1 flex-col gap-2">
+          <input
+            ref={inputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp,image/gif"
+            className="hidden"
+            onChange={handleFileChange}
+            disabled={disabled || uploading}
           />
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-sm text-foreground">Current image</p>
-            <p className="truncate text-xs text-muted-foreground">
-              {previewUrl}
-            </p>
-          </div>
-          {onClear ? (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={handlePickFile}
+            disabled={disabled || uploading}
+            className="w-fit"
+          >
+            {uploading ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <ImagePlus className="h-4 w-4" />
+            )}
+            {uploading
+              ? "Uploading…"
+              : hasLogo
+                ? "Change logo"
+                : "Upload logo"}
+          </Button>
+          <p className="text-xs text-muted-foreground">
+            PNG or JPG with a transparent background works best. Max 5MB.
+          </p>
+          {hasLogo && onClear ? (
             <Button
               type="button"
               variant="ghost"
-              size="icon"
+              size="sm"
               onClick={onClear}
               disabled={disabled || uploading}
-              aria-label="Remove image"
+              className="h-auto w-fit px-0 text-xs text-muted-foreground hover:text-destructive"
             >
-              <X className="h-4 w-4" />
+              <X className="mr-1 h-3.5 w-3.5" />
+              Remove logo
             </Button>
           ) : null}
         </div>
-      ) : null}
-
-      <div className="flex flex-wrap items-center gap-2">
-        <input
-          ref={inputRef}
-          type="file"
-          accept="image/jpeg,image/png,image/webp,image/gif"
-          className="hidden"
-          onChange={handleFileChange}
-          disabled={disabled || uploading}
-        />
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={() => {
-            if (uploadDisabled) {
-              toast.error(uploadDisabledMessage);
-              return;
-            }
-            inputRef.current?.click();
-          }}
-          disabled={disabled || uploading}
-        >
-          {uploading ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <ImagePlus className="h-4 w-4" />
-          )}
-          {uploading ? "Uploading…" : "Upload image"}
-        </Button>
       </div>
-
-      {allowUrlFallback ? (
-        <div className="space-y-2">
-          <Label htmlFor="image-url-fallback" className="text-xs text-muted-foreground">
-            Or paste an image URL
-          </Label>
-          <div className="flex gap-2">
-            <Input
-              id="image-url-fallback"
-              value={urlFallback}
-              onChange={(e) => setUrlFallback(e.target.value)}
-              placeholder="https://example.com/logo.png"
-              disabled={disabled || uploading}
-            />
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={handleUrlApply}
-              disabled={disabled || uploading || !urlFallback.trim()}
-            >
-              Use URL
-            </Button>
-          </div>
-        </div>
-      ) : null}
     </div>
   );
 }

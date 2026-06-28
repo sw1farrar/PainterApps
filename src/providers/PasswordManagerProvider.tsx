@@ -3,7 +3,10 @@
 import * as React from "react";
 
 import { ExtensionBlocker } from "@/components/forms/ExtensionBlocker";
-import { PASSWORD_MANAGER_SHELL_PROPS } from "@/lib/forms/password-manager";
+import {
+  PASSWORD_MANAGER_BODY_PROPS,
+  PASSWORD_MANAGER_SHELL_PROPS,
+} from "@/lib/forms/password-manager";
 
 const PasswordManagerContext = React.createContext(false);
 
@@ -20,6 +23,25 @@ export function PasswordManagerProvider({
   suppress,
   children,
 }: PasswordManagerProviderProps) {
+  React.useEffect(() => {
+    if (!suppress) {
+      for (const key of Object.keys(PASSWORD_MANAGER_BODY_PROPS)) {
+        document.body.removeAttribute(key);
+      }
+      return;
+    }
+
+    for (const [key, value] of Object.entries(PASSWORD_MANAGER_BODY_PROPS)) {
+      document.body.setAttribute(key, value);
+    }
+
+    return () => {
+      for (const key of Object.keys(PASSWORD_MANAGER_BODY_PROPS)) {
+        document.body.removeAttribute(key);
+      }
+    };
+  }, [suppress]);
+
   return (
     <PasswordManagerContext.Provider value={suppress}>
       {suppress ? (

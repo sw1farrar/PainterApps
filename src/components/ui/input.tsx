@@ -88,7 +88,9 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
         {...props}
         {...(shouldSuppress
           ? getPasswordManagerIgnoreProps()
-          : { autoComplete: autoCompleteProp })}
+          : autoCompleteProp !== undefined
+            ? { autoComplete: autoCompleteProp }
+            : {})}
       />
     );
   },

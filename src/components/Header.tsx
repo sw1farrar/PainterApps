@@ -1,10 +1,21 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
+import * as React from "react";
 import LanguageToggle from "@/components/LanguageToggle";
 import Logo from "@/components/Logo";
 import MarketingMobileNav from "@/components/MarketingMobileNav";
+import { MarketingUserMenu } from "@/components/MarketingUserMenu";
 import PageShell from "@/components/PageShell";
+import {
+  buildLoginHref,
+  isFreeToolsPath,
+} from "@/lib/auth/login-redirect";
+import {
+  getMarketingUser,
+  type MarketingUser,
+} from "@/lib/auth/marketing-actions";
 import { useLanguage } from "@/providers/LanguageProvider";
 
 type HeaderProps = {
@@ -12,8 +23,30 @@ type HeaderProps = {
 };
 
 export default function Header({ variant = "marketing" }: HeaderProps) {
+  const pathname = usePathname();
   const { t } = useLanguage();
   const nav = t("nav");
+  const onFreeTools = isFreeToolsPath(pathname);
+  const [marketingUser, setMarketingUser] = React.useState<
+    MarketingUser | null | undefined
+  >(undefined);
+
+  React.useEffect(() => {
+    let cancelled = false;
+    setMarketingUser(undefined);
+
+    getMarketingUser().then((user) => {
+      if (!cancelled) setMarketingUser(user);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [pathname]);
+
+  const showSignedInMenu = onFreeTools && marketingUser;
+  const showSignIn = marketingUser === null;
+  const loginHref = buildLoginHref(onFreeTools ? pathname : null);
 
   if (variant === "minimal") {
     return (
@@ -23,9 +56,6 @@ export default function Header({ variant = "marketing" }: HeaderProps) {
             <Logo size="sm" />
           </Link>
           <div className="flex items-center gap-5 sm:gap-6">
-            <Link href="/free-tools" className="type-link">
-              {nav.freeTools}
-            </Link>
             <LanguageToggle />
           </div>
         </PageShell>
@@ -41,22 +71,24 @@ export default function Header({ variant = "marketing" }: HeaderProps) {
         </Link>
 
         <div className="flex items-center gap-3 sm:gap-6 lg:gap-8">
-          <Link href="/free-tools" className="type-link hidden sm:inline">
-            {nav.freeTools}
-          </Link>
-          <Link href="/login" className="type-link hidden md:inline">
-            {nav.signIn}
-          </Link>
-          <div className="hidden md:block">
+          {showSignedInMenu ? (
+            <div className="hidden md:block">
+              <MarketingUserMenu user={marketingUser} />
+            </div>
+          ) : null}
+          {showSignIn ? (
+            <a href={loginHref} className="type-link hidden md:inline">
+              {nav.signIn}
+            </a>
+          ) : null}
+          <div className="block">
             <LanguageToggle />
           </div>
-          <Link
-            href="/signup"
-            className="btn-rugged hidden px-4 py-2 text-sm sm:px-5 sm:py-2.5 md:inline-flex lg:px-6 lg:py-3"
-          >
-            {nav.getEarlyAccess}
-          </Link>
-          <MarketingMobileNav />
+          <MarketingMobileNav
+            marketingUser={onFreeTools ? marketingUser : null}
+            loginHref={loginHref}
+            showSignIn={showSignIn}
+          />
         </div>
       </PageShell>
     </header>

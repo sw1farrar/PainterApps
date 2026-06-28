@@ -5,17 +5,13 @@ function SkeletonBlock({ className }: { className: string }) {
 export default function AppLoading() {
   return (
     <div
-      className="portal-shell flex min-h-[100dvh]"
+      className="portal-app-shell portal-shell flex min-h-0 h-dvh overflow-hidden"
       aria-busy="true"
       aria-label="Loading application"
     >
-      <aside className="hidden h-full w-64 shrink-0 flex-col border-r border-border bg-navy-900/50 md:flex">
-        <div className="flex items-center gap-3 border-b border-border px-5 py-5">
+      <aside className="hidden h-dvh w-64 shrink-0 flex-col border-r border-border bg-navy-900/50 md:flex">
+        <div className="flex items-center border-b border-border px-5 py-5">
           <SkeletonBlock className="h-8 w-8 shrink-0 rounded-lg" />
-          <div className="min-w-0 flex-1 space-y-2">
-            <SkeletonBlock className="h-4 w-28" />
-            <SkeletonBlock className="h-3 w-16" />
-          </div>
         </div>
 
         <nav className="flex flex-1 flex-col gap-1 px-3 py-4">
@@ -25,15 +21,15 @@ export default function AppLoading() {
         </nav>
       </aside>
 
-      <div className="flex min-w-0 flex-1 flex-col">
-        <header className="flex min-h-14 shrink-0 items-center justify-between gap-3 border-b border-border bg-navy-950/80 px-3 pt-[env(safe-area-inset-top,0px)] backdrop-blur-md sm:px-4 md:px-6">
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+        <header className="sticky top-0 z-40 flex min-h-14 shrink-0 items-center justify-between gap-3 border-b border-border bg-navy-900/50 px-3 pt-[env(safe-area-inset-top,0px)] backdrop-blur-md sm:px-4 md:px-6">
           <SkeletonBlock className="h-8 w-8 rounded-md md:hidden" />
           <SkeletonBlock className="h-4 w-32 md:hidden" />
           <SkeletonBlock className="ml-auto h-9 w-9 rounded-full" />
         </header>
 
-        <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
-          <div className="mx-auto w-full min-w-0 max-w-7xl space-y-8">
+        <main data-site-scroll-main className="site-scroll-main">
+          <div className="mx-auto w-full min-w-0 max-w-7xl space-y-8 p-4 md:p-6 lg:p-8">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
               <div className="space-y-2">
                 <SkeletonBlock className="h-3 w-20" />

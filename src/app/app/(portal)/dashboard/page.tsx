@@ -20,8 +20,14 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { formatJobAddress, type JobAddressFields } from "@/lib/address";
+import {
+  companyEnabledFeatures,
+  companyHasExtendedPortal,
+  safePortalHome,
+} from "@/lib/auth/company-features";
 import { filterNavByRole } from "@/lib/auth/roles";
 import { requireOnboarded } from "@/lib/auth/session";
+import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getSupabaseEnvError } from "@/lib/supabase/env";
 
@@ -35,6 +41,12 @@ function formatCurrency(amount: number): string {
 
 export default async function DashboardPage() {
   const session = await requireOnboarded();
+  const enabledFeatures = companyEnabledFeatures(session.company);
+
+  if (!companyHasExtendedPortal(enabledFeatures)) {
+    redirect(safePortalHome(enabledFeatures));
+  }
+
   const envError = getSupabaseEnvError();
   const companyId = session.company?.id;
 

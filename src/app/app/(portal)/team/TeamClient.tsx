@@ -86,7 +86,7 @@ export function TeamClient({
     if (result.data?.inviteUrl) {
       try {
         await navigator.clipboard.writeText(result.data.inviteUrl);
-        toast.message("Invite link copied to clipboard.");
+        toast.success("Invite link copied to clipboard.");
       } catch {
         // Clipboard may be unavailable
       }

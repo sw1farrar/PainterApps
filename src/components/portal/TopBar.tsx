@@ -26,6 +26,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { getUserInitials } from "@/lib/auth/display";
 import { createClient } from "@/lib/supabase/client";
 import { getSupabaseEnvError } from "@/lib/supabase/env";
 import { isAbsoluteHttpUrl } from "@/lib/utils";
@@ -36,13 +37,6 @@ type TopBarProps = {
   company: Company | null;
   onMenuClick?: () => void;
 };
-
-function getInitials(name: string | null | undefined): string {
-  if (!name) return "PA";
-  const parts = name.trim().split(/\s+/);
-  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
-  return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
-}
 
 type SettingsNavItemProps = {
   href: string;
@@ -110,7 +104,7 @@ export function TopBar({ profile, company, onMenuClick }: TopBarProps) {
   }
 
   return (
-    <header className="flex min-h-14 shrink-0 items-center justify-between gap-2 border-b border-border bg-navy-950/80 px-3 pt-[env(safe-area-inset-top,0px)] backdrop-blur-md sm:gap-3 sm:px-4 md:gap-4 md:px-6">
+    <header className="flex min-h-14 items-center justify-between gap-2 border-b border-border bg-navy-900/50 px-3 pt-[env(safe-area-inset-top,0px)] backdrop-blur-md sm:gap-3 sm:px-4 md:gap-4 md:px-6">
       <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3">
         <Button
           variant="ghost"
@@ -153,7 +147,7 @@ export function TopBar({ profile, company, onMenuClick }: TopBarProps) {
                   alt={profile.full_name ?? "User"}
                 />
                 <AvatarFallback className="bg-navy-700 text-blue-200">
-                  {getInitials(profile.full_name)}
+                  {getUserInitials(profile.full_name)}
                 </AvatarFallback>
               </Avatar>
             </Button>
@@ -177,7 +171,7 @@ export function TopBar({ profile, company, onMenuClick }: TopBarProps) {
               isNavigating={isPending && pendingHref === "/app/profile"}
               onNavigate={handleSettingsNavigate}
             />
-            {profile.role === "admin" ? (
+            {profile.role === "admin" && company ? (
               <>
                 <SettingsNavItem
                   href="/app/settings"

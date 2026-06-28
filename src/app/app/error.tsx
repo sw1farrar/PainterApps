@@ -16,12 +16,17 @@ export default function AppError({
   }, [error]);
 
   return (
-    <div className="portal-shell flex min-h-[100dvh] flex-col items-center justify-center gap-4 px-4 text-center">
-      <h1 className="font-display text-2xl text-white">Something went wrong</h1>
-      <p className="max-w-md text-sm text-muted-foreground">
-        {error.message || "An unexpected error occurred in the portal."}
-      </p>
-      <Button onClick={reset}>Try again</Button>
+    <div className="portal-shell site-viewport-shell min-h-0">
+      <div
+        data-site-scroll-main
+        className="site-scroll-main flex min-h-full flex-col items-center justify-center gap-4 px-4 py-10 text-center"
+      >
+        <h1 className="font-display text-2xl text-white">Something went wrong</h1>
+        <p className="max-w-md text-sm text-muted-foreground">
+          {error.message || "An unexpected error occurred in the portal."}
+        </p>
+        <Button onClick={reset}>Try again</Button>
+      </div>
     </div>
   );
 }

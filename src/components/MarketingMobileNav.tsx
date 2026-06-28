@@ -1,9 +1,20 @@
 "use client";
 
 import Link from "next/link";
-import { Menu } from "lucide-react";
+import { useRouter } from "next/navigation";
+import {
+  CreditCard,
+  LayoutDashboard,
+  LogOut,
+  Menu,
+  Settings,
+  User,
+} from "lucide-react";
+import * as React from "react";
+import { toast } from "sonner";
 
 import LanguageToggle from "@/components/LanguageToggle";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Sheet,
   SheetClose,
@@ -12,11 +23,45 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import { getUserInitials } from "@/lib/auth/display";
+import type { MarketingUser } from "@/lib/auth/marketing-actions";
+import { createClient } from "@/lib/supabase/client";
+import { getSupabaseEnvError } from "@/lib/supabase/env";
 import { useLanguage } from "@/providers/LanguageProvider";
 
-export default function MarketingMobileNav() {
+type MarketingMobileNavProps = {
+  marketingUser?: MarketingUser | null | undefined;
+  loginHref: string;
+  showSignIn: boolean;
+};
+
+export default function MarketingMobileNav({
+  marketingUser = null,
+  loginHref,
+  showSignIn,
+}: MarketingMobileNavProps) {
+  const router = useRouter();
   const { t } = useLanguage();
   const nav = t("nav");
+  const showSignedInMenu = Boolean(marketingUser);
+
+  async function handleLogout() {
+    const envError = getSupabaseEnvError();
+    if (envError) {
+      toast.error(envError);
+      return;
+    }
+
+    const supabase = createClient();
+    const { error } = await supabase.auth.signOut();
+
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+
+    router.refresh();
+  }
 
   return (
     <Sheet>
@@ -26,7 +71,19 @@ export default function MarketingMobileNav() {
           className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-silver-400/15 bg-navy-900/50 text-silver-200 backdrop-blur-sm transition hover:border-silver-400/25 hover:text-white md:hidden"
           aria-label={nav.openMenuAria}
         >
-          <Menu className="h-5 w-5" />
+          {showSignedInMenu && marketingUser ? (
+            <Avatar className="h-7 w-7">
+              <AvatarImage
+                src={marketingUser.avatarUrl ?? undefined}
+                alt={marketingUser.fullName ?? "User"}
+              />
+              <AvatarFallback className="bg-navy-700 text-[0.65rem] text-blue-200">
+                {getUserInitials(marketingUser.fullName)}
+              </AvatarFallback>
+            </Avatar>
+          ) : (
+            <Menu className="h-5 w-5" />
+          )}
         </button>
       </SheetTrigger>
 
@@ -36,28 +93,81 @@ export default function MarketingMobileNav() {
       >
         <SheetHeader className="border-b border-silver-400/10 px-6 py-5 text-left">
           <SheetTitle className="font-display text-lg text-white">
-            {nav.menuTitle}
+            {showSignedInMenu && marketingUser
+              ? marketingUser.fullName ?? "Account"
+              : nav.menuTitle}
           </SheetTitle>
+          {showSignedInMenu && marketingUser ? (
+            <p className="text-sm capitalize text-silver-500">
+              {marketingUser.role.replace(/_/g, " ")}
+            </p>
+          ) : null}
         </SheetHeader>
 
         <nav className="flex flex-1 flex-col gap-1 px-4 py-6" aria-label={nav.menuTitle}>
-          <SheetClose asChild>
-            <Link
-              href="/free-tools"
-              className="rounded-lg px-3 py-3 text-base font-semibold text-silver-200 transition hover:bg-navy-900/60 hover:text-white"
-            >
-              {nav.freeTools}
-            </Link>
-          </SheetClose>
+          {showSignedInMenu && marketingUser ? (
+            <>
+              <SheetClose asChild>
+                <Link
+                  href="/app/dashboard"
+                  className="inline-flex items-center gap-2 rounded-lg px-3 py-3 text-base font-semibold text-silver-200 transition hover:bg-navy-900/60 hover:text-white"
+                >
+                  <LayoutDashboard className="h-4 w-4" />
+                  Dashboard
+                </Link>
+              </SheetClose>
+              <SheetClose asChild>
+                <Link
+                  href="/app/profile"
+                  className="inline-flex items-center gap-2 rounded-lg px-3 py-3 text-base font-semibold text-silver-200 transition hover:bg-navy-900/60 hover:text-white"
+                >
+                  <User className="h-4 w-4" />
+                  Profile settings
+                </Link>
+              </SheetClose>
+              {marketingUser.role === "admin" ? (
+                <>
+                  <SheetClose asChild>
+                    <Link
+                      href="/app/settings"
+                      className="inline-flex items-center gap-2 rounded-lg px-3 py-3 text-base font-semibold text-silver-200 transition hover:bg-navy-900/60 hover:text-white"
+                    >
+                      <Settings className="h-4 w-4" />
+                      Company settings
+                    </Link>
+                  </SheetClose>
+                  <SheetClose asChild>
+                    <Link
+                      href="/app/billing"
+                      className="inline-flex items-center gap-2 rounded-lg px-3 py-3 text-base font-semibold text-silver-200 transition hover:bg-navy-900/60 hover:text-white"
+                    >
+                      <CreditCard className="h-4 w-4" />
+                      Billing
+                    </Link>
+                  </SheetClose>
+                </>
+              ) : null}
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="inline-flex items-center gap-2 rounded-lg px-3 py-3 text-left text-base font-semibold text-red-300 transition hover:bg-navy-900/60"
+              >
+                <LogOut className="h-4 w-4" />
+                Log out
+              </button>
+            </>
+          ) : null}
 
-          <SheetClose asChild>
-            <Link
-              href="/login"
-              className="rounded-lg px-3 py-3 text-base font-semibold text-silver-200 transition hover:bg-navy-900/60 hover:text-white"
-            >
-              {nav.signIn}
-            </Link>
-          </SheetClose>
+          {showSignIn ? (
+            <SheetClose asChild>
+              <a
+                href={loginHref}
+                className="block rounded-lg px-3 py-3 text-base font-semibold text-silver-200 transition hover:bg-navy-900/60 hover:text-white"
+              >
+                {nav.signIn}
+              </a>
+            </SheetClose>
+          ) : null}
 
           <div className="mt-4 border-t border-silver-400/10 pt-6">
             <p className="mb-3 px-3 text-xs font-semibold uppercase tracking-wider text-silver-500">
@@ -68,14 +178,6 @@ export default function MarketingMobileNav() {
             </div>
           </div>
         </nav>
-
-        <div className="border-t border-silver-400/10 px-6 py-5">
-          <SheetClose asChild>
-            <Link href="/signup" className="btn-rugged w-full justify-center px-6 py-3 text-sm">
-              {nav.getEarlyAccess}
-            </Link>
-          </SheetClose>
-        </div>
       </SheetContent>
     </Sheet>
   );

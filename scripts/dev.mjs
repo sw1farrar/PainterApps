@@ -43,12 +43,26 @@ if (process.argv.includes("--clean") && existsSync(nextDir)) {
 
 freePort(port);
 
+const useTurbopack = process.argv.includes("--turbo");
+const onOneDrive = /onedrive/i.test(root);
+
 console.log(`Starting Next.js dev server on http://localhost:${port}`);
+if (useTurbopack) {
+  console.log("Using Turbopack (omit --turbo to use Webpack).");
+}
+if (onOneDrive) {
+  console.log(
+    "Project is under OneDrive — exclude .next and node_modules from sync, or move the repo to a local folder (e.g. C:\\dev\\painterapps) for faster dev loads."
+  );
+}
 console.log(
   "Tip: run `npm run build` safely while dev is running (uses separate .next-build folder)."
 );
 
-const child = spawn(process.execPath, [nextBin, "dev", "-p", port], {
+const devArgs = ["dev", "-p", port];
+if (useTurbopack) devArgs.push("--turbo");
+
+const child = spawn(process.execPath, [nextBin, ...devArgs], {
   cwd: root,
   stdio: "inherit",
   env: { ...process.env, NEXT_DIST_DIR: ".next", PORT: port },

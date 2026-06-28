@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 
-import { requireOnboarded } from "@/lib/auth/session";
+import { requireSession } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
 import { getSupabaseEnvError } from "@/lib/supabase/env";
 import { isAbsoluteHttpUrl } from "@/lib/utils";
@@ -19,7 +19,7 @@ export async function updateProfile(data: {
   const envError = getSupabaseEnvError();
   if (envError) return { success: false, error: envError };
 
-  const session = await requireOnboarded();
+  const session = await requireSession();
   const fullName = data.fullName.trim();
 
   if (!fullName) {
@@ -43,6 +43,7 @@ export async function updateProfile(data: {
   if (error) return { success: false, error: error.message };
 
   revalidatePath("/app/profile");
+  revalidatePath("/app/admin/account");
   revalidatePath("/app/dashboard");
   return { success: true };
 }

@@ -6,11 +6,12 @@ import { usePathname } from "next/navigation";
 import { AppSidebar } from "@/components/portal/AppSidebar";
 import { SubscriptionBanner } from "@/components/portal/SubscriptionBanner";
 import { TopBar } from "@/components/portal/TopBar";
-import { filterNavByRole } from "@/lib/auth/roles";
-import type { AppSession } from "@/lib/auth/session";
+import type { NavItem } from "@/lib/auth/roles";
+import { isSiteAdmin, type AppSession } from "@/lib/auth/app-session";
 
 type PortalShellProps = {
   session: AppSession;
+  navItems: NavItem[];
   children: React.ReactNode;
 };
 
@@ -27,11 +28,11 @@ function MainContentFallback() {
   );
 }
 
-export function PortalShell({ session, children }: PortalShellProps) {
+export function PortalShell({ session, navItems, children }: PortalShellProps) {
   const [mobileNavOpen, setMobileNavOpen] = React.useState(false);
   const pathname = usePathname();
   const mainRef = React.useRef<HTMLElement>(null);
-  const navItems = filterNavByRole(session.profile.role);
+  const showSiteAdminLink = isSiteAdmin(session);
 
   React.useEffect(() => {
     setMobileNavOpen(false);
@@ -42,32 +43,35 @@ export function PortalShell({ session, children }: PortalShellProps) {
   }, [pathname]);
 
   return (
-    <div className="portal-shell flex min-h-[100dvh]">
+    <div className="portal-app-shell portal-shell flex min-h-0 h-dvh overflow-hidden">
       <AppSidebar
         navItems={navItems}
-        companyName={session.company?.name}
+        siteAdminHref={showSiteAdminLink ? "/app/admin" : undefined}
         mobileOpen={mobileNavOpen}
         onMobileOpenChange={setMobileNavOpen}
       />
 
-      <div className="flex min-w-0 flex-1 flex-col">
-        {session.company ? (
-          <SubscriptionBanner
-            company={session.company}
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+        <div className="sticky top-0 z-40 shrink-0">
+          {session.company ? (
+            <SubscriptionBanner
+              company={session.company}
+              profile={session.profile}
+            />
+          ) : null}
+          <TopBar
             profile={session.profile}
+            company={session.company}
+            onMenuClick={() => setMobileNavOpen(true)}
           />
-        ) : null}
-        <TopBar
-          profile={session.profile}
-          company={session.company}
-          onMenuClick={() => setMobileNavOpen(true)}
-        />
+        </div>
 
         <main
           ref={mainRef}
-          className="flex-1 overflow-x-hidden overflow-y-auto scroll-smooth p-4 md:p-6 lg:p-8"
+          data-site-scroll-main
+          className="site-scroll-main scroll-smooth"
         >
-          <div className="page-enter mx-auto w-full min-w-0 max-w-7xl">
+          <div className="page-enter mx-auto w-full min-w-0 max-w-7xl p-4 md:p-6 lg:p-8">
             <React.Suspense fallback={<MainContentFallback />}>
               {children}
             </React.Suspense>

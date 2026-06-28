@@ -13,6 +13,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { formatJobAddress } from "@/lib/address";
+import { formatPhoneDisplay } from "@/lib/phone";
 import { formatCurrency, isAbsoluteHttpUrl } from "@/lib/utils";
 import type { Quote, QuoteTier, QuoteTierName } from "@/types/database";
 
@@ -111,7 +112,7 @@ export function PortalQuoteView({
               {companyPhone ? (
                 <span className="inline-flex items-center gap-1.5">
                   <Phone className="h-3.5 w-3.5" />
-                  {companyPhone}
+                  {formatPhoneDisplay(companyPhone)}
                 </span>
               ) : null}
               {companyEmail ? (

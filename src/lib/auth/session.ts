@@ -1,12 +1,16 @@
+import "server-only";
+
 import { redirect } from "next/navigation";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
+import {
+  isSiteAdmin,
+  type AppSession,
+} from "@/lib/auth/app-session";
 import type { Company, Profile } from "@/types/database";
 
-export type AppSession = {
-  profile: Profile;
-  company: Company | null;
-};
+export type { AppSession } from "@/lib/auth/app-session";
+export { isSiteAdmin } from "@/lib/auth/app-session";
 
 async function loadProfile(userId: string, fullName: string | null) {
   const supabase = await createClient();
@@ -17,7 +21,7 @@ async function loadProfile(userId: string, fullName: string | null) {
     .eq("id", userId)
     .maybeSingle();
 
-  if (existingProfile) return { profile: existingProfile, error: null };
+  if (existingProfile) return { profile: existingProfile as Profile, error: null };
 
   const { data: insertedProfile, error: insertError } = await supabase
     .from("profiles")
@@ -25,11 +29,12 @@ async function loadProfile(userId: string, fullName: string | null) {
       id: userId,
       full_name: fullName,
       role: "admin",
+      is_site_admin: false,
     })
     .select("*")
     .maybeSingle();
 
-  if (insertedProfile) return { profile: insertedProfile, error: null };
+  if (insertedProfile) return { profile: insertedProfile as Profile, error: null };
 
   try {
     const admin = createAdminClient();
@@ -39,11 +44,12 @@ async function loadProfile(userId: string, fullName: string | null) {
         id: userId,
         full_name: fullName,
         role: "admin",
+        is_site_admin: false,
       })
       .select("*")
       .single();
 
-    if (adminProfile) return { profile: adminProfile, error: null };
+    if (adminProfile) return { profile: adminProfile as Profile, error: null };
 
     return {
       profile: null,
@@ -57,6 +63,26 @@ async function loadProfile(userId: string, fullName: string | null) {
           ? error.message
           : insertError?.message ?? "Profile could not be created.",
     };
+  }
+}
+
+export async function getAuthUser() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  return user;
+}
+
+export async function isEmailConfirmed(): Promise<boolean> {
+  const user = await getAuthUser();
+  return Boolean(user?.email_confirmed_at);
+}
+
+export async function requireEmailConfirmed() {
+  const user = await getAuthUser();
+  if (user && !user.email_confirmed_at) {
+    redirect("/verify-email");
   }
 }
 
@@ -84,7 +110,7 @@ export async function getSession(): Promise<AppSession | null> {
       .select("*")
       .eq("id", profile.company_id)
       .single();
-    company = data;
+    company = data as Company | null;
   }
 
   return { profile, company };
@@ -109,8 +135,17 @@ export async function requireSession(): Promise<AppSession> {
   return session;
 }
 
+export async function requireSiteAdmin(): Promise<AppSession> {
+  const session = await requireSession();
+  if (!isSiteAdmin(session)) {
+    redirect("/app/dashboard");
+  }
+  return session;
+}
+
 export async function requireOnboarded(): Promise<AppSession> {
   const session = await requireSession();
+  if (isSiteAdmin(session)) return session;
   if (!session.company?.onboarding_complete) {
     redirect("/app/onboarding");
   }

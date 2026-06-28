@@ -49,8 +49,11 @@ export default async function PortalQuotePage({
   if (!tiers?.length) notFound();
 
   return (
-    <div className="portal-shell min-h-dvh">
-      <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 lg:py-16">
+    <div className="portal-shell site-viewport-shell min-h-0">
+      <div
+        data-site-scroll-main
+        className="site-scroll-main mx-auto w-full max-w-6xl px-4 py-10 sm:px-6 lg:py-16"
+      >
         <PortalQuoteView
           quote={quote as Quote}
           tiers={tiers as QuoteTier[]}

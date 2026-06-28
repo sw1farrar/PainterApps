@@ -5,9 +5,12 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 import {
   BarChart3,
+  FileStack,
   FileText,
   HardHat,
   LayoutDashboard,
+  Shield,
+  Sparkles,
   UserPlus,
   Users,
   type LucideIcon,
@@ -19,9 +22,11 @@ import { cn } from "@/lib/utils";
 import type { NavItem } from "@/lib/auth/roles";
 
 const ICON_MAP: Record<string, LucideIcon> = {
+  sparkles: Sparkles,
   "layout-dashboard": LayoutDashboard,
   users: Users,
   "file-text": FileText,
+  "file-stack": FileStack,
   "hard-hat": HardHat,
   "user-plus": UserPlus,
   "bar-chart": BarChart3,
@@ -29,17 +34,19 @@ const ICON_MAP: Record<string, LucideIcon> = {
 
 type AppSidebarProps = {
   navItems: NavItem[];
-  companyName?: string | null;
+  siteAdminHref?: string;
   mobileOpen?: boolean;
   onMobileOpenChange?: (open: boolean) => void;
 };
 
 function NavLinks({
   navItems,
+  siteAdminHref,
   onNavigate,
   stagger = false,
 }: {
   navItems: NavItem[];
+  siteAdminHref?: string;
   onNavigate?: () => void;
   stagger?: boolean;
 }) {
@@ -101,13 +108,33 @@ function NavLinks({
           </Link>
         );
       })}
+
+      {siteAdminHref ? (
+        <Link
+          href={siteAdminHref}
+          prefetch={true}
+          onClick={(event) => {
+            event.preventDefault();
+            handleNavigate(siteAdminHref);
+          }}
+          className={cn(
+            "portal-nav-item mt-4 flex min-h-11 items-center gap-3 rounded-lg border border-amber-400/25 bg-amber-400/10 px-3 py-2.5 text-sm font-medium text-amber-100 transition hover:bg-amber-400/15",
+            (pathname === siteAdminHref ||
+              pathname.startsWith(`${siteAdminHref}/`)) &&
+              "border-amber-300/40 bg-amber-400/20",
+          )}
+        >
+          <Shield className="h-4 w-4 shrink-0" />
+          Site admin
+        </Link>
+      ) : null}
     </nav>
   );
 }
 
 export function AppSidebar({
   navItems,
-  companyName,
+  siteAdminHref,
   mobileOpen = false,
   onMobileOpenChange,
 }: AppSidebarProps) {
@@ -125,24 +152,18 @@ export function AppSidebar({
   }, [mobileOpen]);
 
   const sidebarHeader = (
-    <div className="flex items-center gap-3 border-b border-border px-5 py-5">
+    <div className="flex items-center border-b border-border px-5 py-5">
       <Logo size="sm" />
-      {companyName ? (
-        <div className="min-w-0">
-          <p className="truncate text-sm font-semibold text-foreground">
-            {companyName}
-          </p>
-          <p className="text-xs text-muted-foreground">Portal</p>
-        </div>
-      ) : null}
     </div>
   );
 
   return (
     <>
-      <aside className="hidden h-full w-64 shrink-0 flex-col border-r border-border bg-navy-900/50 md:flex">
+      <aside className="hidden h-dvh w-64 shrink-0 flex-col border-r border-border bg-navy-900/50 md:flex">
         {sidebarHeader}
-        <NavLinks navItems={navItems} />
+        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
+          <NavLinks navItems={navItems} siteAdminHref={siteAdminHref} />
+        </div>
       </aside>
 
       <Sheet open={mobileOpen} onOpenChange={onMobileOpenChange}>
@@ -154,6 +175,7 @@ export function AppSidebar({
           <NavLinks
             key={staggerKey}
             navItems={navItems}
+            siteAdminHref={siteAdminHref}
             stagger
             onNavigate={() => onMobileOpenChange?.(false)}
           />

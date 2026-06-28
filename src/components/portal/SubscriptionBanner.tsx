@@ -18,7 +18,7 @@ export function SubscriptionBanner({
   if (!message) return null;
 
   return (
-    <div className="flex flex-col gap-3 border-b border-amber-500/30 bg-amber-500/10 px-4 py-3 sm:flex-row sm:items-center sm:justify-between md:px-6">
+    <div className="flex shrink-0 flex-col gap-3 border-b border-amber-500/30 bg-amber-500/10 px-4 py-3 sm:flex-row sm:items-center sm:justify-between md:px-6">
       <div className="flex items-start gap-2 text-sm text-amber-100">
         <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-400" />
         <span>{message}</span>

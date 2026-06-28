@@ -50,9 +50,8 @@ export default async function QuotesPage() {
   const quoteRows = (quotes ?? []) as unknown as QuoteListRow[];
 
   return (
-    <div className="portal-shell min-h-dvh">
-      <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:py-12">
-        <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+    <div className="mx-auto min-w-0 max-w-5xl space-y-8">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <p className="type-eyebrow">Quotes</p>
             <h1 className="font-display mt-2 text-3xl text-white sm:text-4xl">
@@ -137,7 +136,6 @@ export default async function QuotesPage() {
             })}
           </div>
         )}
-      </div>
     </div>
   );
 }

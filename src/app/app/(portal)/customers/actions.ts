@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 
 import { requireOnboarded } from "@/lib/auth/session";
+import { normalizePhoneForStorage } from "@/lib/phone";
 import { createClient } from "@/lib/supabase/server";
 import { getSupabaseEnvError } from "@/lib/supabase/env";
 
@@ -27,7 +28,7 @@ function normalizeCustomerInput(data: CustomerInput) {
   return {
     name: data.name.trim(),
     email: data.email?.trim() || null,
-    phone: data.phone?.trim() || null,
+    phone: normalizePhoneForStorage(data.phone),
     address: data.address?.trim() || null,
     address_line2: data.address_line2?.trim() || null,
     city: data.city?.trim() || null,

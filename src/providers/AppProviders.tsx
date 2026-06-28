@@ -2,6 +2,7 @@
 
 import { NavigationProgress } from "@/components/NavigationProgress";
 import { LanguageProvider } from "@/providers/LanguageProvider";
+import { SitePasswordManagerBoundary } from "@/providers/SitePasswordManagerBoundary";
 
 export default function AppProviders({
   children,
@@ -10,8 +11,10 @@ export default function AppProviders({
 }) {
   return (
     <LanguageProvider>
-      <NavigationProgress />
-      {children}
+      <SitePasswordManagerBoundary>
+        <NavigationProgress />
+        {children}
+      </SitePasswordManagerBoundary>
     </LanguageProvider>
   );
 }

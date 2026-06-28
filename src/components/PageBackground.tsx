@@ -11,8 +11,8 @@ export default function PageBackground({
 }: PageBackgroundProps) {
   return (
     <div
-      className={`relative flex flex-col ${
-        viewportLocked ? "h-dvh overflow-hidden" : "min-h-dvh"
+      className={`relative flex min-h-0 flex-col ${
+        viewportLocked ? "site-viewport-shell" : "min-h-dvh"
       }`}
     >
       <div className="fixed inset-0 -z-10">

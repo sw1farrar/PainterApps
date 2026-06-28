@@ -2,6 +2,8 @@ export const STORAGE_BUCKETS = {
   companyLogos: "company-logos",
   quotePhotos: "quote-photos",
   jobPhotos: "job-photos",
+  sellSheetAssets: "sell-sheet-assets",
+  productCatalogAssets: "product-catalog-assets",
 } as const;
 
 export const MAX_LOGO_BYTES = 5 * 1024 * 1024;

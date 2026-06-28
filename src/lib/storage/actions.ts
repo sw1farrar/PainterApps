@@ -41,7 +41,7 @@ export async function uploadCompanyLogo(
     if (validationError) return { success: false, error: validationError };
 
     const admin = createAdminClient();
-    const path = `${companyId}/logo.${fileExtension(file)}`;
+    const path = `${companyId}/logo-${Date.now()}.${fileExtension(file)}`;
 
     const { error: uploadError } = await admin.storage
       .from(STORAGE_BUCKETS.companyLogos)
@@ -60,6 +60,7 @@ export async function uploadCompanyLogo(
 
     revalidatePath("/app/onboarding");
     revalidatePath("/app/dashboard");
+    revalidatePath("/app/settings");
 
     return { success: true, data: { url: publicUrl } };
   } catch (error) {

@@ -5,9 +5,23 @@ import type { Database } from "@/types/database";
 
 const PROTECTED_PREFIXES = ["/app"];
 
+const EMAIL_CONFIRM_EXEMPT = [
+  "/verify-email",
+  "/login",
+  "/signup",
+  "/auth/callback",
+  "/reset-password",
+];
+
 function isProtectedPath(pathname: string) {
   return PROTECTED_PREFIXES.some(
     (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
+  );
+}
+
+function isEmailConfirmExempt(pathname: string) {
+  return EMAIL_CONFIRM_EXEMPT.some(
+    (path) => pathname === path || pathname.startsWith(`${path}/`),
   );
 }
 
@@ -76,7 +90,20 @@ export async function middleware(request: NextRequest) {
     return redirectResponse;
   }
 
-  if ((pathname === "/login" || pathname === "/signup") && user) {
+  if (
+    user &&
+    isProtectedPath(pathname) &&
+    !user.email_confirmed_at &&
+    !isEmailConfirmExempt(pathname)
+  ) {
+    const redirectResponse = NextResponse.redirect(
+      new URL("/verify-email", request.url),
+    );
+    copyCookies(supabaseResponse, redirectResponse);
+    return redirectResponse;
+  }
+
+  if (pathname === "/signup" && user) {
     const redirectResponse = NextResponse.redirect(
       new URL("/app/onboarding", request.url),
     );

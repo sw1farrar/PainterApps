@@ -17,12 +17,14 @@ export type NotificationRow = {
 
 export async function getNotifications(): Promise<NotificationRow[]> {
   const session = await requireOnboarded();
+  if (!session.company?.id) return [];
+
   const supabase = await createClient();
 
   const { data } = await supabase
     .from("notifications")
     .select("id, type, title, body, href, read_at, created_at")
-    .eq("company_id", session.company!.id)
+    .eq("company_id", session.company.id)
     .order("created_at", { ascending: false })
     .limit(20);
 
@@ -33,25 +35,29 @@ export async function markNotificationRead(
   notificationId: string,
 ): Promise<void> {
   const session = await requireOnboarded();
+  if (!session.company?.id) return;
+
   const supabase = await createClient();
 
   await supabase
     .from("notifications")
     .update({ read_at: new Date().toISOString() })
     .eq("id", notificationId)
-    .eq("company_id", session.company!.id);
+    .eq("company_id", session.company.id);
 
   revalidatePath("/app/dashboard");
 }
 
 export async function markAllNotificationsRead(): Promise<void> {
   const session = await requireOnboarded();
+  if (!session.company?.id) return;
+
   const supabase = await createClient();
 
   await supabase
     .from("notifications")
     .update({ read_at: new Date().toISOString() })
-    .eq("company_id", session.company!.id)
+    .eq("company_id", session.company.id)
     .is("read_at", null);
 
   revalidatePath("/app/dashboard");

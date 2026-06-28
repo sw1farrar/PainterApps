@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { ChangePasswordForm } from "@/components/account/ChangePasswordForm";
 import { getSupabaseEnvError } from "@/lib/supabase/env";
 import type { Company, Profile } from "@/types/database";
 import { updateProfile } from "./actions";
@@ -117,6 +118,8 @@ export function ProfileClient({ profile, company }: ProfileClientProps) {
           </Button>
         </CardContent>
       </Card>
+
+      <ChangePasswordForm />
     </div>
   );
 }

@@ -7,6 +7,7 @@ import {
   StyleSheet,
 } from "@react-pdf/renderer";
 import { formatJobAddress } from "@/lib/address";
+import { formatPhoneDisplay } from "@/lib/phone";
 import { isAbsoluteHttpUrl } from "@/lib/utils";
 import type {
   Company,
@@ -28,28 +29,40 @@ const styles = StyleSheet.create({
     marginBottom: 24,
     borderBottomWidth: 2,
     borderBottomColor: "#2b6cb8",
-    paddingBottom: 12,
-  },
-  headerRow: {
-    flexDirection: "row",
+    paddingBottom: 16,
     alignItems: "center",
-    gap: 12,
-    marginBottom: 8,
+  },
+  brandBlock: {
+    alignItems: "center",
+    marginBottom: 10,
+  },
+  logoWrap: {
+    width: 260,
+    height: 88,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    backgroundColor: "#fafbfc",
+    borderRadius: 10,
   },
   logo: {
-    width: 64,
-    height: 64,
+    width: 228,
+    height: 72,
     objectFit: "contain",
   },
   companyName: {
-    fontSize: 22,
+    fontSize: 24,
     fontWeight: "bold",
     color: "#0a1428",
+    textAlign: "center",
   },
   subtitle: {
     fontSize: 11,
     color: "#4f5c6c",
     marginTop: 4,
+    textAlign: "center",
   },
   sectionTitle: {
     fontSize: 13,
@@ -143,16 +156,16 @@ export function MarketingSheetDocument({
     <Document>
       <Page size="LETTER" style={styles.page}>
         <View style={styles.header}>
-          {logoUrl ? (
-            <View style={styles.headerRow}>
-              {/* @react-pdf/renderer Image does not support alt */}
-              {/* eslint-disable-next-line jsx-a11y/alt-text */}
-              <Image src={logoUrl} style={styles.logo} />
-              <Text style={styles.companyName}>{company.name}</Text>
-            </View>
-          ) : (
+          <View style={styles.brandBlock}>
+            {logoUrl ? (
+              <View style={styles.logoWrap}>
+                {/* @react-pdf/renderer Image does not support alt */}
+                {/* eslint-disable-next-line jsx-a11y/alt-text */}
+                <Image src={logoUrl} style={styles.logo} />
+              </View>
+            ) : null}
             <Text style={styles.companyName}>{company.name}</Text>
-          )}
+          </View>
           <Text style={styles.subtitle}>
             Painting Proposal for {customer.name}
           </Text>
@@ -212,7 +225,7 @@ export function MarketingSheetDocument({
         ) : null}
 
         <Text style={styles.footer}>
-          {company.phone ? `${company.phone} · ` : ""}
+          {company.phone ? `${formatPhoneDisplay(company.phone)} · ` : ""}
           {company.email ?? ""} · Prepared by {company.name}
         </Text>
       </Page>

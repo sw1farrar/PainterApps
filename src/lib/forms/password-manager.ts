@@ -39,6 +39,38 @@ export const PASSWORD_MANAGER_SHELL_PROPS = {
   autoComplete: "off",
 } as const satisfies PasswordManagerFieldProps & { autoComplete: string };
 
+/** Applied to document.body while password managers are suppressed site-wide. */
+export const PASSWORD_MANAGER_BODY_PROPS = {
+  "data-pm-suppress": "true",
+  "data-lpignore": "true",
+  "data-lastpass-ignore": "true",
+  "data-lastpass-disable-search": "true",
+} as const;
+
+/** Routes where password managers (LastPass, etc.) may run normally. */
+export const PASSWORD_MANAGER_ALLOWED_PATHS = ["/login"] as const;
+
+export function isPasswordManagerAllowedPath(pathname: string) {
+  return PASSWORD_MANAGER_ALLOWED_PATHS.some(
+    (allowed) => pathname === allowed || pathname.startsWith(`${allowed}/`),
+  );
+}
+
+export const PASSWORD_MANAGER_LOGIN_FORM_PROPS = {
+  autoComplete: "on",
+  "data-form-type": "login",
+} as const;
+
+export const PASSWORD_MANAGER_LOGIN_USERNAME_PROPS = {
+  autoComplete: "username",
+  "data-form-type": "login",
+} as const;
+
+export const PASSWORD_MANAGER_LOGIN_PASSWORD_PROPS = {
+  autoComplete: "current-password",
+  "data-form-type": "login",
+} as const;
+
 export function getPasswordManagerIgnoreProps(): PasswordManagerFieldProps {
   return {
     autoComplete: "one-time-code",

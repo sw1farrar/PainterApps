@@ -45,6 +45,20 @@ export function NavigationProgress() {
     timersRef.current.push(id);
   }, []);
 
+  const complete = useCallback(() => {
+    clearTimers();
+    setProgress(100);
+
+    schedule(() => {
+      setVisible(false);
+      setProgress(0);
+      isNavigatingRef.current = false;
+    }, 220);
+  }, [clearTimers, schedule]);
+
+  const completeRef = useRef(complete);
+  completeRef.current = complete;
+
   const start = useCallback(() => {
     if (isNavigatingRef.current) return;
 
@@ -57,17 +71,11 @@ export function NavigationProgress() {
     schedule(() => setProgress(58), 200);
     schedule(() => setProgress(78), 400);
     schedule(() => setProgress(90), 700);
-  }, [clearTimers, schedule]);
-
-  const complete = useCallback(() => {
-    clearTimers();
-    setProgress(100);
-
     schedule(() => {
-      setVisible(false);
-      setProgress(0);
-      isNavigatingRef.current = false;
-    }, 220);
+      if (isNavigatingRef.current) {
+        completeRef.current();
+      }
+    }, 8000);
   }, [clearTimers, schedule]);
 
   useEffect(() => {

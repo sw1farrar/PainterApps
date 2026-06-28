@@ -44,19 +44,17 @@ export default async function EditQuotePage({ params }: PageProps) {
   if (!quote) notFound();
 
   return (
-    <div className="portal-shell min-h-dvh">
-      <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:py-12">
-        <QuoteBuilder
-          mode="edit"
-          quote={quote}
-          rooms={rooms ?? []}
-          lineItems={lineItems ?? []}
-          tiers={tiers ?? []}
-          customers={customers ?? []}
-          company={company!}
-          upgradeRules={upgradeRules}
-        />
-      </div>
+    <div className="mx-auto min-w-0 max-w-5xl">
+      <QuoteBuilder
+        mode="edit"
+        quote={quote}
+        rooms={rooms ?? []}
+        lineItems={lineItems ?? []}
+        tiers={tiers ?? []}
+        customers={customers ?? []}
+        company={company!}
+        upgradeRules={upgradeRules}
+      />
     </div>
   );
 }
