@@ -67,6 +67,36 @@ async function productAttributeColumnsReady(): Promise<boolean> {
   return !error;
 }
 
+async function companyPaintProductAttributeColumnsReady(): Promise<boolean> {
+  const admin = createAdminClient();
+  const { error } = await admin
+    .from("company_paint_products")
+    .select("base_type, resin_type, can_image_url")
+    .limit(1);
+
+  return !error;
+}
+
+async function unifiedCatalogColumnsReady(): Promise<boolean> {
+  const admin = createAdminClient();
+  const { error } = await admin
+    .from("paint_products")
+    .select("catalog_origin, catalog_review_status, submitted_by_company_id")
+    .limit(1);
+
+  return !error;
+}
+
+async function companyPaintProductCanImageStorageColumnReady(): Promise<boolean> {
+  const admin = createAdminClient();
+  const { error } = await admin
+    .from("company_paint_products")
+    .select("can_image_storage_path")
+    .limit(1);
+
+  return !error;
+}
+
 async function applyMigrationFile(filename: string): Promise<void> {
   const databaseUrl = buildDatabaseUrl();
   if (!databaseUrl) {
@@ -110,6 +140,9 @@ export async function ensurePaintProductSchema(): Promise<{
     if (!(await productAttributeColumnsReady())) {
       await applyMigrationFile("020_paint_product_attributes.sql");
     }
+    if (!(await unifiedCatalogColumnsReady())) {
+      await applyMigrationFile("046_unified_product_catalog.sql");
+    }
   } catch (error) {
     const message =
       error instanceof Error
@@ -122,7 +155,8 @@ export async function ensurePaintProductSchema(): Promise<{
   if (
     !(await productColumnsReady()) ||
     !(await manufacturerLogoColumnsReady()) ||
-    !(await productAttributeColumnsReady())
+    !(await productAttributeColumnsReady()) ||
+    !(await unifiedCatalogColumnsReady())
   ) {
     const message = "Could not apply required product catalog schema updates.";
     schemaWarning = message;
@@ -141,6 +175,59 @@ export async function requirePaintProductSchema(): Promise<void> {
       result.message ??
         schemaWarning ??
         "Product catalog schema is not ready yet.",
+    );
+  }
+}
+
+let companySchemaEnsured = false;
+
+export async function ensureCompanyPaintProductSchema(): Promise<{
+  ready: boolean;
+  message?: string;
+}> {
+  if (companySchemaEnsured) return { ready: true };
+
+  try {
+    if (!(await companyPaintProductAttributeColumnsReady())) {
+      await applyMigrationFile("037_company_paint_product_attributes.sql");
+    }
+    if (!(await companyPaintProductCanImageStorageColumnReady())) {
+      await applyMigrationFile("045_company_product_can_image_storage.sql");
+    }
+  } catch (error) {
+    const message =
+      error instanceof Error
+        ? error.message
+        : "Could not apply company paint product schema updates.";
+    return { ready: false, message };
+  }
+
+  if (!(await companyPaintProductAttributeColumnsReady())) {
+    return {
+      ready: false,
+      message:
+        "Could not apply required company paint product attribute columns.",
+    };
+  }
+
+  if (!(await companyPaintProductCanImageStorageColumnReady())) {
+    return {
+      ready: false,
+      message:
+        "Could not apply required company product can image storage column.",
+    };
+  }
+
+  companySchemaEnsured = true;
+  return { ready: true };
+}
+
+export async function requireCompanyPaintProductSchema(): Promise<void> {
+  const result = await ensureCompanyPaintProductSchema();
+  if (!result.ready) {
+    throw new Error(
+      result.message ??
+        "Company paint product schema is not ready yet. Run npm run db:migrate:037 / db:migrate:045 or add SUPABASE_DB_PASSWORD to .env.local.",
     );
   }
 }

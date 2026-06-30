@@ -22,7 +22,7 @@ export async function createCheckoutSession(): Promise<ActionResult> {
     if (!isStripeConfigured()) {
       return {
         success: false,
-        error: "Stripe is not configured. Add STRIPE_SECRET_KEY and STRIPE_PRICE_ID.",
+        error: "Billing is not configured on this server.",
       };
     }
 
@@ -34,7 +34,7 @@ export async function createCheckoutSession(): Promise<ActionResult> {
     const company = session.company!;
 
     if (!stripe || !priceId) {
-      return { success: false, error: "Stripe is not configured." };
+      return { success: false, error: "Billing is not configured on this server." };
     }
 
     const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
@@ -87,7 +87,7 @@ export async function createCheckoutSession(): Promise<ActionResult> {
 export async function createBillingPortalSession(): Promise<ActionResult> {
   try {
     if (!isStripeConfigured()) {
-      return { success: false, error: "Stripe is not configured." };
+      return { success: false, error: "Billing is not configured on this server." };
     }
 
     const session = await requireOnboarded();
@@ -128,7 +128,7 @@ export async function syncSubscriptionStatus(
   try {
     const stripe = getStripe();
     if (!stripe) {
-      return { success: false, error: "Stripe is not configured." };
+      return { success: false, error: "Billing is not configured on this server." };
     }
 
     const admin = createAdminClient();

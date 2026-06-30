@@ -9,6 +9,10 @@ import {
 import { formatJobAddress } from "@/lib/address";
 import { formatPhoneDisplay } from "@/lib/phone";
 import { isAbsoluteHttpUrl } from "@/lib/utils";
+import {
+  filterActiveQuoteTiers,
+  formatQuoteTierLabel,
+} from "@/lib/quotes/tier-labels";
 import type {
   Company,
   Customer,
@@ -117,13 +121,6 @@ const styles = StyleSheet.create({
   },
 });
 
-const TIER_LABELS: Record<string, string> = {
-  good: "Good",
-  better: "Better",
-  best: "Best",
-  beautiful: "Beautiful",
-};
-
 function formatMoney(amount: number) {
   return new Intl.NumberFormat("en-US", {
     style: "currency",
@@ -149,7 +146,9 @@ export function MarketingSheetDocument({
   lineItems,
   tiers,
 }: MarketingSheetProps) {
-  const sortedTiers = [...tiers].sort((a, b) => a.price - b.price);
+  const sortedTiers = filterActiveQuoteTiers([...tiers])
+    .filter((tier) => tier.price > 0)
+    .sort((a, b) => a.price - b.price);
   const logoUrl = isAbsoluteHttpUrl(company.logo_url) ? company.logo_url : null;
 
   return (
@@ -177,7 +176,7 @@ export function MarketingSheetDocument({
           {sortedTiers.map((tier) => (
             <View key={tier.id} style={styles.tierCard}>
               <Text style={styles.tierName}>
-                {TIER_LABELS[tier.tier] ?? tier.tier}
+                {formatQuoteTierLabel(tier.tier)}
               </Text>
               <Text style={styles.tierPrice}>{formatMoney(tier.price)}</Text>
               {(tier.features ?? []).slice(0, 4).map((feature, i) => (

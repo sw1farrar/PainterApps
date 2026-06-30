@@ -95,6 +95,8 @@ export async function savePricingDefaults(data: {
   materialMarkup: number;
   overheadPct: number;
   coverageSqftPerGallon: number;
+  gallonsPerLaborHour: number;
+  avgLaborCostPerHour?: number | null;
   laborRates: Record<string, number>;
   defaultMargins: Record<string, number>;
 }): Promise<ActionResult> {
@@ -114,6 +116,8 @@ export async function savePricingDefaults(data: {
       material_markup: data.materialMarkup,
       overhead_pct: data.overheadPct,
       coverage_sqft_per_gallon: data.coverageSqftPerGallon,
+      gallons_per_labor_hour: data.gallonsPerLaborHour,
+      avg_labor_cost_per_hour: data.avgLaborCostPerHour ?? null,
       labor_rates: data.laborRates,
       default_margins: data.defaultMargins,
     })

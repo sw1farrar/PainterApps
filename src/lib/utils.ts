@@ -13,6 +13,29 @@ export function formatCurrency(amount: number): string {
   }).format(amount);
 }
 
+/** USD with exactly two decimal places — for product costs and prices. */
+export function formatCurrencyWithCents(amount: number): string {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(Number.isFinite(amount) ? amount : 0);
+}
+
+export function toMoneyInputString(amount: number): string {
+  return (Number.isFinite(amount) ? amount : 0).toFixed(2);
+}
+
+export function parseMoneyInput(value: string): number {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+export function formatMoneyInputOnBlur(value: string): string {
+  return toMoneyInputString(parseMoneyInput(value));
+}
+
 export function slugify(value: string): string {
   return value
     .toLowerCase()

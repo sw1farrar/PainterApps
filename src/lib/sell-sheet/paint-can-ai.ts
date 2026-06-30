@@ -857,7 +857,7 @@ function buildLookupInstructions(
     "Never use Home Depot, Lowe's, Amazon, Walmart, Pinterest, or any third-party product listing.",
     "The paint can image must be hosted on the manufacturer's official site or its official CDN on the same domain family.",
     "imageUrl must be a direct photo of a physical paint can or bucket with a readable product label — never a brochure, sell sheet, literature PDF, flyer, data sheet, product overview graphic, swatch, chip, brush, logo-only graphic, lifestyle photo, or unlabeled container.",
-    "Prefer Sherwin-Williams sw-img-promo packshot URLs when available. Never return brochure, literature, hero banner, or document images as imageUrl.",
+    "Prefer official manufacturer paint-can packshot URLs when available. Never return brochure, literature, hero banner, or document images as imageUrl.",
     "Use image understanding to verify the candidate image is a labeled paint can before returning imageUrl. Reject brochure covers, document scans, and marketing collateral.",
     "paintSystemFeatures must come from the manufacturer product page only — do not invent specs or use third-party descriptions.",
     `paintSystemFeatures must be ${PAINT_SYSTEM_DISCOVERY_TARGET_MIN}-${PAINT_SYSTEM_OPTIONS_MAX} very short bullet phrases (max 8 words, ~50 characters each) extracted comprehensively from the manufacturer product page.`,

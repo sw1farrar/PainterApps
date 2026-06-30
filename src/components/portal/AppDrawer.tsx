@@ -3,6 +3,7 @@
 import * as React from "react";
 
 import { PASSWORD_MANAGER_SHELL_PROPS } from "@/lib/forms/password-manager";
+import { Z_LAYERS } from "@/lib/ui/z-layers";
 import { cn } from "@/lib/utils";
 import {
   Sheet,
@@ -13,6 +14,8 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 
+type AppDrawerSide = "left" | "right" | "top" | "bottom" | "responsive";
+
 export interface AppDrawerProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -21,6 +24,8 @@ export interface AppDrawerProps {
   children: React.ReactNode;
   footer?: React.ReactNode;
   className?: string;
+  overlayClassName?: string;
+  side?: AppDrawerSide;
 }
 
 export function AppDrawer({
@@ -31,14 +36,18 @@ export function AppDrawer({
   children,
   footer,
   className,
+  overlayClassName,
+  side = "responsive",
 }: AppDrawerProps) {
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
-        side="responsive"
+        side={side}
+        overlayClassName={cn(Z_LAYERS.drawerOverlay, overlayClassName)}
         className={cn(
+          Z_LAYERS.drawerContent,
           "flex h-[100dvh] w-full flex-col gap-0 rounded-none border-border p-0 md:h-full md:w-[480px] md:max-w-[480px]",
-          className
+          className,
         )}
       >
         <SheetHeader className="shrink-0 space-y-1 border-b border-border px-6 py-5 text-left">

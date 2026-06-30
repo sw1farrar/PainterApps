@@ -14,7 +14,7 @@ export async function GET(request: Request) {
 
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
     return NextResponse.redirect(
-      `${origin}/login?error=${encodeURIComponent("Supabase is not configured.")}`,
+      `${origin}/login?error=${encodeURIComponent("Database connection is not configured.")}`,
     );
   }
 

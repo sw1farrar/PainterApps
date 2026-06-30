@@ -27,6 +27,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { getUserInitials } from "@/lib/auth/display";
+import { signalNavigationStart } from "@/lib/ui/navigation-progress";
 import { createClient } from "@/lib/supabase/client";
 import { getSupabaseEnvError } from "@/lib/supabase/env";
 import { isAbsoluteHttpUrl } from "@/lib/utils";
@@ -79,6 +80,7 @@ export function TopBar({ profile, company, onMenuClick }: TopBarProps) {
     if (pathname === href) return;
 
     setPendingHref(href);
+    signalNavigationStart();
     startTransition(() => {
       router.push(href);
     });

@@ -16,14 +16,8 @@ import { formatJobAddress, type JobAddressFields } from "@/lib/address";
 import { requireOnboarded } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
 import { formatCurrency } from "@/lib/utils";
+import { formatQuoteTierLabel } from "@/lib/quotes/tier-labels";
 import type { QuoteTierName } from "@/types/database";
-
-const TIER_LABELS: Record<QuoteTierName, string> = {
-  good: "Good",
-  better: "Better",
-  best: "Best",
-  beautiful: "Beautiful",
-};
 
 const STATUS_VARIANT: Record<
   string,
@@ -111,7 +105,7 @@ export default async function JobsPage() {
                           {job.status}
                         </Badge>
                         <Badge variant="secondary">
-                          {TIER_LABELS[job.tier]} tier
+                          {formatQuoteTierLabel(job.tier)} tier
                         </Badge>
                       </div>
                       <p className="truncate text-sm text-muted-foreground">

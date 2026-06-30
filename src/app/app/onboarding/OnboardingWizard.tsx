@@ -22,7 +22,9 @@ import { toAddressInput, type AddressFields as AddressValue } from "@/lib/addres
 import { ONBOARDING_DEFAULTS } from "@/lib/onboarding/defaults";
 import { formatPhoneDisplay } from "@/lib/phone";
 import { getSupabaseEnvError } from "@/lib/supabase/env";
-import type { Company, QuoteTierName } from "@/types/database";
+import { QUOTE_PAINT_TIERS } from "@/lib/paint-library/types";
+import { QUOTE_TIER_LABELS } from "@/lib/quotes/tier-labels";
+import type { Company } from "@/types/database";
 import {
   saveCompanyInfo,
   savePricingDefaults,
@@ -30,13 +32,6 @@ import {
 } from "./actions";
 
 const STEPS = ["Company", "Pricing", "Upgrades"] as const;
-const TIER_LABELS: Record<QuoteTierName, string> = {
-  good: "Good",
-  better: "Better",
-  best: "Best",
-  beautiful: "Beautiful",
-};
-
 type OnboardingWizardProps = {
   company: Company | null;
 };
@@ -88,6 +83,19 @@ export function OnboardingWizard({ company: initialCompany }: OnboardingWizardPr
     String(
       (initialCompany?.labor_rates as Record<string, number> | undefined)?.prep ??
         defaults.laborRates.prep,
+    ),
+  );
+  const [gallonsPerHour, setGallonsPerHour] = React.useState(
+    String(
+      initialCompany?.gallons_per_labor_hour ?? defaults.gallonsPerLaborHour,
+    ),
+  );
+  const [avgLaborCost, setAvgLaborCost] = React.useState(
+    String(
+      initialCompany?.avg_labor_cost_per_hour ??
+        (initialCompany?.labor_rates as Record<string, number> | undefined)
+          ?.painter ??
+        defaults.avgLaborCostPerHour,
     ),
   );
 
@@ -143,6 +151,8 @@ export function OnboardingWizard({ company: initialCompany }: OnboardingWizardPr
       materialMarkup: Number(materialMarkup) || 0,
       overheadPct: Number(overheadPct) || 0,
       coverageSqftPerGallon: Number(coverage) || 350,
+      gallonsPerLaborHour: Number(gallonsPerHour) || defaults.gallonsPerLaborHour,
+      avgLaborCostPerHour: Number(avgLaborCost) || null,
       laborRates: {
         painter: Number(painterRate) || defaults.laborRates.painter,
         prep: Number(prepRate) || defaults.laborRates.prep,
@@ -333,6 +343,17 @@ export function OnboardingWizard({ company: initialCompany }: OnboardingWizardPr
                     onChange={(e) => setCoverage(e.target.value)}
                   />
                 </div>
+                <div className="space-y-2 sm:col-span-2">
+                  <Label htmlFor="avgLaborCost">Average labor cost ($/hr)</Label>
+                  <Input
+                    id="avgLaborCost"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={avgLaborCost}
+                    onChange={(e) => setAvgLaborCost(e.target.value)}
+                  />
+                </div>
                 <div className="space-y-2">
                   <Label htmlFor="painterRate">Painter rate ($/hr)</Label>
                   <Input
@@ -354,6 +375,21 @@ export function OnboardingWizard({ company: initialCompany }: OnboardingWizardPr
                     value={prepRate}
                     onChange={(e) => setPrepRate(e.target.value)}
                   />
+                </div>
+                <div className="space-y-2 sm:col-span-2">
+                  <Label htmlFor="gallonsPerHour">Crew productivity (gal / hr)</Label>
+                  <Input
+                    id="gallonsPerHour"
+                    type="number"
+                    min="0.5"
+                    step="0.5"
+                    value={gallonsPerHour}
+                    onChange={(e) => setGallonsPerHour(e.target.value)}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Used to convert estimated gallons into painting labor hours on
+                    quotes.
+                  </p>
                 </div>
               </div>
               <div className="flex gap-3">
@@ -408,13 +444,13 @@ export function OnboardingWizard({ company: initialCompany }: OnboardingWizardPr
 
               <div className="space-y-3">
                 <Label>Tier multipliers</Label>
-                {(Object.keys(TIER_LABELS) as QuoteTierName[]).map((tier) => (
+                {QUOTE_PAINT_TIERS.map((tier) => (
                   <div
                     key={tier}
                     className="flex items-center justify-between gap-4"
                   >
                     <span className="text-sm text-muted-foreground">
-                      {TIER_LABELS[tier]}
+                      {QUOTE_TIER_LABELS[tier]}
                     </span>
                     <Input
                       type="number"

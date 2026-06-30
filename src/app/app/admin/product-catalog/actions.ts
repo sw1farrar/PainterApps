@@ -12,6 +12,7 @@ import {
   ensurePaintProductSchema,
   requirePaintProductSchema,
 } from "@/lib/product-catalog/ensure-schema";
+import { resolveDisplayAttributes } from "@/lib/product-catalog/infer-product-display-attributes";
 import { loadCatalogProduct } from "@/lib/product-catalog/load-catalog-product";
 import { normalizeManufacturerRow } from "@/lib/product-catalog/normalize-manufacturer";
 import { normalizeProductRow } from "@/lib/product-catalog/normalize-product";
@@ -24,6 +25,7 @@ import {
   type PaintProductApplication,
   type PaintProductRow,
 } from "@/lib/product-catalog/types";
+import { persistPlatformPaintCanImageUpload } from "@/lib/product-catalog/persist-platform-can-image";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { STORAGE_BUCKETS } from "@/lib/storage/constants";
 
@@ -71,7 +73,12 @@ export async function listProductCatalog(): Promise<{
       const manufacturer = manufacturerById.get(row.manufacturer_id as string);
       return toCatalogProductRow(
         normalizeProductRow(row),
-        manufacturer ?? { name: "Unknown", logo_url: null },
+        manufacturer ?? {
+          name: "Unknown",
+          logo_url: null,
+          logo_storage_path: null,
+        },
+        process.env.NEXT_PUBLIC_SUPABASE_URL,
       );
     }) ?? [];
 
@@ -172,6 +179,15 @@ export async function updatePaintProduct(
 
   const duplicateSiblingIds = (siblingRows ?? []).map((row) => row.id as string);
 
+  const displayAttributes = resolveDisplayAttributes({
+    ...existingProduct,
+    application_type: mergedApplicationType,
+    category: input.category,
+    product_description: input.product_description,
+    paint_system_features: input.paint_system_features,
+    paint_system_feature_options: input.paint_system_feature_options,
+  });
+
   const enrichmentStatus = computeEnrichmentStatus(
     toEnrichmentStatusInput({
       ...existingProduct,
@@ -181,6 +197,8 @@ export async function updatePaintProduct(
       product_description: input.product_description,
       sheen_options: input.sheen_options,
       paint_system_feature_options: input.paint_system_feature_options,
+      product_uses: displayAttributes.productUses,
+      substrates: displayAttributes.substrates,
     }),
   );
 
@@ -199,10 +217,22 @@ export async function updatePaintProduct(
       sheen_options: input.sheen_options,
       paint_system_features: input.paint_system_features,
       paint_system_feature_options: input.paint_system_feature_options,
+      product_uses: displayAttributes.productUses,
+      substrates: displayAttributes.substrates,
+      is_self_priming: Boolean(displayAttributes.capabilityFlags.isSelfPriming),
+      is_stain_blocking: Boolean(
+        displayAttributes.capabilityFlags.isStainBlocking,
+      ),
+      is_mold_mildew_resistant: Boolean(
+        displayAttributes.capabilityFlags.isMoldMildewResistant,
+      ),
+      is_scrubbable: Boolean(displayAttributes.capabilityFlags.isScrubbable),
+      is_one_coat: Boolean(displayAttributes.capabilityFlags.isOneCoat),
       can_image_url: canImageUrl,
       can_image_storage_path: canImageStoragePath,
       is_discontinued: input.is_discontinued,
       enrichment_status: enrichmentStatus,
+      catalog_review_status: "approved",
       updated_at: new Date().toISOString(),
     })
     .eq("id", input.id);
@@ -292,4 +322,45 @@ export async function deletePaintProduct(
 
   revalidatePath("/app/admin/product-catalog");
   return { success: true };
+}
+
+export async function uploadPlatformPaintProductCanImage(
+  formData: FormData,
+): Promise<
+  ActionResult<{ url: string; storagePath: string; updatedAt: string }>
+> {
+  await assertSiteAdmin();
+  await requirePaintProductSchema();
+
+  const file = formData.get("file");
+  const paintProductId = String(formData.get("paintProductId") ?? "").trim();
+
+  if (!(file instanceof File) || file.size === 0) {
+    return { success: false, error: "Choose an image to upload." };
+  }
+  if (!paintProductId) {
+    return { success: false, error: "Product id is required." };
+  }
+
+  const result = await persistPlatformPaintCanImageUpload({
+    paintProductId,
+    file,
+  });
+
+  if (!result.success) {
+    return { success: false, error: result.error };
+  }
+
+  revalidatePath("/app/admin/product-catalog");
+  revalidatePath("/app/products/catalog");
+  revalidatePath("/app/settings/paint-library");
+
+  return {
+    success: true,
+    data: {
+      url: result.url,
+      storagePath: result.storagePath,
+      updatedAt: result.updatedAt,
+    },
+  };
 }

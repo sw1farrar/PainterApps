@@ -1,7 +1,11 @@
 import { notFound } from "next/navigation";
 import { requireOnboarded } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
-import { QuoteBuilder } from "@/components/quotes/QuoteBuilder";
+import { SimpleQuoteBuilder } from "@/components/quotes/simple/SimpleQuoteBuilder";
+import { loadCompanyPaintProducts } from "@/lib/paint-library/load-company-paint-products";
+import { extractReferencedProductIdsFromQuoteData } from "@/lib/paint-library/quote-product-refs";
+import { collectEstimateDefaultsProductIds } from "@/lib/quotes/company-estimate-defaults";
+import { loadCompanyEstimateDefaults } from "@/lib/quotes/load-company-estimate-defaults";
 
 type PageProps = {
   params: Promise<{ id: string }>;
@@ -15,10 +19,13 @@ export default async function EditQuotePage({ params }: PageProps) {
   const [
     { data: quote },
     { data: rooms },
+    { data: surfaces },
     { data: lineItems },
     { data: tiers },
     { data: customers },
-    { data: upgradeRules },
+    { data: paintDefaults },
+    { data: baselinePaintSystems },
+    { data: tierPaintConfig },
   ] = await Promise.all([
     supabase
       .from("quotes")
@@ -26,35 +33,73 @@ export default async function EditQuotePage({ params }: PageProps) {
       .eq("id", id)
       .eq("company_id", company!.id)
       .single(),
-    supabase.from("quote_rooms").select("*").eq("quote_id", id),
-    supabase.from("quote_line_items").select("*").eq("quote_id", id),
+    supabase
+      .from("quote_rooms")
+      .select("*")
+      .eq("quote_id", id)
+      .order("sort_order"),
+    supabase.from("quote_surfaces").select("*").eq("quote_id", id),
+    supabase
+      .from("quote_line_items")
+      .select("*")
+      .eq("quote_id", id)
+      .order("sort_order"),
     supabase.from("quote_tiers").select("*").eq("quote_id", id),
     supabase
       .from("customers")
-      .select("*")
+      .select(
+        "id, company_id, name, email, phone, address, address_line2, city, state, zip, notes, portal_token, created_at",
+      )
       .eq("company_id", company!.id)
       .order("name"),
-    supabase
-      .from("quote_upgrade_rules")
-      .select("*")
-      .eq("company_id", company!.id)
-      .maybeSingle(),
+    supabase.from("quote_paint_defaults").select("*").eq("quote_id", id),
+    supabase.from("quote_baseline_paint_systems").select("*").eq("quote_id", id),
+    supabase.from("quote_tier_paint_config").select("*").eq("quote_id", id),
   ]);
 
   if (!quote) notFound();
 
+  const [estimateDefaults, quoteReferencedProductIds] = await Promise.all([
+    loadCompanyEstimateDefaults(company!),
+    Promise.resolve(
+      extractReferencedProductIdsFromQuoteData({
+        lineItems,
+        surfaces,
+        paintDefaults,
+        tierPaintConfig,
+        baselineSystems: baselinePaintSystems,
+      }),
+    ),
+  ]);
+
+  const referencedProductIds = [
+    ...new Set([
+      ...quoteReferencedProductIds,
+      ...collectEstimateDefaultsProductIds(estimateDefaults),
+    ]),
+  ];
+
+  const paintProducts = await loadCompanyPaintProducts({
+    companyId: company!.id,
+    referencedProductIds,
+    activeOnly: true,
+  });
+
   return (
-    <div className="mx-auto min-w-0 max-w-5xl">
-      <QuoteBuilder
-        mode="edit"
-        quote={quote}
-        rooms={rooms ?? []}
-        lineItems={lineItems ?? []}
-        tiers={tiers ?? []}
-        customers={customers ?? []}
-        company={company!}
-        upgradeRules={upgradeRules}
-      />
-    </div>
+    <SimpleQuoteBuilder
+      mode="edit"
+      quote={quote}
+      rooms={rooms ?? []}
+      surfaces={surfaces ?? []}
+      lineItems={lineItems ?? []}
+      tiers={tiers ?? []}
+      customers={customers ?? []}
+      company={company!}
+      paintProducts={paintProducts}
+      paintDefaults={paintDefaults ?? []}
+      baselinePaintSystems={baselinePaintSystems ?? []}
+      tierPaintConfig={tierPaintConfig ?? []}
+      estimateDefaults={estimateDefaults}
+    />
   );
 }

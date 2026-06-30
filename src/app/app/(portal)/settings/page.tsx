@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { redirect } from "next/navigation";
 
 import { isSiteAdmin, requireOnboarded } from "@/lib/auth/session";
@@ -23,9 +24,11 @@ export default async function SettingsPage() {
     .maybeSingle();
 
   return (
-    <SettingsClient
-      company={session.company}
-      upgradeRules={upgradeRules}
-    />
+    <Suspense fallback={null}>
+      <SettingsClient
+        company={session.company}
+        upgradeRules={upgradeRules}
+      />
+    </Suspense>
   );
 }

@@ -159,9 +159,9 @@ export const es: Messages = {
     applicationExteriorSystem: "Sistema exterior",
     systemsGuide: "Guía de sistemas",
     manufacturer: "{tier} — fabricante",
-    manufacturerPlaceholder: "ej. Sherwin-Williams",
+    manufacturerPlaceholder: "ej. Tu fabricante de pintura",
     paintType: "{tier} — tipo de pintura",
-    paintTypePlaceholder: "ej. Duration Exterior Acrylic Latex",
+    paintTypePlaceholder: "ej. Látex acrílico exterior",
     paintCanUpload: "{tier} — foto del bote",
     paintCanHint: "Sube una foto del bote de pintura para este nivel.",
     findProductWithAi: "Buscar producto con IA",
@@ -199,7 +199,7 @@ export const es: Messages = {
           retry:
             "Intenta de nuevo — obtendremos la imagen directamente de la página del fabricante.",
           specificName:
-            "Usa el nombre de la línea del bote, ej. \"Emerald Rain Refresh\" o \"SuperPaint Interior Acrylic Latex\".",
+            "Usa el nombre exacto de la línea del bote, ej. \"Acrílico exterior premium\" o \"Látex interior mate\".",
           checkApplication:
             "Confirma que Interior o Exterior coincide con el producto que vendes.",
           uploadManual:

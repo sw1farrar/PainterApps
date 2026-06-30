@@ -35,17 +35,20 @@ export default function Header({ variant = "marketing" }: HeaderProps) {
     let cancelled = false;
     setMarketingUser(undefined);
 
-    getMarketingUser().then((user) => {
-      if (!cancelled) setMarketingUser(user);
-    });
+    getMarketingUser()
+      .then((user) => {
+        if (!cancelled) setMarketingUser(user);
+      })
+      .catch(() => {
+        if (!cancelled) setMarketingUser(null);
+      });
 
     return () => {
       cancelled = true;
     };
   }, [pathname]);
 
-  const showSignedInMenu = onFreeTools && marketingUser;
-  const showSignIn = marketingUser === null;
+  const showSignIn = !marketingUser;
   const loginHref = buildLoginHref(onFreeTools ? pathname : null);
 
   if (variant === "minimal") {
@@ -71,13 +74,16 @@ export default function Header({ variant = "marketing" }: HeaderProps) {
         </Link>
 
         <div className="flex items-center gap-3 sm:gap-6 lg:gap-8">
-          {showSignedInMenu ? (
+          {marketingUser ? (
             <div className="hidden md:block">
               <MarketingUserMenu user={marketingUser} />
             </div>
           ) : null}
           {showSignIn ? (
-            <a href={loginHref} className="type-link hidden md:inline">
+            <a
+              href={loginHref}
+              className="type-link inline-flex shrink-0 text-sm font-semibold text-silver-200 hover:text-white"
+            >
               {nav.signIn}
             </a>
           ) : null}
@@ -85,7 +91,7 @@ export default function Header({ variant = "marketing" }: HeaderProps) {
             <LanguageToggle />
           </div>
           <MarketingMobileNav
-            marketingUser={onFreeTools ? marketingUser : null}
+            marketingUser={marketingUser ?? null}
             loginHref={loginHref}
             showSignIn={showSignIn}
           />

@@ -1,31 +1,39 @@
 "use client";
 
 import * as React from "react";
-import { Download, X } from "lucide-react";
+import { Download, Loader2, X } from "lucide-react";
 
 import { ProductMarketingSheetPreview } from "@/components/admin/ProductMarketingSheetPreview";
 import { Button } from "@/components/ui/button";
 import {
   buildProductMarketingSheetView,
   productMarketingSheetFilename,
+  type ProductMarketingSheetView,
 } from "@/lib/product-catalog/product-marketing-sheet";
 import type { CatalogProductRow } from "@/lib/product-catalog/types";
 
 type ProductMarketingSheetModalProps = {
-  product: CatalogProductRow | null;
   open: boolean;
   onClose: () => void;
+  product?: CatalogProductRow | null;
+  view?: ProductMarketingSheetView | null;
+  downloadHref?: string | null;
+  isEnriching?: boolean;
 };
 
 export function ProductMarketingSheetModal({
-  product,
+  product = null,
+  view: viewProp = null,
+  downloadHref: downloadHrefProp = null,
+  isEnriching = false,
   open,
   onClose,
 }: ProductMarketingSheetModalProps) {
-  const view = React.useMemo(
+  const builtView = React.useMemo(
     () => (product ? buildProductMarketingSheetView(product) : null),
     [product],
   );
+  const view = viewProp ?? builtView;
 
   React.useEffect(() => {
     if (!open) return;
@@ -38,10 +46,12 @@ export function ProductMarketingSheetModal({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [open, onClose]);
 
-  if (!open || !product || !view) return null;
+  if (!open || !view) return null;
 
   const filename = productMarketingSheetFilename(view);
-  const downloadHref = `/api/admin/product-catalog/${product.id}/marketing-sheet`;
+  const downloadHref =
+    downloadHrefProp ??
+    (product ? `/api/admin/product-catalog/${product.id}/marketing-sheet` : null);
 
   return (
     <div
@@ -68,14 +78,16 @@ export function ProductMarketingSheetModal({
         </div>
 
         <div className="flex shrink-0 items-center gap-2">
-          <a
-            href={downloadHref}
-            download={filename}
-            className="inline-flex h-10 items-center gap-2 rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground shadow hover:bg-primary/90"
-          >
-            <Download className="h-4 w-4" />
-            Download PDF
-          </a>
+          {downloadHref ? (
+            <a
+              href={downloadHref}
+              download={filename}
+              className="inline-flex h-10 items-center gap-2 rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground shadow hover:bg-primary/90"
+            >
+              <Download className="h-4 w-4" />
+              Download PDF
+            </a>
+          ) : null}
           <Button
             type="button"
             variant="ghost"
@@ -90,14 +102,22 @@ export function ProductMarketingSheetModal({
       </div>
 
       <div
-        className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-8"
+        className="min-h-0 flex-1 overflow-hidden"
         onClick={onClose}
       >
-        <div
-          className="mx-auto max-w-[8.75in]"
-          onClick={(event) => event.stopPropagation()}
-        >
-          <ProductMarketingSheetPreview view={view} />
+        <div className="product-marketing-sheet-preview-stage product-marketing-sheet-preview-stage--modal relative">
+          <div onClick={(event) => event.stopPropagation()}>
+            <ProductMarketingSheetPreview view={view} />
+          </div>
+          {isEnriching ? (
+            <div
+              className="pointer-events-none absolute right-4 top-4 flex items-center gap-2 rounded-full border border-white/15 bg-navy-900/80 px-3 py-1.5 text-xs text-silver-300 shadow-lg backdrop-blur-sm"
+              aria-live="polite"
+            >
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              Updating…
+            </div>
+          ) : null}
         </div>
       </div>
     </div>

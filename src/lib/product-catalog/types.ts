@@ -1,3 +1,5 @@
+import { resolveManufacturerLogoPublicUrl } from "@/lib/product-catalog/manufacturer-logo-public-url";
+
 export type PaintProductApplication = "interior" | "exterior" | "both";
 
 export const PAINT_PRODUCT_APPLICATIONS = [
@@ -90,6 +92,8 @@ export type PaintManufacturerRow = {
 
 export type PaintProductEnrichmentStatus = "pending" | "partial" | "complete";
 export type PaintEnrichmentProposalStatus = "pending" | "accepted" | "declined";
+export type PaintCatalogOrigin = "admin" | "subscriber";
+export type PaintCatalogReviewStatus = "approved" | "pending_review" | "rejected";
 
 export type PaintProductRow = {
   id: string;
@@ -112,6 +116,7 @@ export type PaintProductRow = {
   recommended_uses: string[];
   volume_solids_pct: number | null;
   volume_solids_label: string | null;
+  coverage_sqft_per_gallon: number;
   attribute_source_url: string | null;
   source_url: string | null;
   can_image_url: string | null;
@@ -124,6 +129,10 @@ export type PaintProductRow = {
   enriched_at: string | null;
   enrichment_source_url: string | null;
   is_discontinued: boolean;
+  catalog_origin: PaintCatalogOrigin;
+  catalog_review_status: PaintCatalogReviewStatus;
+  submitted_by_company_id: string | null;
+  submitted_at: string | null;
   discovered_at: string;
   created_by: string | null;
   created_at: string;
@@ -283,12 +292,20 @@ export type CatalogProductRow = PaintProductRow & {
 
 export function toCatalogProductRow(
   product: PaintProductRow,
-  manufacturer: Pick<PaintManufacturerRow, "name" | "logo_url">,
+  manufacturer: Pick<
+    PaintManufacturerRow,
+    "name" | "logo_url" | "logo_storage_path"
+  >,
+  supabaseUrl?: string | null,
 ): CatalogProductRow {
   return {
     ...product,
     manufacturer_name: manufacturer.name,
-    manufacturer_logo_url: manufacturer.logo_url ?? null,
+    manufacturer_logo_url:
+      resolveManufacturerLogoPublicUrl(
+        supabaseUrl ?? process.env.NEXT_PUBLIC_SUPABASE_URL,
+        manufacturer,
+      ) ?? null,
   };
 }
 

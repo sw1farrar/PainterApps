@@ -63,7 +63,7 @@ export async function createXaiResponse(
   if (!apiKey) {
     return {
       success: false,
-      error: "xAI is not configured. Set XAI_API_KEY in your environment.",
+      error: "AI is not configured on this server.",
     };
   }
 
@@ -133,7 +133,7 @@ export async function createXaiResponse(
   } catch {
     return {
       success: false,
-      error: `xAI returned an invalid response (HTTP ${response.status}).`,
+      error: `AI returned an invalid response (HTTP ${response.status}).`,
     };
   }
 
@@ -142,13 +142,13 @@ export async function createXaiResponse(
       success: false,
       error:
         payload.error?.message ??
-        `xAI request failed with status ${response.status}.`,
+        `AI request failed with status ${response.status}.`,
     };
   }
 
   const text = collectResponseText(payload);
   if (!text) {
-    return { success: false, error: "xAI returned an empty response." };
+    return { success: false, error: "AI returned an empty response." };
   }
 
   return {

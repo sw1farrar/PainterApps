@@ -52,7 +52,7 @@ export function ProductMarketingSheetPreview({
 
   return (
     <article
-      className={`product-marketing-sheet ${className}`.trim()}
+      className={`product-marketing-sheet product-marketing-sheet--single-page ${className}`.trim()}
       style={productMarketingSheetDisplayStyle()}
       aria-label={`${view.productName} marketing sheet`}
     >

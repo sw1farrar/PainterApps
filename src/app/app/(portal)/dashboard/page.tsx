@@ -9,6 +9,7 @@ import {
   Users,
 } from "lucide-react";
 
+import { NewEstimateFab } from "@/components/quotes/NewEstimateFab";
 import { PageHeader } from "@/components/portal/PageHeader";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -155,6 +156,7 @@ export default async function DashboardPage() {
 
   const navItems = filterNavByRole(session.profile.role);
   const quickLinks = navItems.filter((item) => item.href !== "/app/dashboard");
+  const canCreateQuotes = navItems.some((item) => item.href === "/app/quotes");
 
   const stats = [
     {
@@ -184,7 +186,7 @@ export default async function DashboardPage() {
   ];
 
   return (
-    <div className="min-w-0 space-y-8">
+    <div className="min-w-0 space-y-8 pb-24">
       <PageHeader
         title="Dashboard"
         description={
@@ -377,6 +379,10 @@ export default async function DashboardPage() {
           {session.company?.name}
         </Badge>
       </div>
+
+      {canCreateQuotes ? (
+        <NewEstimateFab href="/app/quotes/new" />
+      ) : null}
     </div>
   );
 }

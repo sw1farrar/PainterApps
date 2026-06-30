@@ -1,5 +1,6 @@
 import "server-only";
 
+import { cache } from "react";
 import { redirect } from "next/navigation";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
@@ -66,13 +67,13 @@ async function loadProfile(userId: string, fullName: string | null) {
   }
 }
 
-export async function getAuthUser() {
+export const getAuthUser = cache(async () => {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   return user;
-}
+});
 
 export async function isEmailConfirmed(): Promise<boolean> {
   const user = await getAuthUser();
@@ -86,7 +87,7 @@ export async function requireEmailConfirmed() {
   }
 }
 
-export async function getSession(): Promise<AppSession | null> {
+export const getSession = cache(async (): Promise<AppSession | null> => {
   const supabase = await createClient();
   const {
     data: { user },
@@ -114,16 +115,13 @@ export async function getSession(): Promise<AppSession | null> {
   }
 
   return { profile, company };
-}
+});
 
 export async function requireSession(): Promise<AppSession> {
   const session = await getSession();
 
   if (!session) {
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const user = await getAuthUser();
 
     if (!user) redirect("/login");
 

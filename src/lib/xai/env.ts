@@ -24,7 +24,7 @@ export function isXaiConfigured(): boolean {
 
 export function getXaiEnvError(): string | null {
   if (!getXaiApiKey()) {
-    return "xAI is not configured. Set XAI_API_KEY in your environment.";
+    return "AI is not configured on this server.";
   }
 
   return null;

@@ -159,9 +159,9 @@ export const en: Messages = {
     applicationExteriorSystem: "Exterior system",
     systemsGuide: "Systems guide",
     manufacturer: "{tier} — manufacturer",
-    manufacturerPlaceholder: "e.g. Sherwin-Williams",
+    manufacturerPlaceholder: "e.g. Your paint manufacturer",
     paintType: "{tier} — paint type",
-    paintTypePlaceholder: "e.g. Duration Exterior Acrylic Latex",
+    paintTypePlaceholder: "e.g. Exterior acrylic latex",
     paintCanUpload: "{tier} — paint can photo",
     paintCanHint: "Upload a photo of the paint can for this package level.",
     findProductWithAi: "Find product with AI",
@@ -199,7 +199,7 @@ export const en: Messages = {
           retry:
             "Try again — we'll pull the image directly from the manufacturer's product page.",
           specificName:
-            "Use the product line name from the can label, e.g. \"Emerald Rain Refresh\" or \"SuperPaint Interior Acrylic Latex\".",
+            "Use the exact product line name from the can label, e.g. \"Premium Exterior Acrylic\" or \"Interior Flat Latex\".",
           checkApplication:
             "Confirm Interior or Exterior matches the product you're selling.",
           uploadManual:

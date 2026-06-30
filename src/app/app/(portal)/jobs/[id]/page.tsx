@@ -17,17 +17,11 @@ import { formatPhoneDisplay } from "@/lib/phone";
 import { requireOnboarded } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
 import { formatCurrency } from "@/lib/utils";
+import { formatQuoteTierLabel } from "@/lib/quotes/tier-labels";
 import type { Customer, Quote, QuoteTierName } from "@/types/database";
 import { JobPhotosPanel } from "./JobPhotosPanel";
 import { JobStatusPanel } from "./JobStatusPanel";
 import { JobWorkPanel } from "./JobWorkPanel";
-
-const TIER_LABELS: Record<QuoteTierName, string> = {
-  good: "Good",
-  better: "Better",
-  best: "Best",
-  beautiful: "Beautiful",
-};
 
 type PageProps = {
   params: Promise<{ id: string }>;
@@ -89,7 +83,7 @@ export default async function JobDetailPage({ params }: PageProps) {
             {jobRow.status}
           </Badge>
           <Badge variant="outline">
-            {TIER_LABELS[jobRow.tier]} tier
+            {formatQuoteTierLabel(jobRow.tier)} tier
           </Badge>
         </div>
       </div>
@@ -117,7 +111,7 @@ export default async function JobDetailPage({ params }: PageProps) {
                 Selected tier
               </p>
               <p className="mt-1 text-lg font-semibold text-foreground">
-                {TIER_LABELS[jobRow.tier]}
+                {formatQuoteTierLabel(jobRow.tier)}
               </p>
             </div>
           </CardContent>

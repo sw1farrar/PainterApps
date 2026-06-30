@@ -1,31 +1,11 @@
 "use client";
 
-import { useCallback, useMemo, useState, useTransition } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import {
-  ArrowLeft,
-  ArrowRight,
-  Copy,
-  CopyPlus,
-  Download,
-  Loader2,
-  Plus,
-  Send,
-  Trash2,
-} from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { AddressFields } from "@/components/forms/AddressFields";
 import { AppDrawer } from "@/components/portal/AppDrawer";
-import { PhotoGalleryUpload } from "@/components/storage/PhotoGalleryUpload";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -35,1008 +15,669 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
+import { QUOTE_PAINT_TIERS } from "@/lib/paint-library/types";
+import { estimateGallons } from "@/lib/quotes/pricing";
+import type { LineItemType } from "@/types/database";
 import {
-  createQuote,
-  duplicateQuote,
-  saveLineItems,
-  saveRooms,
-  saveTiers,
-  sendQuote,
-  updateQuote,
-  type LineItemInput,
-  type RoomInput,
-  type TierInput,
-} from "@/app/app/(portal)/quotes/actions";
+  getEditorOnboardingSeen,
+  getPaintOnboardingSeen,
+  setEditorOnboardingSeen,
+  setPaintOnboardingSeen,
+} from "@/lib/quotes/editor-mode";
+import { QuoteUnsavedPrompt } from "./QuoteUnsavedPrompt";
+import { QuoteCommandPalette } from "./QuoteCommandPalette";
+import { SaveQuoteTemplateDialog } from "./SaveQuoteTemplateDialog";
 import {
-  buildLineItemsFromRooms,
-  getCompanyPricingSummary,
-} from "@/lib/quotes/estimate-from-rooms";
+  QuoteEditorOnboarding,
+  type QuoteOnboardingMode,
+} from "./QuoteEditorOnboarding";
+import { QuoteModalLayout } from "./QuoteModalLayout";
+import { QuoteHeader } from "./QuoteHeader";
+import { QuoteMobileFooter } from "./QuoteMobileFooter";
+import { QuotePreviewPane } from "./QuotePreviewPane";
+import { QuoteStepper } from "./QuoteStepper";
+import { QuoteTotalsBar } from "./QuoteTotalsBar";
 import {
-  calculateQuoteTotals,
-  calculateTierPrices,
-  estimateGallons,
-  lineItemsSubtotal,
-} from "@/lib/quotes/pricing";
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
+import { AreasStep } from "./steps/AreasStep";
+import { BasicsStep } from "./steps/BasicsStep";
+import { LineItemsStep } from "./steps/LineItemsStep";
+import { OptionsStep } from "./steps/OptionsStep";
+import { PaintOptionsStep } from "./steps/PaintOptionsStep";
+import { PolishStep } from "./steps/PolishStep";
+import { SendStep } from "./steps/SendStep";
+import { useQuoteAutosave } from "./hooks/useQuoteAutosave";
+import { useQuoteKeyboardShortcuts } from "./hooks/useQuoteKeyboardShortcuts";
+import { QuoteDocumentLayout } from "@/components/quotes/document/QuoteDocumentLayout";
 import {
-  hasMinimumJobAddress,
-  type JobAddressFields,
-} from "@/lib/address";
-import { formatCurrency } from "@/lib/utils";
-import type {
-  Company,
-  Customer,
-  LineItemType,
-  Quote,
-  QuoteLineItem,
-  QuoteRoom,
-  QuoteTier,
-  QuoteTierName,
-  QuoteUpgradeRules,
-} from "@/types/database";
+  QUOTE_STEP_META,
+  useQuoteBuilder,
+  type UseQuoteBuilderOptions,
+} from "./hooks/useQuoteBuilder";
 
-const STEPS = ["setup", "estimator", "line-items", "tiers", "review"] as const;
-type Step = (typeof STEPS)[number];
-
-const TIER_NAMES: QuoteTierName[] = ["good", "better", "best", "beautiful"];
-
-const TIER_LABELS: Record<QuoteTierName, string> = {
-  good: "Good",
-  better: "Better",
-  best: "Best",
-  beautiful: "Beautiful",
+type QuoteBuilderProps = UseQuoteBuilderOptions & {
+  onDirtyChange?: (dirty: boolean) => void;
+  onSavingChange?: (saving: boolean) => void;
+  onFlushReady?: (flush: () => Promise<void>) => void;
 };
-
-const TIER_DEFAULTS: Record<
-  QuoteTierName,
-  { features: string[]; benefits: string[] }
-> = {
-  good: {
-    features: ["Standard paint", "Basic prep", "1-year warranty"],
-    benefits: ["Affordable quality finish", "Reliable timeline"],
-  },
-  better: {
-    features: ["Premium paint", "Enhanced prep", "2-year warranty"],
-    benefits: ["Better coverage & durability", "Smoother finish"],
-  },
-  best: {
-    features: ["Top-tier paint", "Full prep & repair", "3-year warranty"],
-    benefits: ["Maximum durability", "Designer-grade finish"],
-  },
-  beautiful: {
-    features: ["Luxury paint system", "White-glove service", "5-year warranty"],
-    benefits: ["Showroom-quality results", "Priority scheduling"],
-  },
-};
-
-const EMPTY_ROOM: RoomInput = {
-  name: "",
-  surface_type: "drywall",
-  condition: "good",
-  sq_ft: 0,
-  color_codes: "",
-  coats: 2,
-  prep_work: "",
-};
-
-const EMPTY_LINE_ITEM: LineItemInput = {
-  type: "labor",
-  description: "",
-  qty: 1,
-  unit_cost: 0,
-  markup: 0,
-};
-
-type QuoteBuilderProps = {
-  mode: "create" | "edit";
-  quote?: Quote;
-  rooms?: QuoteRoom[];
-  lineItems?: QuoteLineItem[];
-  tiers?: QuoteTier[];
-  customers: Customer[];
-  company: Company;
-  upgradeRules?: QuoteUpgradeRules | null;
-};
-
-function parseLines(value: string): string[] {
-  return value
-    .split("\n")
-    .map((line) => line.trim())
-    .filter(Boolean);
-}
-
-function joinLines(values: string[]): string {
-  return values.join("\n");
-}
 
 export function QuoteBuilder({
-  mode,
-  quote,
-  rooms: initialRooms = [],
-  lineItems: initialLineItems = [],
-  tiers: initialTiers = [],
-  customers,
-  company,
-  upgradeRules,
+  onDirtyChange,
+  onSavingChange,
+  onFlushReady,
+  workspaceMode = "page",
+  onWorkspaceClose,
+  onPopOut,
+  ...props
 }: QuoteBuilderProps) {
   const router = useRouter();
-  const [isPending, startTransition] = useTransition();
-  const [step, setStep] = useState<Step>("setup");
-  const [error, setError] = useState<string | null>(null);
-  const [quoteId, setQuoteId] = useState(quote?.id ?? "");
-  const [status, setStatus] = useState(quote?.status ?? "draft");
+  const builder = useQuoteBuilder({
+    ...props,
+    workspaceMode,
+    onWorkspaceClose,
+    onPopOut,
+  });
+  const {
+    mode,
+    step,
+    stepIndex,
+    maxReachedIndex,
+    editorMode,
+    handleEditorModeChange,
+    goToStep,
+    costBreakdown,
+    error,
+    isPending,
+    quoteId,
+    status,
+    quoteName,
+    setQuoteName,
+    jobType,
+    setJobType,
+    estimationMode,
+    setEstimationMode,
+    customMessage,
+    setCustomMessage,
+    customerId,
+    setCustomerId,
+    jobAddress,
+    setJobAddress,
+    beforePhotos,
+    setBeforePhotos,
+    rooms,
+    setRooms,
+    selectedAreaIndex,
+    setSelectedAreaIndex,
+    areaSubtotals,
+    surfacesForSelectedArea,
+    lineItemsForSelectedArea,
+    globalManualLineItems,
+    addAreaByName,
+    updateArea,
+    deleteArea,
+    reorderAreas,
+    duplicateArea,
+    bulkDeleteAreas,
+    bulkDuplicateAreas,
+    bulkSetAreasOptional,
+    applyWallDimensions,
+    addSurfaceToArea,
+    updateSurfaceAt,
+    removeSurfaceAt,
+    openLineItemForArea,
+    regenerateArea,
+    company,
+    lineItems,
+    setLineItems,
+    tierState,
+    pricingSummary,
+    subtotal,
+    quoteTotals,
+    tierBase,
+    autoTierPrices,
+    roomDrawerOpen,
+    setRoomDrawerOpen,
+    lineItemDrawerOpen,
+    setLineItemDrawerOpen,
+    editingRoomIndex,
+    editingLineItemIndex,
+    roomDraft,
+    setRoomDraft,
+    lineItemDraft,
+    setLineItemDraft,
+    coverage,
+    selectedCustomer,
+    portalUrl,
+    customers,
+    addCustomer,
+    isEditable,
+    getDraft,
+    saveDraftNow,
+    syncChildrenFromServer,
+    handleNext,
+    handleBack,
+    openRoomDrawer,
+    saveRoomDraft,
+    openLineItemDrawer,
+    generateFromRooms,
+    saveLineItemDraft,
+    applyAutoPricing,
+    addOptionalPreset,
+    toggleLineItemOptional,
+    removeLineItemAt,
+    updateTier,
+    tierPaintConfig,
+    paintProducts,
+    paintPresets,
+    paintableSqFt,
+    updateTierPaint,
+    applyPaintPreset,
+    applyCompanyPaintDefaults,
+    openCustomOptionalItem,
+    handleSendQuote,
+    handleCopyPortalLink,
+    handleDuplicateQuote,
+    handleReviseToDraft,
+    handleResendQuote,
+    jobId,
+    parseLines,
+    joinLines,
+  } = builder;
 
-  const [customerId, setCustomerId] = useState(quote?.customer_id ?? "");
-  const [jobAddress, setJobAddress] = useState<JobAddressFields>(() => ({
-    job_address: quote?.job_address ?? "",
-    job_address_line2: quote?.job_address_line2 ?? "",
-    job_city: quote?.job_city ?? "",
-    job_state: quote?.job_state ?? "",
-    job_zip: quote?.job_zip ?? "",
-  }));
-  const [beforePhotos, setBeforePhotos] = useState<string[]>(
-    quote?.before_photos ?? [],
-  );
+  const [paletteOpen, setPaletteOpen] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [templateDialogOpen, setTemplateDialogOpen] = useState(false);
+  const [onboardingMode, setOnboardingMode] =
+    useState<QuoteOnboardingMode | null>(null);
+  const [basicsDrawerOpen, setBasicsDrawerOpen] = useState(false);
+  const [pageExitPromptOpen, setPageExitPromptOpen] = useState(false);
 
-  const [rooms, setRooms] = useState<RoomInput[]>(
-    initialRooms.map((r) => ({
-      id: r.id,
-      name: r.name,
-      surface_type: r.surface_type,
-      condition: r.condition,
-      sq_ft: r.sq_ft,
-      color_codes: r.color_codes,
-      coats: r.coats,
-      prep_work: r.prep_work,
-    })),
-  );
-
-  const [lineItems, setLineItems] = useState<LineItemInput[]>(
-    initialLineItems.map((item) => ({
-      id: item.id,
-      type: item.type,
-      description: item.description,
-      qty: item.qty,
-      unit_cost: item.unit_cost,
-      markup: item.markup,
-    })),
-  );
-
-  const pricingSummary = useMemo(
-    () => getCompanyPricingSummary(company),
-    [company],
-  );
-
-  const subtotal = useMemo(
-    () =>
-      lineItemsSubtotal(
-        lineItems.map((item, i) => ({
-          id: item.id ?? `temp-${i}`,
-          quote_id: quoteId,
-          type: item.type,
-          description: item.description,
-          qty: item.qty,
-          unit_cost: item.unit_cost,
-          markup: item.markup,
-        })),
-      ),
-    [lineItems, quoteId],
-  );
-
-  const quoteTotals = useMemo(
-    () => calculateQuoteTotals(subtotal, company),
-    [subtotal, company],
-  );
-
-  const tierBase = quoteTotals.beforeTax;
-
-  const autoTierPrices = useMemo(
-    () =>
-      calculateTierPrices(
-        tierBase,
-        upgradeRules,
-        company.default_margins as Record<string, number>,
-      ),
-    [tierBase, upgradeRules, company.default_margins],
-  );
-
-  const [tierState, setTierState] = useState<Record<QuoteTierName, TierInput>>(
-    () => {
-      const state = {} as Record<QuoteTierName, TierInput>;
-      TIER_NAMES.forEach((tier) => {
-        const existing = initialTiers.find((t) => t.tier === tier);
-        const auto = autoTierPrices[tier];
-        state[tier] = {
-          tier,
-          price: existing?.price ?? auto.price,
-          margin: existing?.margin ?? auto.margin,
-          features: existing?.features?.length
-            ? existing.features
-            : TIER_DEFAULTS[tier].features,
-          benefits: existing?.benefits?.length
-            ? existing.benefits
-            : TIER_DEFAULTS[tier].benefits,
-        };
-      });
-      return state;
-    },
-  );
-
-  const [roomDrawerOpen, setRoomDrawerOpen] = useState(false);
-  const [lineItemDrawerOpen, setLineItemDrawerOpen] = useState(false);
-  const [editingRoomIndex, setEditingRoomIndex] = useState<number | null>(null);
-  const [editingLineItemIndex, setEditingLineItemIndex] = useState<
-    number | null
-  >(null);
-  const [roomDraft, setRoomDraft] = useState<RoomInput>(EMPTY_ROOM);
-  const [lineItemDraft, setLineItemDraft] =
-    useState<LineItemInput>(EMPTY_LINE_ITEM);
-
-  const coverage = company.coverage_sqft_per_gallon || 350;
-  const stepIndex = STEPS.indexOf(step);
-
-  const ensureQuote = useCallback(async (): Promise<string | null> => {
-    if (quoteId) return quoteId;
-    if (!customerId || !hasMinimumJobAddress(jobAddress)) {
-      setError(
-        "Select a customer and enter the full job address (street, city, state, ZIP).",
-      );
-      return null;
+  useEffect(() => {
+    const seen = getEditorOnboardingSeen();
+    if (!seen[editorMode]) {
+      setOnboardingMode(editorMode);
     }
+  }, [editorMode]);
 
-    const result = await createQuote({
-      customer_id: customerId,
-      ...jobAddress,
-      job_address: jobAddress.job_address.trim(),
-      before_photos: beforePhotos,
-    });
+  useEffect(() => {
+    if (step !== "paint-options" || getPaintOnboardingSeen()) return;
+    setOnboardingMode((current) => current ?? "paint");
+  }, [step]);
 
-    if (!result.success) {
-      setError(result.error);
-      return null;
-    }
+  const openPalette = useCallback(() => setPaletteOpen(true), []);
+  const openPreview = useCallback(() => setPreviewOpen(true), []);
 
-    setQuoteId(result.data.id);
-    router.replace(`/app/quotes/${result.data.id}`);
-    return result.data.id;
-  }, [quoteId, customerId, jobAddress, beforePhotos, router, company.id]);
+  useQuoteKeyboardShortcuts({
+    enabled: status === "draft",
+    editorMode,
+    step,
+    onOpenPalette: openPalette,
+    onSave: saveDraftNow,
+    onNext: handleNext,
+    onAddArea:
+      step === "estimator"
+        ? () => addAreaByName("New Area")
+        : undefined,
+    onDuplicateArea:
+      step === "estimator"
+        ? () => duplicateArea(selectedAreaIndex)
+        : undefined,
+  });
 
-  const saveSetup = async () => {
-    setError(null);
-    const id = await ensureQuote();
-    if (!id) return false;
+  const {
+    status: autosaveStatus,
+    lastSavedAt,
+    flushSave,
+    hasPendingChanges,
+  } = useQuoteAutosave({
+    quoteId,
+    enabled: Boolean(quoteId) && status === "draft",
+    draft: getDraft(),
+  });
 
-    const result = await updateQuote(id, {
-      customer_id: customerId,
-      ...jobAddress,
-      job_address: jobAddress.job_address.trim(),
-      before_photos: beforePhotos,
-    });
+  const isWorkspaceDirty =
+    status === "draft" &&
+    (hasPendingChanges ||
+      autosaveStatus === "pending" ||
+      autosaveStatus === "saving");
 
-    if (!result.success) {
-      setError(result.error);
-      return false;
-    }
-    return true;
-  };
+  useEffect(() => {
+    onDirtyChange?.(isWorkspaceDirty);
+  }, [isWorkspaceDirty, onDirtyChange]);
 
-  const handleNext = () => {
-    startTransition(async () => {
-      setError(null);
-      if (step === "setup") {
-        const ok = await saveSetup();
-        if (ok) setStep("estimator");
-        return;
-      }
-      if (step === "estimator") {
-        const id = await ensureQuote();
-        if (!id) return;
-        const result = await saveRooms(id, rooms);
-        if (!result.success) {
-          setError(result.error);
-          return;
-        }
-        if (!lineItems.length && rooms.length) {
-          setLineItems(buildLineItemsFromRooms(rooms, company));
-        }
-        setStep("line-items");
-        return;
-      }
-      if (step === "line-items") {
-        const id = await ensureQuote();
-        if (!id) return;
-        const result = await saveLineItems(id, lineItems);
-        if (!result.success) {
-          setError(result.error);
-          return;
-        }
-        setStep("tiers");
-        return;
-      }
-      if (step === "tiers") {
-        const id = await ensureQuote();
-        if (!id) return;
-        const tiersToSave = TIER_NAMES.map((tier) => tierState[tier]);
-        const result = await saveTiers(id, tiersToSave);
-        if (!result.success) {
-          setError(result.error);
-          return;
-        }
-        setStep("review");
-      }
-    });
-  };
+  useEffect(() => {
+    onSavingChange?.(autosaveStatus === "saving");
+  }, [autosaveStatus, onSavingChange]);
 
-  const handleBack = () => {
-    const prev = STEPS[stepIndex - 1];
-    if (prev) setStep(prev);
-  };
+  const onFlushReadyRef = useRef(onFlushReady);
+  onFlushReadyRef.current = onFlushReady;
 
-  const openRoomDrawer = (index: number | null = null) => {
-    if (index !== null) {
-      setRoomDraft(rooms[index]);
-      setEditingRoomIndex(index);
-    } else {
-      setRoomDraft({ ...EMPTY_ROOM });
-      setEditingRoomIndex(null);
-    }
-    setRoomDrawerOpen(true);
-  };
+  useEffect(() => {
+    onFlushReadyRef.current?.(flushSave);
+  }, [flushSave]);
 
-  const saveRoomDraft = () => {
-    if (!roomDraft.name.trim()) return;
-    if (editingRoomIndex !== null) {
-      setRooms((prev) =>
-        prev.map((room, i) => (i === editingRoomIndex ? roomDraft : room)),
-      );
-    } else {
-      setRooms((prev) => [...prev, roomDraft]);
-    }
-    setRoomDrawerOpen(false);
-  };
-
-  const openLineItemDrawer = (index: number | null = null) => {
-    if (index !== null) {
-      setLineItemDraft(lineItems[index]);
-      setEditingLineItemIndex(index);
-    } else {
-      setLineItemDraft({
-        ...EMPTY_LINE_ITEM,
-        markup: pricingSummary.materialMarkup,
-      });
-      setEditingLineItemIndex(null);
-    }
-    setLineItemDrawerOpen(true);
-  };
-
-  const generateFromRooms = () => {
-    if (!rooms.length) {
-      setError("Add rooms in the estimator before generating line items.");
+  const leaveWorkspace = useCallback(async () => {
+    if (workspaceMode === "modal" && onWorkspaceClose) {
+      onWorkspaceClose();
       return;
     }
+    router.push("/app/quotes");
+  }, [onWorkspaceClose, router, workspaceMode]);
 
-    setLineItems(buildLineItemsFromRooms(rooms, company));
-    setError(null);
-  };
-
-  const saveLineItemDraft = () => {
-    if (!lineItemDraft.description.trim()) return;
-    if (editingLineItemIndex !== null) {
-      setLineItems((prev) =>
-        prev.map((item, i) =>
-          i === editingLineItemIndex ? lineItemDraft : item,
-        ),
-      );
-    } else {
-      setLineItems((prev) => [...prev, lineItemDraft]);
-    }
-    setLineItemDrawerOpen(false);
-  };
-
-  const applyAutoPricing = () => {
-    setTierState((prev) => {
-      const next = { ...prev };
-      TIER_NAMES.forEach((tier) => {
-        next[tier] = {
-          ...next[tier],
-          price: autoTierPrices[tier].price,
-          margin: autoTierPrices[tier].margin,
-        };
-      });
-      return next;
-    });
-  };
-
-  const handleSendQuote = () => {
-    startTransition(async () => {
-      setError(null);
-      const id = await ensureQuote();
-      if (!id) return;
-
-      const tiersToSave = TIER_NAMES.map((tier) => tierState[tier]);
-      await saveTiers(id, tiersToSave);
-
-      const result = await sendQuote(id);
-      if (!result.success) {
-        setError(result.error);
-        return;
-      }
-      setStatus("sent");
-      toast.success("Quote sent to customer.");
-    });
-  };
-
-  const selectedCustomer = customers.find((c) => c.id === customerId);
-
-  const portalUrl =
-    quoteId && company.slug && selectedCustomer?.portal_token
-      ? `${typeof window !== "undefined" ? window.location.origin : ""}/${company.slug}/quotes/${quoteId}?portal_token=${selectedCustomer.portal_token}`
-      : null;
-
-  const handleCopyPortalLink = async () => {
-    if (!portalUrl) {
-      toast.error("Save the quote and select a customer first.");
+  const handleExit = useCallback(() => {
+    if (isWorkspaceDirty) {
+      if (workspaceMode === "modal") return;
+      setPageExitPromptOpen(true);
       return;
     }
-
-    try {
-      await navigator.clipboard.writeText(portalUrl);
-      toast.success("Customer portal link copied.");
-    } catch {
-      toast.error("Could not copy link.");
-    }
-  };
-
-  const handleDuplicateQuote = () => {
-    if (!quoteId) return;
-
-    startTransition(async () => {
-      const result = await duplicateQuote(quoteId);
-      if (!result.success) {
-        setError(result.error);
-        toast.error(result.error ?? "Failed to duplicate quote.");
-        return;
+    void (async () => {
+      if (quoteId && status === "draft") {
+        await flushSave();
+        if (workspaceMode === "page") {
+          toast.success("Draft saved");
+        }
       }
+      await leaveWorkspace();
+    })();
+  }, [
+    flushSave,
+    isWorkspaceDirty,
+    leaveWorkspace,
+    quoteId,
+    status,
+    workspaceMode,
+  ]);
 
-      toast.success("Quote duplicated.");
-      router.push(`/app/quotes/${result.data!.id}`);
-    });
+  const handleSaveAndExit = useCallback(async () => {
+    if (quoteId && status === "draft") {
+      await flushSave();
+    }
+    setPageExitPromptOpen(false);
+    await leaveWorkspace();
+  }, [flushSave, leaveWorkspace, quoteId, status]);
+
+  const dismissOnboarding = () => {
+    if (onboardingMode === "paint") {
+      setPaintOnboardingSeen();
+    } else if (onboardingMode) {
+      setEditorOnboardingSeen(onboardingMode);
+    }
+    setOnboardingMode(null);
   };
 
-  const totalGallons = rooms.reduce(
-    (sum, room) =>
-      sum + estimateGallons(room.sq_ft, room.coats, coverage),
-    0,
-  );
+  const stepPanelClassName =
+    workspaceMode === "page" || workspaceMode === "document"
+      ? workspaceMode === "document"
+        ? "min-h-0"
+        : "flex min-h-0 flex-1 flex-col"
+      : isEditable || step === "review"
+        ? "min-h-[320px]"
+        : "pointer-events-none min-h-[320px] opacity-60";
 
-  return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <p className="type-eyebrow">Quote Builder</p>
-          <h1 className="font-display mt-1 text-2xl text-white sm:text-3xl">
-            {mode === "create" ? "New Quote" : "Edit Quote"}
-          </h1>
-        </div>
-        {status !== "draft" ? (
-          <Badge variant={status === "accepted" ? "default" : "secondary"}>
-            {status}
-          </Badge>
+  const stepPanel = (
+    <div className={stepPanelClassName}>
+        {step === "setup" ? (
+          props.skipSetup ? (
+            <div className="rounded-lg border border-border bg-muted/20 px-4 py-3 text-sm">
+              <p className="text-muted-foreground">
+                Customer and job details were set on the start screen.{" "}
+                <button
+                  type="button"
+                  className="font-medium text-primary underline-offset-4 hover:underline"
+                  onClick={() => setBasicsDrawerOpen(true)}
+                >
+                  Edit job details
+                </button>
+              </p>
+            </div>
+          ) : (
+            <BasicsStep
+              customers={customers}
+              customerId={customerId}
+              onCustomerIdChange={setCustomerId}
+              onCustomerCreated={addCustomer}
+              jobType={jobType}
+              onJobTypeChange={setJobType}
+              estimationMode={estimationMode}
+              onEstimationModeChange={setEstimationMode}
+              jobAddress={jobAddress}
+              onJobAddressChange={setJobAddress}
+              beforePhotos={beforePhotos}
+              onBeforePhotosChange={setBeforePhotos}
+              quoteId={quoteId || undefined}
+              selectedCustomer={selectedCustomer}
+            />
+          )
         ) : null}
-      </div>
 
-      <Tabs value={step} onValueChange={(v) => setStep(v as Step)}>
-        <TabsList className="grid h-auto w-full grid-cols-2 gap-1 p-1 sm:grid-cols-5">
-          <TabsTrigger value="setup" className="text-xs sm:text-sm">
-            Setup
-          </TabsTrigger>
-          <TabsTrigger value="estimator" className="text-xs sm:text-sm">
-            Estimator
-          </TabsTrigger>
-          <TabsTrigger value="line-items" className="text-xs sm:text-sm">
-            Line Items
-          </TabsTrigger>
-          <TabsTrigger value="tiers" className="text-xs sm:text-sm">
-            Tiers
-          </TabsTrigger>
-          <TabsTrigger value="review" className="text-xs sm:text-sm">
-            Review
-          </TabsTrigger>
-        </TabsList>
+        {step === "estimator" ? (
+          <AreasStep
+            fillWorkspace={workspaceMode === "page"}
+            rooms={rooms}
+            selectedAreaIndex={selectedAreaIndex}
+            areaSubtotals={areaSubtotals}
+            surfacesForSelectedArea={surfacesForSelectedArea}
+            lineItemsForSelectedArea={lineItemsForSelectedArea}
+            globalManualLineItems={globalManualLineItems}
+            estimationMode={estimationMode}
+            company={company}
+            coverage={coverage}
+            pricingSummary={pricingSummary}
+            onSelectArea={setSelectedAreaIndex}
+            onReorderAreas={reorderAreas}
+            onAddArea={addAreaByName}
+            onOpenCustomArea={() => openRoomDrawer()}
+            onUpdateArea={updateArea}
+            onApplyDimensions={applyWallDimensions}
+            onDuplicateArea={duplicateArea}
+            onDeleteArea={deleteArea}
+            onAddSurface={addSurfaceToArea}
+            onUpdateSurface={updateSurfaceAt}
+            onRemoveSurface={removeSurfaceAt}
+            onEditRoom={openRoomDrawer}
+            onRegenerateAll={generateFromRooms}
+            onRegenerateArea={regenerateArea}
+            onAddLineItemForArea={openLineItemForArea}
+            onAddGlobalLineItem={() => openLineItemForArea(null)}
+            onEditGlobalLineItem={openLineItemDrawer}
+            onRemoveGlobalLineItem={removeLineItemAt}
+            lineItems={lineItems}
+            onToggleLineItemOptional={toggleLineItemOptional}
+            powerMode={editorMode === "power"}
+            onBulkDelete={bulkDeleteAreas}
+            onBulkDuplicate={bulkDuplicateAreas}
+            onBulkSetOptional={bulkSetAreasOptional}
+          />
+        ) : null}
 
-        <TabsContent value="setup" className="mt-6 space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Project Setup</CardTitle>
-              <CardDescription>
-                Choose the customer and job details for this quote.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="customer">Customer</Label>
-                <Select value={customerId} onValueChange={setCustomerId}>
-                  <SelectTrigger id="customer">
-                    <SelectValue placeholder="Select customer" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {customers.map((customer) => (
-                      <SelectItem key={customer.id} value={customer.id}>
-                        {customer.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+        {step === "line-items" ? (
+          <LineItemsStep
+            lineItems={lineItems}
+            subtotal={subtotal}
+            quoteTotals={quoteTotals}
+            hasRooms={rooms.length > 0}
+            onGenerateFromRooms={generateFromRooms}
+            onAddLineItem={() => openLineItemDrawer()}
+            onEditLineItem={openLineItemDrawer}
+            onRemoveLineItem={(index) =>
+              setLineItems((prev) => prev.filter((_, i) => i !== index))
+            }
+          />
+        ) : null}
 
-              <div className="space-y-3">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <Label>Job site address</Label>
-                  {selectedCustomer ? (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() =>
-                        setJobAddress({
-                          job_address: selectedCustomer.address ?? "",
-                          job_address_line2:
-                            selectedCustomer.address_line2 ?? "",
-                          job_city: selectedCustomer.city ?? "",
-                          job_state: selectedCustomer.state ?? "",
-                          job_zip: selectedCustomer.zip ?? "",
-                        })
-                      }
-                    >
-                      Use customer address
-                    </Button>
-                  ) : null}
-                </div>
-                <AddressFields
-                  idPrefix="job"
-                  value={{
-                    address: jobAddress.job_address,
-                    address_line2: jobAddress.job_address_line2 ?? "",
-                    city: jobAddress.job_city ?? "",
-                    state: jobAddress.job_state ?? "",
-                    zip: jobAddress.job_zip ?? "",
-                  }}
-                  onChange={(value) =>
-                    setJobAddress({
-                      job_address: value.address ?? "",
-                      job_address_line2: value.address_line2 ?? "",
-                      job_city: value.city ?? "",
-                      job_state: value.state ?? "",
-                      job_zip: value.zip ?? "",
-                    })
-                  }
-                  line1Label="Job street address"
-                  required
-                />
-              </div>
+        {step === "paint-options" ? (
+          <PaintOptionsStep
+            company={company}
+            paintableSqFt={paintableSqFt}
+            tierPaintConfig={tierPaintConfig}
+            products={paintProducts}
+            presets={paintPresets}
+            onTierPaintChange={updateTierPaint}
+            onApplyCompanyDefaults={applyCompanyPaintDefaults}
+            onApplyPreset={applyPaintPreset}
+          />
+        ) : null}
 
-              <PhotoGalleryUpload
-                photos={beforePhotos}
-                onChange={setBeforePhotos}
-                quoteId={quoteId || undefined}
-                label="Before photos"
-                description="Upload photos of the job site before work begins."
-              />
-            </CardContent>
-          </Card>
-        </TabsContent>
+        {step === "tiers" ? (
+          <OptionsStep
+            lineItems={lineItems}
+            materialMarkup={0}
+            onAddPreset={addOptionalPreset}
+            onToggleOptional={toggleLineItemOptional}
+            onRemoveItem={removeLineItemAt}
+            onAddCustomOptional={openCustomOptionalItem}
+          />
+        ) : null}
 
-        <TabsContent value="estimator" className="mt-6 space-y-4">
-          <Card className="border-border/60 bg-muted/20">
-            <CardContent className="flex flex-wrap gap-x-6 gap-y-2 py-4 text-sm text-muted-foreground">
-              <span>
-                Painter: {formatCurrency(pricingSummary.painterRate)}/hr
-              </span>
-              <span>Prep: {formatCurrency(pricingSummary.prepRate)}/hr</span>
-              <span>Materials: +{pricingSummary.materialMarkup}% markup</span>
-              <span>Overhead: {pricingSummary.overheadPct}%</span>
-              <span>Tax: {pricingSummary.taxRate}%</span>
-            </CardContent>
-          </Card>
-
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <h2 className="text-lg font-semibold text-foreground">Rooms</h2>
-              <p className="text-sm text-muted-foreground">
-                {totalGallons} gallons estimated · {coverage} sq ft/gal coverage
-              </p>
-            </div>
-            <Button size="sm" onClick={() => openRoomDrawer()}>
-              <Plus className="h-4 w-4" />
-              Add Room
-            </Button>
-          </div>
-
-          {rooms.length === 0 ? (
-            <Card>
-              <CardContent className="py-10 text-center text-muted-foreground">
-                No rooms yet. Add rooms to estimate paint quantities.
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="grid gap-3">
-              {rooms.map((room, index) => {
-                const gallons = estimateGallons(
-                  room.sq_ft,
-                  room.coats,
-                  coverage,
-                );
-                return (
-                  <Card key={`${room.name}-${index}`}>
-                    <CardContent className="flex items-start justify-between gap-4 p-4">
-                      <div className="min-w-0 flex-1 space-y-1">
-                        <p className="font-semibold text-foreground">
-                          {room.name}
-                        </p>
-                        <p className="text-sm text-muted-foreground">
-                          {room.sq_ft} sq ft · {room.coats} coats · {gallons}{" "}
-                          gallons
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {room.surface_type} · {room.condition}
-                          {room.color_codes ? ` · ${room.color_codes}` : ""}
-                        </p>
-                      </div>
-                      <div className="flex shrink-0 gap-1">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => openRoomDrawer(index)}
-                        >
-                          Edit
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() =>
-                            setRooms((prev) =>
-                              prev.filter((_, i) => i !== index),
-                            )
-                          }
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                );
-              })}
-            </div>
-          )}
-        </TabsContent>
-
-        <TabsContent value="line-items" className="mt-6 space-y-4">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <h2 className="text-lg font-semibold text-foreground">
-                Line Items
-              </h2>
-              <p className="text-sm text-muted-foreground">
-                Direct costs: {formatCurrency(subtotal)} · With overhead:{" "}
-                {formatCurrency(quoteTotals.beforeTax)}
-                {quoteTotals.tax > 0
-                  ? ` · Total w/ tax: ${formatCurrency(quoteTotals.total)}`
-                  : ""}
-              </p>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={generateFromRooms}
-                disabled={!rooms.length}
-              >
-                Generate from rooms
-              </Button>
-              <Button size="sm" onClick={() => openLineItemDrawer()}>
-                <Plus className="h-4 w-4" />
-                Add Item
-              </Button>
-            </div>
-          </div>
-
-          {lineItems.length === 0 ? (
-            <Card>
-              <CardContent className="space-y-4 py-10 text-center text-muted-foreground">
-                <p>
-                  Add labor, materials, and extras — or generate from your room
-                  estimates using company pricing defaults.
-                </p>
-                {rooms.length ? (
-                  <Button variant="outline" onClick={generateFromRooms}>
-                    Generate from rooms
-                  </Button>
-                ) : null}
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="grid gap-3">
-              {lineItems.map((item, index) => {
-                const lineTotal =
-                  item.qty * item.unit_cost * (1 + item.markup / 100);
-                return (
-                  <Card key={`${item.description}-${index}`}>
-                    <CardContent className="flex items-start justify-between gap-4 p-4">
-                      <div className="min-w-0 flex-1 space-y-1">
-                        <div className="flex items-center gap-2">
-                          <Badge variant="outline" className="capitalize">
-                            {item.type}
-                          </Badge>
-                          <p className="font-semibold text-foreground">
-                            {item.description}
-                          </p>
-                        </div>
-                        <p className="text-sm text-muted-foreground">
-                          {item.qty} × {formatCurrency(item.unit_cost)} +{" "}
-                          {item.markup}% markup = {formatCurrency(lineTotal)}
-                        </p>
-                      </div>
-                      <div className="flex shrink-0 gap-1">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => openLineItemDrawer(index)}
-                        >
-                          Edit
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() =>
-                            setLineItems((prev) =>
-                              prev.filter((_, i) => i !== index),
-                            )
-                          }
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                );
-              })}
-            </div>
-          )}
-        </TabsContent>
-
-        <TabsContent value="tiers" className="mt-6 space-y-4">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-sm text-muted-foreground">
-              Tier base (costs + {pricingSummary.overheadPct}% overhead):{" "}
-              {formatCurrency(tierBase)}
-            </p>
-            <Button variant="outline" size="sm" onClick={applyAutoPricing}>
-              Apply Auto Pricing
-            </Button>
-          </div>
-
-          <div className="grid gap-4 lg:grid-cols-2">
-            {TIER_NAMES.map((tier) => (
-              <Card key={tier}>
-                <CardHeader className="pb-3">
-                  <CardTitle>{TIER_LABELS[tier]}</CardTitle>
-                  <CardDescription>
-                    Auto: {formatCurrency(autoTierPrices[tier].price)} ·{" "}
-                    {autoTierPrices[tier].margin}% margin
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-2">
-                      <Label>Price</Label>
-                      <Input
-                        type="number"
-                        value={tierState[tier].price}
-                        onChange={(e) =>
-                          setTierState((prev) => ({
-                            ...prev,
-                            [tier]: {
-                              ...prev[tier],
-                              price: Number(e.target.value),
-                              margin:
-                                tierBase > 0
-                                  ? Math.round(
-                                      ((Number(e.target.value) - tierBase) /
-                                        Number(e.target.value)) *
-                                        1000,
-                                    ) / 10
-                                  : 0,
-                            },
-                          }))
-                        }
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Margin %</Label>
-                      <Input
-                        type="number"
-                        value={tierState[tier].margin}
-                        readOnly
-                      />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Features (one per line)</Label>
-                    <Textarea
-                      rows={3}
-                      value={joinLines(tierState[tier].features)}
-                      onChange={(e) =>
-                        setTierState((prev) => ({
-                          ...prev,
-                          [tier]: {
-                            ...prev[tier],
-                            features: parseLines(e.target.value),
-                          },
-                        }))
-                      }
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Benefits (one per line)</Label>
-                    <Textarea
-                      rows={3}
-                      value={joinLines(tierState[tier].benefits)}
-                      onChange={(e) =>
-                        setTierState((prev) => ({
-                          ...prev,
-                          [tier]: {
-                            ...prev[tier],
-                            benefits: parseLines(e.target.value),
-                          },
-                        }))
-                      }
-                    />
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </TabsContent>
-
-        <TabsContent value="review" className="mt-6 space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Quote Summary</CardTitle>
-              <CardDescription>
-                Review margins and share with your customer.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid gap-2 rounded-lg border border-border bg-muted/20 p-4 text-sm sm:grid-cols-2 lg:grid-cols-4">
-                <div>
-                  <p className="text-muted-foreground">Direct costs</p>
-                  <p className="font-semibold text-foreground">
-                    {formatCurrency(quoteTotals.subtotal)}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-muted-foreground">Overhead</p>
-                  <p className="font-semibold text-foreground">
-                    {formatCurrency(quoteTotals.overhead)}
-                  </p>
-                </div>
-                {quoteTotals.tax > 0 ? (
-                  <div>
-                    <p className="text-muted-foreground">Tax</p>
-                    <p className="font-semibold text-foreground">
-                      {formatCurrency(quoteTotals.tax)}
-                    </p>
-                  </div>
-                ) : null}
-                <div>
-                  <p className="text-muted-foreground">All-in total</p>
-                  <p className="font-semibold text-foreground">
-                    {formatCurrency(quoteTotals.total)}
-                  </p>
-                </div>
-              </div>
-
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                {TIER_NAMES.map((tier) => (
-                  <div
-                    key={tier}
-                    className="rounded-lg border border-border bg-muted/30 p-4"
-                  >
-                    <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                      {TIER_LABELS[tier]}
-                    </p>
-                    <p className="type-stat-value mt-1 text-2xl">
-                      {formatCurrency(tierState[tier].price)}
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      {tierState[tier].margin}% margin
-                    </p>
-                  </div>
-                ))}
-              </div>
-
-              <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-                {quoteId ? (
-                  <Button variant="outline" asChild>
-                    <a
-                      href={`/api/quotes/${quoteId}/marketing-sheet`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      <Download className="h-4 w-4" />
-                      Download PDF
-                    </a>
-                  </Button>
-                ) : null}
-                {portalUrl && status !== "draft" ? (
-                  <Button variant="outline" onClick={handleCopyPortalLink}>
-                    <Copy className="h-4 w-4" />
-                    Copy portal link
-                  </Button>
-                ) : null}
-                {quoteId && mode === "edit" ? (
-                  <Button
-                    variant="outline"
-                    onClick={handleDuplicateQuote}
-                    disabled={isPending}
-                  >
-                    <CopyPlus className="h-4 w-4" />
-                    Duplicate quote
-                  </Button>
-                ) : null}
-                <Button onClick={handleSendQuote} disabled={isPending}>
-                  {isPending ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Send className="h-4 w-4" />
-                  )}
-                  Send Quote
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
-
-      {error ? (
-        <p className="rounded-md border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-          {error}
-        </p>
-      ) : null}
-
-      <div className="flex items-center justify-between gap-3 border-t border-border pt-4">
-        <Button
-          variant="outline"
-          onClick={handleBack}
-          disabled={stepIndex === 0 || isPending}
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Back
-        </Button>
-        {step !== "review" ? (
-          <Button onClick={handleNext} disabled={isPending}>
-            {isPending ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <>
-                Save & Continue
-                <ArrowRight className="h-4 w-4" />
-              </>
+        {step === "polish" ? (
+          <PolishStep
+            quoteId={quoteId || "preview"}
+            company={company}
+            quoteName={quoteName}
+            customerName={selectedCustomer?.name}
+            customerId={customerId}
+            jobType={jobType}
+            estimationMode={estimationMode}
+            customMessage={customMessage}
+            onCustomMessageChange={setCustomMessage}
+            jobAddress={jobAddress}
+            beforePhotos={beforePhotos}
+            status={status}
+            rooms={rooms}
+            lineItems={lineItems}
+            subtotal={subtotal}
+            tierState={tierState}
+            tierBase={tierBase}
+            autoTierPrices={autoTierPrices}
+            onTierChange={updateTier}
+            onApplyAutoPricing={applyAutoPricing}
+            parseLines={parseLines}
+            joinLines={joinLines}
+            tierPaintConfig={QUOTE_PAINT_TIERS.map(
+              (tier) => tierPaintConfig[tier],
             )}
-          </Button>
+            paintProducts={paintProducts}
+          />
+        ) : null}
+
+        {step === "review" ? (
+          <SendStep
+            quoteTotals={quoteTotals}
+            tierState={tierState}
+            quoteId={quoteId || undefined}
+            portalUrl={portalUrl}
+            status={status}
+            customerName={selectedCustomer?.name}
+            mode={mode}
+            isPending={isPending}
+            onSend={handleSendQuote}
+            onCopyPortalLink={handleCopyPortalLink}
+            onDuplicate={handleDuplicateQuote}
+            onReviseToDraft={handleReviseToDraft}
+            onResend={handleResendQuote}
+            onSaveAsTemplate={() => setTemplateDialogOpen(true)}
+            onOpenPreview={openPreview}
+            jobId={jobId}
+          />
+        ) : null}
+    </div>
+  );
+
+  const statusBanner =
+    status !== "draft" ? (
+      <div
+        role="status"
+        className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-sm text-foreground"
+      >
+        This quote is <span className="font-medium capitalize">{status}</span>.
+        {status === "sent" || status === "declined" ? (
+          <>
+            {" "}
+            Use <span className="font-medium">Revise quote</span> on the Send step
+            to edit and resend.
+          </>
+        ) : status === "accepted" ? (
+          <> View the linked job from the Send step.</>
         ) : null}
       </div>
+    ) : null;
+
+  const stepFooter = (
+    <QuoteMobileFooter
+      currentStep={step}
+      maxReachedIndex={maxReachedIndex}
+      editorMode={editorMode}
+      isPending={isPending}
+      showNext={step !== "review" && isEditable}
+      showSend={step === "review" && status === "draft"}
+      onBack={handleBack}
+      onNext={handleNext}
+      onSend={handleSendQuote}
+      onStepClick={goToStep}
+      layout={workspaceMode === "page" ? "inline" : "fixed"}
+    />
+  );
+
+  const headerBlock = (
+    <QuoteHeader
+      quoteName={quoteName}
+      onQuoteNameChange={setQuoteName}
+      customerName={selectedCustomer?.name}
+      jobType={jobType}
+      status={status}
+      editorMode={editorMode}
+      onEditorModeChange={handleEditorModeChange}
+      onOpenCommandPalette={openPalette}
+      onOpenPreview={openPreview}
+      onEditJobDetails={
+        props.skipSetup ? () => setBasicsDrawerOpen(true) : undefined
+      }
+      onSaveDraft={saveDraftNow}
+      onExit={handleExit}
+      onPopOut={workspaceMode === "page" ? onPopOut : undefined}
+      showExit={workspaceMode !== "modal"}
+      autosaveStatus={autosaveStatus}
+      lastSavedAt={lastSavedAt}
+      sticky={workspaceMode !== "page"}
+    />
+  );
+
+  const stepperBlock =
+    workspaceMode !== "modal" ? (
+      <QuoteStepper
+        currentStep={step}
+        maxReachedIndex={maxReachedIndex}
+        editorMode={editorMode}
+        onStepClick={goToStep}
+        compact={workspaceMode === "page"}
+      />
+    ) : null;
+
+  const totalsBlock = (
+    <QuoteTotalsBar
+      laborTotal={costBreakdown.laborTotal}
+      materialsTotal={costBreakdown.materialsTotal}
+      profitPct={costBreakdown.profitPct}
+      quoteTotal={costBreakdown.displayTotal}
+      tierLabel={costBreakdown.featuredTierLabel}
+      compact={workspaceMode === "page"}
+    />
+  );
+
+  const renderedStepPanel =
+    workspaceMode === "modal" ? (
+      <QuoteModalLayout
+        currentStep={step}
+        maxReachedIndex={maxReachedIndex}
+        editorMode={editorMode}
+        onStepClick={goToStep}
+      >
+        {stepPanel}
+      </QuoteModalLayout>
+    ) : (
+      stepPanel
+    );
+
+  const wizardStepLabel =
+    QUOTE_STEP_META.find((meta) => meta.id === step)?.label ?? "Edit";
+
+  const workspaceOverlays = (
+    <>
+      <Sheet open={previewOpen} onOpenChange={setPreviewOpen}>
+        <SheetContent side="responsive" className="w-full p-0 sm:max-w-2xl">
+          <SheetHeader className="border-b border-border px-6 py-4 text-left">
+            <SheetTitle>Customer preview</SheetTitle>
+            <SheetDescription>
+              Live view of what your customer sees on the portal
+            </SheetDescription>
+          </SheetHeader>
+          <div className="overflow-y-auto p-4 sm:p-6">
+            <QuotePreviewPane
+              quoteId={quoteId || "preview"}
+              companyId={company.id}
+              companyName={company.name}
+              companyLogoUrl={company.logo_url}
+              companyPhone={company.phone}
+              companyEmail={company.email}
+              customerName={selectedCustomer?.name ?? "Customer"}
+              customerId={customerId}
+              quoteName={quoteName || null}
+              jobType={jobType}
+              customMessage={customMessage || null}
+              jobAddress={jobAddress}
+              beforePhotos={beforePhotos}
+              status={status}
+              lineItems={lineItems}
+              tierState={tierState}
+              rooms={rooms}
+              estimationMode={estimationMode}
+              tierPaintConfig={QUOTE_PAINT_TIERS.map(
+                (tier) => tierPaintConfig[tier],
+              )}
+              paintProducts={paintProducts}
+            />
+          </div>
+        </SheetContent>
+      </Sheet>
+
+      <AppDrawer
+        open={basicsDrawerOpen}
+        onOpenChange={setBasicsDrawerOpen}
+        title="Job details"
+        description="Customer, address, and job settings."
+        footer={
+          <Button
+            className="w-full"
+            type="button"
+            onClick={() => setBasicsDrawerOpen(false)}
+          >
+            Done
+          </Button>
+        }
+      >
+        <BasicsStep
+          customers={customers}
+          customerId={customerId}
+          onCustomerIdChange={setCustomerId}
+          onCustomerCreated={addCustomer}
+          jobType={jobType}
+          onJobTypeChange={setJobType}
+          estimationMode={estimationMode}
+          onEstimationModeChange={setEstimationMode}
+          jobAddress={jobAddress}
+          onJobAddressChange={setJobAddress}
+          beforePhotos={beforePhotos}
+          onBeforePhotosChange={setBeforePhotos}
+          quoteId={quoteId || undefined}
+          selectedCustomer={selectedCustomer}
+        />
+      </AppDrawer>
 
       <AppDrawer
         open={roomDrawerOpen}
         onOpenChange={setRoomDrawerOpen}
-        title={editingRoomIndex !== null ? "Edit Room" : "Add Room"}
-        description="Estimate paint needs for this room."
+        title={editingRoomIndex !== null ? "Colors & prep" : "Add Room"}
+        description="Color codes, prep notes, and surface details."
         footer={
-          <Button className="w-full" onClick={saveRoomDraft}>
-            Save Room
-          </Button>
+          <div className="flex w-full gap-2">
+            <Button
+              className="flex-1"
+              variant="outline"
+              type="button"
+              onClick={() => setRoomDrawerOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button className="flex-1" type="button" onClick={saveRoomDraft}>
+              Save &amp; close
+            </Button>
+          </div>
         }
       >
         <div className="space-y-4">
@@ -1158,9 +799,19 @@ export function QuoteBuilder({
         title={editingLineItemIndex !== null ? "Edit Line Item" : "Add Line Item"}
         description="Labor, materials, or extra charges."
         footer={
-          <Button className="w-full" onClick={saveLineItemDraft}>
-            Save Item
-          </Button>
+          <div className="flex w-full gap-2">
+            <Button
+              className="flex-1"
+              variant="outline"
+              type="button"
+              onClick={() => setLineItemDrawerOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button className="flex-1" type="button" onClick={saveLineItemDraft}>
+              Save &amp; close
+            </Button>
+          </div>
         }
       >
         <div className="space-y-4">
@@ -1241,6 +892,245 @@ export function QuoteBuilder({
           </div>
         </div>
       </AppDrawer>
+    </>
+  );
+
+  const documentWizardPanel =
+    workspaceMode === "document" ? (
+      <div className="flex h-full min-h-0 flex-col">
+        <div className="shrink-0 border-b border-border/60 px-4 py-3">
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            Wizard
+          </p>
+          <p className="font-semibold text-foreground">{wizardStepLabel}</p>
+        </div>
+        <div className="min-h-0 flex-1 overflow-y-auto p-4">
+          {renderedStepPanel}
+          {error ? (
+            <p
+              role="alert"
+              className="mt-4 rounded-md border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive"
+            >
+              {error}
+            </p>
+          ) : null}
+        </div>
+      </div>
+    ) : null;
+
+  if (workspaceMode === "document") {
+    return (
+      <div className="quote-document-workspace-root flex h-full min-h-0 flex-1 flex-col">
+        <QuoteDocumentLayout
+          quoteId={quoteId || "draft"}
+          companyId={company.id}
+          customerId={customerId}
+          quoteName={quoteName || null}
+          jobType={jobType}
+          customMessage={customMessage || null}
+          jobAddress={jobAddress}
+          beforePhotos={beforePhotos}
+          status={status}
+          tierState={tierState}
+          lineItems={lineItems}
+          rooms={rooms}
+          estimationMode={estimationMode}
+          tierPaintConfig={QUOTE_PAINT_TIERS.map((tier) => tierPaintConfig[tier])}
+          paintProducts={paintProducts}
+          companyName={company.name}
+          companyLogoUrl={company.logo_url}
+          companyPhone={company.phone}
+          companyEmail={company.email}
+          customerName={selectedCustomer?.name}
+          currentStep={step}
+          maxReachedIndex={maxReachedIndex}
+          editorMode={editorMode}
+          isPending={isPending}
+          isEditable={isEditable}
+          autosaveStatus={autosaveStatus}
+          lastSavedAt={lastSavedAt}
+          onExit={handleExit}
+          onStepClick={goToStep}
+          onNext={handleNext}
+          onBack={handleBack}
+          onSend={handleSendQuote}
+          onEditCustomer={() => goToStep("setup")}
+          onEditSite={() =>
+            props.skipSetup ? setBasicsDrawerOpen(true) : goToStep("setup")
+          }
+          onEditAreas={() => goToStep("estimator")}
+          onEditPaint={() => goToStep("paint-options")}
+          onEditPackages={() => goToStep("tiers")}
+          onEditMessage={() => goToStep("polish")}
+          onAddArea={() => {
+            goToStep("estimator");
+            addAreaByName("New Area");
+          }}
+          wizardPanel={documentWizardPanel}
+        />
+
+        <QuoteEditorOnboarding mode={onboardingMode} onDismiss={dismissOnboarding} />
+
+        <QuoteCommandPalette
+          open={paletteOpen}
+          onOpenChange={setPaletteOpen}
+          currentStep={step}
+          editorMode={editorMode}
+          maxReachedIndex={maxReachedIndex}
+          onGoToStep={goToStep}
+          onAddArea={addAreaByName}
+          onDuplicateArea={() => duplicateArea(selectedAreaIndex)}
+          onRegenerateAll={generateFromRooms}
+          onSave={saveDraftNow}
+          onNext={handleNext}
+          onOpenPreview={openPreview}
+          onSaveAsTemplate={() => setTemplateDialogOpen(true)}
+          onEditorModeChange={handleEditorModeChange}
+          onApplyPaintDefaults={applyCompanyPaintDefaults}
+          onOpenPaintLibrary={() => {
+            window.open(
+              "/app/settings?tab=paint-library",
+              "_blank",
+              "noopener,noreferrer",
+            );
+          }}
+        />
+
+        <SaveQuoteTemplateDialog
+          open={templateDialogOpen}
+          onOpenChange={setTemplateDialogOpen}
+          draft={getDraft()}
+          jobType={jobType}
+          quoteId={quoteId || undefined}
+          defaultName={quoteName || `${selectedCustomer?.name ?? "Job"} template`}
+        />
+
+        <QuoteUnsavedPrompt
+          open={pageExitPromptOpen}
+          isSaving={autosaveStatus === "saving"}
+          onKeepEditing={() => setPageExitPromptOpen(false)}
+          onDiscard={async () => {
+            setPageExitPromptOpen(false);
+            await leaveWorkspace();
+          }}
+          onSaveAndClose={handleSaveAndExit}
+        />
+
+        {workspaceOverlays}
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className={
+        workspaceMode === "page"
+          ? "quote-editor-page"
+          : "space-y-6 pb-28 lg:pb-6"
+      }
+    >
+      {workspaceMode === "page" ? (
+        <>
+          <div className="shrink-0 space-y-2 border-b border-border/60 pb-2">
+            {headerBlock}
+            {stepperBlock}
+            {statusBanner}
+            {totalsBlock}
+          </div>
+
+          <div className="quote-editor-workspace">
+            <div
+              className={
+                step === "estimator"
+                  ? "flex min-h-0 flex-1 flex-col overflow-hidden"
+                  : "flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain"
+              }
+            >
+              {renderedStepPanel}
+              {error ? (
+                <p
+                  role="alert"
+                  className="mt-3 shrink-0 rounded-md border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive"
+                >
+                  {error}
+                </p>
+              ) : null}
+            </div>
+          </div>
+
+          {stepFooter}
+        </>
+      ) : (
+        <>
+          {headerBlock}
+          {workspaceMode !== "modal" ? (
+            <div className="hidden md:block">{stepperBlock}</div>
+          ) : null}
+          {statusBanner}
+          {totalsBlock}
+          {renderedStepPanel}
+          {error ? (
+            <p
+              role="alert"
+              className="rounded-md border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive"
+            >
+              {error}
+            </p>
+          ) : null}
+          {stepFooter}
+        </>
+      )}
+
+      <QuoteEditorOnboarding mode={onboardingMode} onDismiss={dismissOnboarding} />
+
+      <QuoteCommandPalette
+        open={paletteOpen}
+        onOpenChange={setPaletteOpen}
+        currentStep={step}
+        editorMode={editorMode}
+        maxReachedIndex={maxReachedIndex}
+        onGoToStep={goToStep}
+        onAddArea={addAreaByName}
+        onDuplicateArea={() => duplicateArea(selectedAreaIndex)}
+        onRegenerateAll={generateFromRooms}
+        onSave={saveDraftNow}
+        onNext={handleNext}
+        onOpenPreview={openPreview}
+        onSaveAsTemplate={() => setTemplateDialogOpen(true)}
+        onEditorModeChange={handleEditorModeChange}
+        onApplyPaintDefaults={applyCompanyPaintDefaults}
+        onOpenPaintLibrary={() => {
+          window.open(
+            "/app/settings?tab=paint-library",
+            "_blank",
+            "noopener,noreferrer",
+          );
+        }}
+      />
+
+      <SaveQuoteTemplateDialog
+        open={templateDialogOpen}
+        onOpenChange={setTemplateDialogOpen}
+        draft={getDraft()}
+        jobType={jobType}
+        quoteId={quoteId || undefined}
+        defaultName={quoteName || `${selectedCustomer?.name ?? "Job"} template`}
+      />
+
+      {workspaceOverlays}
+
+      {workspaceMode === "page" ? (
+        <QuoteUnsavedPrompt
+          open={pageExitPromptOpen}
+          isSaving={autosaveStatus === "saving"}
+          onKeepEditing={() => setPageExitPromptOpen(false)}
+          onDiscard={async () => {
+            setPageExitPromptOpen(false);
+            await leaveWorkspace();
+          }}
+          onSaveAndClose={handleSaveAndExit}
+        />
+      ) : null}
     </div>
   );
 }

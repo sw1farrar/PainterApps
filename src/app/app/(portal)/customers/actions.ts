@@ -19,10 +19,9 @@ export type CustomerInput = {
   notes?: string;
 };
 
-export type ActionResult = {
-  success: boolean;
-  error?: string;
-};
+export type ActionResult<T = void> =
+  | { success: true; data?: T }
+  | { success: false; error: string };
 
 function normalizeCustomerInput(data: CustomerInput) {
   return {
@@ -38,7 +37,9 @@ function normalizeCustomerInput(data: CustomerInput) {
   };
 }
 
-export async function createCustomer(data: CustomerInput): Promise<ActionResult> {
+export async function createCustomer(
+  data: CustomerInput,
+): Promise<ActionResult<{ id: string; portal_token: string }>> {
   const envError = getSupabaseEnvError();
   if (envError) return { success: false, error: envError };
 
@@ -56,16 +57,24 @@ export async function createCustomer(data: CustomerInput): Promise<ActionResult>
   const supabase = await createClient();
   const portalToken = crypto.randomUUID();
 
-  const { error } = await supabase.from("customers").insert({
-    company_id: companyId,
-    ...normalizeCustomerInput(data),
-    portal_token: portalToken,
-  });
+  const { data: row, error } = await supabase
+    .from("customers")
+    .insert({
+      company_id: companyId,
+      ...normalizeCustomerInput(data),
+      portal_token: portalToken,
+    })
+    .select("id, portal_token")
+    .single();
 
   if (error) return { success: false, error: error.message };
 
   revalidatePath("/app/customers");
-  return { success: true };
+  revalidatePath("/app/quotes");
+  return {
+    success: true,
+    data: { id: row.id, portal_token: row.portal_token },
+  };
 }
 
 export async function updateCustomer(

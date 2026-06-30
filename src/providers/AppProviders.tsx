@@ -1,6 +1,6 @@
 "use client";
 
-import { NavigationProgress } from "@/components/NavigationProgress";
+import { PortalNavigationProvider } from "@/components/portal/PortalNavigationProvider";
 import { LanguageProvider } from "@/providers/LanguageProvider";
 import { SitePasswordManagerBoundary } from "@/providers/SitePasswordManagerBoundary";
 
@@ -12,8 +12,7 @@ export default function AppProviders({
   return (
     <LanguageProvider>
       <SitePasswordManagerBoundary>
-        <NavigationProgress />
-        {children}
+        <PortalNavigationProvider>{children}</PortalNavigationProvider>
       </SitePasswordManagerBoundary>
     </LanguageProvider>
   );

@@ -2,7 +2,6 @@
 
 import * as React from "react";
 import dynamic from "next/dynamic";
-import Image from "next/image";
 import { useRouter } from "next/navigation";
 import {
   ImageIcon,
@@ -19,8 +18,10 @@ import {
   deletePaintProduct,
   setPaintProductDiscontinued,
   updatePaintProduct,
+  uploadPlatformPaintProductCanImage,
   type UpdatePaintProductInput,
 } from "@/app/app/admin/product-catalog/actions";
+import { CatalogCanImageCell } from "@/components/products/CatalogCanImageCell";
 import { ProductEditModal } from "@/components/admin/ProductEditModal";
 import { formatApplicationType } from "@/lib/product-catalog/product-attribute-display";
 import type {
@@ -28,7 +29,7 @@ import type {
   PaintManufacturerRow,
 } from "@/lib/product-catalog/types";
 import { Badge } from "@/components/ui/badge";
-import { cn, productCanImageDisplayUrl } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -82,6 +83,8 @@ export function ProductCatalogClient({
     React.useState("");
   const [catalogMissingCanOnly, setCatalogMissingCanOnly] =
     React.useState(false);
+  const [catalogPendingReviewOnly, setCatalogPendingReviewOnly] =
+    React.useState(false);
   const [editingProduct, setEditingProduct] =
     React.useState<CatalogProductRow | null>(null);
   const [savingProduct, setSavingProduct] = React.useState(false);
@@ -101,17 +104,38 @@ export function ProductCatalogClient({
     [catalogProducts],
   );
 
+  const catalogPendingReviewCount = React.useMemo(
+    () =>
+      catalogProducts.filter(
+        (product) => product.catalog_review_status === "pending_review",
+      ).length,
+    [catalogProducts],
+  );
+
   const filteredCatalogProducts = React.useMemo(() => {
     const query = catalogManufacturerFilter.trim().toLowerCase();
     return catalogProducts.filter((product) => {
       if (catalogMissingCanOnly && product.can_image_url) return false;
+      if (
+        catalogPendingReviewOnly &&
+        product.catalog_review_status !== "pending_review"
+      ) {
+        return false;
+      }
       if (!query) return true;
       return product.manufacturer_name.toLowerCase().includes(query);
     });
-  }, [catalogProducts, catalogManufacturerFilter, catalogMissingCanOnly]);
+  }, [
+    catalogProducts,
+    catalogManufacturerFilter,
+    catalogMissingCanOnly,
+    catalogPendingReviewOnly,
+  ]);
 
   const catalogFilterActive =
-    catalogManufacturerFilter.trim().length > 0 || catalogMissingCanOnly;
+    catalogManufacturerFilter.trim().length > 0 ||
+    catalogMissingCanOnly ||
+    catalogPendingReviewOnly;
 
   const busy =
     savingProduct || deletingId != null || discontinuedUpdatingId != null;
@@ -241,6 +265,20 @@ export function ProductCatalogClient({
                   </div>
                   <Button
                     type="button"
+                    variant={catalogPendingReviewOnly ? "default" : "outline"}
+                    className="h-9 shrink-0"
+                    onClick={() =>
+                      setCatalogPendingReviewOnly((current) => !current)
+                    }
+                    aria-pressed={catalogPendingReviewOnly}
+                  >
+                    Subscriber review
+                    {catalogPendingReviewCount > 0
+                      ? ` (${catalogPendingReviewCount})`
+                      : ""}
+                  </Button>
+                  <Button
+                    type="button"
                     variant={catalogMissingCanOnly ? "default" : "outline"}
                     className="h-9 shrink-0"
                     onClick={() => setCatalogMissingCanOnly((current) => !current)}
@@ -304,26 +342,26 @@ export function ProductCatalogClient({
                           )}
                         >
                           <td className="px-3 py-2">
-                            {product.can_image_url ? (
-                              <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded bg-white">
-                                <Image
-                                  key={`${product.id}-${product.updated_at}`}
-                                  src={
-                                    productCanImageDisplayUrl(
-                                      product.can_image_url,
-                                      product.updated_at,
-                                    ) ?? product.can_image_url
-                                  }
-                                  alt={`${product.name} can`}
-                                  fill
-                                  sizes="48px"
-                                  className="object-contain"
-                                  unoptimized
-                                />
-                              </div>
-                            ) : (
-                              <span className="text-muted-foreground">—</span>
-                            )}
+                            <CatalogCanImageCell
+                              paintProductId={product.id}
+                              productName={product.name}
+                              canImageUrl={product.can_image_url}
+                              cacheBuster={product.updated_at}
+                              upload={uploadPlatformPaintProductCanImage}
+                              onUploaded={({ canImageUrl, updatedAt }) => {
+                                setCatalogProducts((current) =>
+                                  current.map((entry) =>
+                                    entry.id === product.id
+                                      ? {
+                                          ...entry,
+                                          can_image_url: canImageUrl,
+                                          updated_at: updatedAt,
+                                        }
+                                      : entry,
+                                  ),
+                                );
+                              }}
+                            />
                           </td>
                           <td className="px-3 py-2">
                             {product.manufacturer_name}
@@ -331,6 +369,15 @@ export function ProductCatalogClient({
                           <td className="px-3 py-2 text-white">
                             <div className="flex flex-wrap items-center gap-2">
                               <span>{product.name}</span>
+                              {product.catalog_review_status ===
+                              "pending_review" ? (
+                                <Badge variant="secondary">
+                                  Needs review
+                                </Badge>
+                              ) : null}
+                              {product.catalog_origin === "subscriber" ? (
+                                <Badge variant="outline">Subscriber</Badge>
+                              ) : null}
                               {product.is_discontinued ? (
                                 <Badge variant="outline">Discontinued</Badge>
                               ) : null}

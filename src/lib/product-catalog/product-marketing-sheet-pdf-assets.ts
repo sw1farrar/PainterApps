@@ -65,7 +65,7 @@ async function downloadStoragePathAsDataUrl(
   return bufferToDataUrl(normalized.buffer, normalized.mime);
 }
 
-async function fetchHttpImageAsDataUrl(
+export async function fetchHttpImageAsDataUrl(
   url: string | null | undefined,
 ): Promise<string | null> {
   if (!isAbsoluteHttpUrl(url)) return null;

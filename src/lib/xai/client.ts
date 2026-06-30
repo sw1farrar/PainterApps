@@ -69,7 +69,7 @@ export async function createXaiChatCompletion(
   } catch {
     return {
       success: false,
-      error: `xAI returned an invalid response (HTTP ${response.status}).`,
+      error: `AI returned an invalid response (HTTP ${response.status}).`,
     };
   }
 
@@ -78,13 +78,13 @@ export async function createXaiChatCompletion(
       success: false,
       error:
         payload.error?.message ??
-        `xAI request failed with status ${response.status}.`,
+        `AI request failed with status ${response.status}.`,
     };
   }
 
   const content = payload.choices?.[0]?.message?.content?.trim();
   if (!content) {
-    return { success: false, error: "xAI returned an empty response." };
+    return { success: false, error: "AI returned an empty response." };
   }
 
   return {

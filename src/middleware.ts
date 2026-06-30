@@ -25,6 +25,14 @@ function isEmailConfirmExempt(pathname: string) {
   );
 }
 
+/** Paths that need a Supabase session check in middleware. */
+function needsAuthMiddleware(pathname: string) {
+  if (isProtectedPath(pathname)) return true;
+  if (pathname === "/signup") return true;
+  if (pathname.startsWith("/auth/")) return true;
+  return false;
+}
+
 function copyCookies(from: NextResponse, to: NextResponse) {
   from.cookies.getAll().forEach((cookie) => {
     to.cookies.set(cookie.name, cookie.value);
@@ -56,6 +64,10 @@ export async function middleware(request: NextRequest) {
     if (isProtectedPath(pathname)) {
       return NextResponse.redirect(new URL("/login", request.url));
     }
+    return supabaseResponse;
+  }
+
+  if (!needsAuthMiddleware(pathname)) {
     return supabaseResponse;
   }
 
@@ -115,5 +127,11 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
+  matcher: [
+    "/app/:path*",
+    "/signup",
+    "/auth/:path*",
+    "/login",
+    "/verify-email",
+  ],
 };

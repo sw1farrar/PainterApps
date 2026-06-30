@@ -13,6 +13,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import type { AddressFields as AddressValue } from "@/lib/address";
 import { US_STATES } from "@/lib/address";
+import { cn } from "@/lib/utils";
 
 type AddressFieldsProps = {
   idPrefix: string;
@@ -24,6 +25,7 @@ type AddressFieldsProps = {
   notes?: string;
   onNotesChange?: (notes: string) => void;
   required?: boolean;
+  compact?: boolean;
 };
 
 export function AddressFields({
@@ -36,6 +38,7 @@ export function AddressFields({
   notes = "",
   onNotesChange,
   required = false,
+  compact = false,
 }: AddressFieldsProps) {
   const set = (key: keyof AddressValue, next: string) => {
     onChange({ ...value, [key]: next });
@@ -43,10 +46,14 @@ export function AddressFields({
 
   const req = required ? " *" : "";
 
+  const fieldGap = compact ? "space-y-1" : "space-y-2";
+  const labelClass = compact ? "text-xs" : undefined;
+  const inputClass = compact ? "h-9" : undefined;
+
   return (
-    <div className="space-y-4">
-      <div className="space-y-2">
-        <Label htmlFor={`${idPrefix}-address`}>
+    <div className={compact ? "space-y-2" : "space-y-4"}>
+      <div className={fieldGap}>
+        <Label htmlFor={`${idPrefix}-address`} className={labelClass}>
           {line1Label}
           {req}
         </Label>
@@ -54,6 +61,8 @@ export function AddressFields({
           id={`${idPrefix}-address`}
           value={value.address ?? ""}
           placeholder="Start typing street address…"
+          showHint={!compact}
+          inputClassName={inputClass}
           onValueChange={(next) => set("address", next)}
           onAddressSelect={(address) =>
             onChange({
@@ -69,21 +78,28 @@ export function AddressFields({
       </div>
 
       {showLine2 ? (
-        <div className="space-y-2">
-          <Label htmlFor={`${idPrefix}-address-line2`}>Apt / suite (optional)</Label>
+        <div className={fieldGap}>
+          <Label htmlFor={`${idPrefix}-address-line2`} className={labelClass}>
+            Apt / suite (optional)
+          </Label>
           <Input
             id={`${idPrefix}-address-line2`}
             value={value.address_line2 ?? ""}
             onChange={(e) => set("address_line2", e.target.value)}
             placeholder="Unit 4B"
-
+            className={inputClass}
           />
         </div>
       ) : null}
 
-      <div className="grid gap-4 sm:grid-cols-6">
-        <div className="space-y-2 sm:col-span-3">
-          <Label htmlFor={`${idPrefix}-city`}>
+      <div
+        className={cn(
+          "grid gap-2 sm:grid-cols-12",
+          compact ? "sm:gap-2" : "gap-4",
+        )}
+      >
+        <div className={cn(fieldGap, "sm:col-span-5")}>
+          <Label htmlFor={`${idPrefix}-city`} className={labelClass}>
             City
             {req}
           </Label>
@@ -92,11 +108,11 @@ export function AddressFields({
             value={value.city ?? ""}
             onChange={(e) => set("city", e.target.value)}
             placeholder="Austin"
-
+            className={inputClass}
           />
         </div>
-        <div className="space-y-2 sm:col-span-1">
-          <Label htmlFor={`${idPrefix}-state`}>
+        <div className={cn(fieldGap, "sm:col-span-4")}>
+          <Label htmlFor={`${idPrefix}-state`} className={labelClass}>
             State
             {req}
           </Label>
@@ -104,20 +120,22 @@ export function AddressFields({
             value={value.state ?? ""}
             onValueChange={(next) => set("state", next)}
           >
-            <SelectTrigger id={`${idPrefix}-state`}>
+            <SelectTrigger id={`${idPrefix}-state`} className={inputClass}>
               <SelectValue placeholder="ST" />
             </SelectTrigger>
             <SelectContent>
               {US_STATES.map((state) => (
                 <SelectItem key={state.value} value={state.value}>
-                  {state.value} — {state.label}
+                  {compact
+                    ? state.value
+                    : `${state.value} — ${state.label}`}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
         </div>
-        <div className="space-y-2 sm:col-span-2">
-          <Label htmlFor={`${idPrefix}-zip`}>
+        <div className={cn(fieldGap, "sm:col-span-3")}>
+          <Label htmlFor={`${idPrefix}-zip`} className={labelClass}>
             ZIP
             {req}
           </Label>
@@ -126,7 +144,7 @@ export function AddressFields({
             value={value.zip ?? ""}
             onChange={(e) => set("zip", e.target.value)}
             placeholder="78701"
-
+            className={inputClass}
             inputMode="numeric"
           />
         </div>

@@ -10,7 +10,7 @@ export async function POST(request: Request) {
 
   if (!stripe || !webhookSecret) {
     return NextResponse.json(
-      { error: "Stripe webhook is not configured." },
+      { error: "Billing webhook is not configured." },
       { status: 500 },
     );
   }

@@ -1,17 +1,12 @@
-import { notFound, redirect } from "next/navigation";
-import { getSellSheetRecord } from "@/app/app/(portal)/sell-sheets/actions";
+import { redirect } from "next/navigation";
 
-type SellSheetDetailPageProps = {
+type SellSheetRedirectPageProps = {
   params: Promise<{ id: string }>;
 };
 
-export default async function SellSheetDetailPage({
+export default async function SellSheetRedirectPage({
   params,
-}: SellSheetDetailPageProps) {
+}: SellSheetRedirectPageProps) {
   const { id } = await params;
-  const loaded = await getSellSheetRecord(id);
-
-  if (!loaded) notFound();
-
-  redirect(`/free-tools/build-sell-sheet?edit=${loaded.record.id}`);
+  redirect(`/app/products/sell-sheets/${id}`);
 }

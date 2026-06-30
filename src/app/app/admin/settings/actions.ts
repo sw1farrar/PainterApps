@@ -39,7 +39,7 @@ export async function updateSiteXaiModelTier(
   const session = await requireSiteAdmin();
 
   if (!isXaiModelTier(tier)) {
-    return { success: false, error: "Invalid xAI model selection." };
+    return { success: false, error: "Invalid AI model selection." };
   }
 
   const schema = await ensureSiteSettingsSchema();

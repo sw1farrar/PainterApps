@@ -110,6 +110,7 @@ export default function BuildSellSheetContent({
   const autoSaveAttemptedRef = useRef(false);
   const draftLoggedOutRef = useRef(false);
   const draftHydratedRef = useRef(false);
+  const prevIsLoggedInRef = useRef(isLoggedIn);
   const prevLocaleRef = useRef(locale);
 
   const seedSheet = useCallback(
@@ -238,6 +239,9 @@ export default function BuildSellSheetContent({
   }, [persistDraft, savedSellSheetId]);
 
   useEffect(() => {
+    const justLoggedOut = prevIsLoggedInRef.current && !isLoggedIn;
+    prevIsLoggedInRef.current = isLoggedIn;
+
     if (forceNew) {
       clearSellSheetDraft();
       draftLoggedOutRef.current = false;
@@ -247,6 +251,21 @@ export default function BuildSellSheetContent({
     }
 
     if (initialData) {
+      draftHydratedRef.current = true;
+      setDraftReady(true);
+      return;
+    }
+
+    if (!isLoggedIn) {
+      if (!draftHydratedRef.current || justLoggedOut) {
+        clearSellSheetDraft();
+        draftLoggedOutRef.current = true;
+        logoTouchedRef.current = false;
+        initialTrimDoneRef.current = false;
+        setData(seedSheet(initialEmpty));
+        setBenefitLibrary(EMPTY_BENEFIT_LIBRARY);
+        setSavedSellSheetId(undefined);
+      }
       draftHydratedRef.current = true;
       setDraftReady(true);
       return;
@@ -265,25 +284,10 @@ export default function BuildSellSheetContent({
       if (storedDraft.sellSheetId) {
         setSavedSellSheetId(storedDraft.sellSheetId);
       }
-      if (!isLoggedIn) {
-        const legacyDraft = storedDraft as typeof storedDraft & {
-          hiddenCatalogIds?: string[];
-        };
-        if (storedDraft.benefitLibrary) {
-          setBenefitLibrary(storedDraft.benefitLibrary);
-        } else if (legacyDraft.hiddenCatalogIds?.length) {
-          setBenefitLibrary((prev) => ({
-            ...prev,
-            hiddenCatalogIds: legacyDraft.hiddenCatalogIds!,
-          }));
-        }
-      }
-    } else if (!isLoggedIn) {
-      draftLoggedOutRef.current = true;
     }
 
     setDraftReady(true);
-  }, [forceNew, initialData, isLoggedIn, seedSheet]);
+  }, [forceNew, initialData, initialEmpty, isLoggedIn, seedSheet]);
 
   useEffect(() => {
     if (initialData || !draftReady) return;

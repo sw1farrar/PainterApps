@@ -1,3 +1,11 @@
+export type Json =
+  | string
+  | number
+  | boolean
+  | null
+  | { [key: string]: Json | undefined }
+  | Json[];
+
 export type UserRole =
   | "admin"
   | "project_manager"
@@ -41,10 +49,17 @@ export type Company = {
   email: string | null;
   tax_rate: number;
   labor_rates: Record<string, number>;
+  avg_labor_cost_per_hour: number | null;
   material_markup: number;
+  labor_markup_pct: number;
+  sundries_pct: number;
+  surface_labor_defaults: Record<string, unknown>;
   overhead_pct: number;
   default_margins: Record<string, number>;
   coverage_sqft_per_gallon: number;
+  gallons_per_labor_hour: number;
+  material_waste_pct: number;
+  spot_prime_material_pct: number;
   onboarding_complete: boolean;
   stripe_customer_id: string | null;
   stripe_subscription_id: string | null;
@@ -81,10 +96,28 @@ export type Customer = {
   created_at: string;
 };
 
+export type QuoteJobType = "interior" | "exterior" | "both" | "specialty";
+export type QuoteEstimationMode = "hybrid" | "room" | "surface" | "manual";
+export type QuoteSurfaceKind =
+  | "wall"
+  | "ceiling"
+  | "floor"
+  | "closet"
+  | "trim"
+  | "window"
+  | "door"
+  | "custom";
+export type QuoteRateType = "sqft" | "linear" | "each";
+export type QuoteLineItemSource = "room" | "surface" | "manual";
+
 export type Quote = {
   id: string;
   company_id: string;
   customer_id: string;
+  name: string | null;
+  job_type: QuoteJobType;
+  estimation_mode: QuoteEstimationMode;
+  custom_message: string | null;
   job_address: string;
   job_address_line2: string | null;
   job_city: string | null;
@@ -93,6 +126,7 @@ export type Quote = {
   status: QuoteStatus;
   before_photos: string[];
   accepted_tier: QuoteTierName | null;
+  accepted_optional_line_item_ids: string[];
   created_at: string;
   updated_at: string;
 };
@@ -107,7 +141,49 @@ export type QuoteRoom = {
   color_codes: string;
   coats: number;
   prep_work: string;
+  sort_order: number;
+  photo_url: string | null;
+  is_optional: boolean;
+  length_ft: number | null;
+  width_ft: number | null;
+  height_ft: number | null;
 };
+
+export type QuoteSurface = {
+  id: string;
+  quote_id: string;
+  room_id: string;
+  surface_type: QuoteSurfaceKind;
+  sq_ft: number;
+  coats: number;
+  unit_rate: number;
+  rate_type: QuoteRateType;
+  notes: string | null;
+  is_optional: boolean;
+  sort_order: number;
+  company_paint_product_id: string | null;
+  product_override: boolean;
+  gallons_estimated: number | null;
+  surface_key: string | null;
+};
+
+export type QuotePaintDefault = {
+  id: string;
+  quote_id: string;
+  surface_type: QuoteSurfaceKind;
+  company_paint_product_id: string | null;
+  coats: number;
+  created_at: string;
+  updated_at: string;
+};
+
+export type CompanyPaintProductRole =
+  | "primer"
+  | "topcoat"
+  | "sealer"
+  | "undercoater";
+
+export type PaintProductSource = "catalog" | "custom";
 
 export type QuoteLineItem = {
   id: string;
@@ -117,6 +193,123 @@ export type QuoteLineItem = {
   qty: number;
   unit_cost: number;
   markup: number;
+  source: QuoteLineItemSource;
+  room_id: string | null;
+  is_optional: boolean;
+  sort_order: number;
+  company_paint_product_id: string | null;
+  paint_role: CompanyPaintProductRole | null;
+};
+
+export type QuoteTierPaintConfig = {
+  id: string;
+  quote_id: string;
+  tier: QuoteTierName;
+  primer_product_id: string | null;
+  topcoat_product_id: string | null;
+  primer_coats: number;
+  topcoat_coats: number;
+  primer_spot_prime: boolean;
+  labor_hours_delta_pct: number;
+  labor_hours_delta_hours: number;
+  prep_hours_delta: number;
+  value_add_features: string[];
+  snapshot: Record<string, unknown>;
+  created_at: string;
+  updated_at: string;
+};
+
+export type CompanyPaintProduct = {
+  id: string;
+  company_id: string;
+  source: PaintProductSource;
+  paint_product_id: string | null;
+  name: string;
+  manufacturer_name: string | null;
+  role: CompanyPaintProductRole;
+  unit_cost: number;
+  unit_price: number;
+  coverage_sqft_per_gallon: number | null;
+  application_type: string;
+  sheen: string | null;
+  is_self_priming: boolean;
+  is_stain_blocking: boolean;
+  is_mold_mildew_resistant: boolean;
+  is_scrubbable: boolean;
+  is_one_coat: boolean;
+  paint_system_features: string[];
+  paint_system_feature_options: string[];
+  product_description: string | null;
+  product_uses: string[];
+  substrates: string[];
+  recommended_uses: string[];
+  base_type: string;
+  resin_type: string | null;
+  resin_system: string;
+  voc_level: string;
+  volume_solids_pct: number | null;
+  volume_solids_label: string | null;
+  sheen_options: string[];
+  source_url: string | null;
+  can_image_url: string | null;
+  can_image_storage_path: string | null;
+  gallons_per_labor_hour: number | null;
+  is_active: boolean;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+};
+
+export type CompanyPaintPreset = {
+  id: string;
+  company_id: string;
+  name: string;
+  application_type: string;
+  description: string | null;
+  primer_product_id: string | null;
+  topcoat_product_id: string | null;
+  primer_coats: number;
+  topcoat_coats: number;
+  labor_hours_delta_pct: number;
+  labor_hours_delta_hours: number;
+  prep_hours_delta: number;
+  value_add_features: string[];
+  is_active: boolean;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+};
+
+export type CompanyBaselinePaintSystem = {
+  id: string;
+  company_id: string;
+  application_scope: string;
+  surface_category: string;
+  primer_product_id: string | null;
+  topcoat_product_id: string | null;
+  primer_coats: number;
+  topcoat_coats: number;
+  primer_spot_prime: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
+export type CompanyTierDefault = {
+  id: string;
+  company_id: string;
+  tier: QuoteTierName;
+  application_scope: string;
+  primer_product_id: string | null;
+  topcoat_product_id: string | null;
+  primer_coats: number;
+  topcoat_coats: number;
+  preset_id: string | null;
+  labor_hours_delta_pct: number;
+  labor_hours_delta_hours: number;
+  prep_hours_delta: number;
+  value_add_features: string[];
+  created_at: string;
+  updated_at: string;
 };
 
 export type QuoteTier = {
@@ -127,6 +320,21 @@ export type QuoteTier = {
   margin: number;
   features: string[];
   benefits: string[];
+  display_name?: string | null;
+};
+
+export type QuoteBaselinePaintSystem = {
+  id: string;
+  quote_id: string;
+  application_scope: string;
+  surface_category: string;
+  primer_product_id: string | null;
+  topcoat_product_id: string | null;
+  primer_coats: number;
+  topcoat_coats: number;
+  primer_spot_prime: boolean;
+  created_at: string;
+  updated_at: string;
 };
 
 export type QuoteUpgradeRules = {
@@ -135,6 +343,18 @@ export type QuoteUpgradeRules = {
   per_gallon_premium: number;
   premium_service_fee: number;
   tier_multipliers: Record<QuoteTierName, number>;
+};
+
+export type QuoteTemplate = {
+  id: string;
+  company_id: string;
+  name: string;
+  description: string | null;
+  job_type: QuoteJobType;
+  source_quote_id: string | null;
+  payload: Record<string, unknown>;
+  created_at: string;
+  updated_at: string;
 };
 
 export type JobChecklistItem = {
@@ -250,6 +470,8 @@ export type PaintManufacturer = {
 
 export type PaintProductEnrichmentStatus = "pending" | "partial" | "complete";
 export type PaintEnrichmentProposalStatus = "pending" | "accepted" | "declined";
+export type PaintCatalogOrigin = "admin" | "subscriber";
+export type PaintCatalogReviewStatus = "approved" | "pending_review" | "rejected";
 
 export type PaintProduct = {
   id: string;
@@ -272,6 +494,7 @@ export type PaintProduct = {
   recommended_uses: string[];
   volume_solids_pct: number | null;
   volume_solids_label: string | null;
+  coverage_sqft_per_gallon: number;
   attribute_source_url: string | null;
   source_url: string | null;
   can_image_url: string | null;
@@ -284,6 +507,10 @@ export type PaintProduct = {
   enriched_at: string | null;
   enrichment_source_url: string | null;
   is_discontinued: boolean;
+  catalog_origin: PaintCatalogOrigin;
+  catalog_review_status: PaintCatalogReviewStatus;
+  submitted_by_company_id: string | null;
+  submitted_at: string | null;
   discovered_at: string;
   created_by: string | null;
   created_at: string;
@@ -333,7 +560,7 @@ export type Database = {
     Tables: {
       companies: {
         Row: Company;
-        Insert: InsertOf<Company, "id" | "created_at" | "logo_url" | "address" | "address_line2" | "city" | "state" | "zip" | "phone" | "email" | "tax_rate" | "labor_rates" | "material_markup" | "overhead_pct" | "default_margins" | "coverage_sqft_per_gallon" | "onboarding_complete" | "stripe_customer_id" | "stripe_subscription_id" | "subscription_status" | "sell_sheet_benefit_library" | "sell_sheet_paint_system_library" | "enabled_features">;
+        Insert: InsertOf<Company, "id" | "created_at" | "logo_url" | "address" | "address_line2" | "city" | "state" | "zip" | "phone" | "email" | "tax_rate" | "labor_rates" | "avg_labor_cost_per_hour" | "material_markup" | "labor_markup_pct" | "sundries_pct" | "surface_labor_defaults" | "overhead_pct" | "default_margins" | "coverage_sqft_per_gallon" | "gallons_per_labor_hour" | "material_waste_pct" | "spot_prime_material_pct" | "onboarding_complete" | "stripe_customer_id" | "stripe_subscription_id" | "subscription_status" | "sell_sheet_benefit_library" | "sell_sheet_paint_system_library" | "enabled_features">;
         Update: Partial<Company>;
         Relationships: [];
       };
@@ -365,7 +592,24 @@ export type Database = {
       };
       quotes: {
         Row: Quote;
-        Insert: InsertOf<Quote, "id" | "status" | "before_photos" | "accepted_tier" | "job_address_line2" | "job_city" | "job_state" | "job_zip" | "created_at" | "updated_at">;
+        Insert: InsertOf<
+          Quote,
+          | "id"
+          | "name"
+          | "job_type"
+          | "estimation_mode"
+          | "custom_message"
+          | "status"
+          | "before_photos"
+          | "accepted_tier"
+          | "accepted_optional_line_item_ids"
+          | "job_address_line2"
+          | "job_city"
+          | "job_state"
+          | "job_zip"
+          | "created_at"
+          | "updated_at"
+        >;
         Update: Partial<Quote>;
         Relationships: [
           {
@@ -386,19 +630,69 @@ export type Database = {
       };
       quote_rooms: {
         Row: QuoteRoom;
-        Insert: InsertOf<QuoteRoom, "id" | "surface_type" | "condition" | "sq_ft" | "color_codes" | "coats" | "prep_work">;
+        Insert: InsertOf<
+          QuoteRoom,
+          | "id"
+          | "surface_type"
+          | "condition"
+          | "sq_ft"
+          | "color_codes"
+          | "coats"
+          | "prep_work"
+          | "sort_order"
+          | "photo_url"
+          | "is_optional"
+          | "length_ft"
+          | "width_ft"
+          | "height_ft"
+        >;
         Update: Partial<QuoteRoom>;
+        Relationships: [];
+      };
+      quote_surfaces: {
+        Row: QuoteSurface;
+        Insert: InsertOf<
+          QuoteSurface,
+          | "id"
+          | "sq_ft"
+          | "coats"
+          | "unit_rate"
+          | "rate_type"
+          | "notes"
+          | "is_optional"
+          | "sort_order"
+          | "company_paint_product_id"
+          | "product_override"
+          | "gallons_estimated"
+          | "surface_key"
+        >;
+        Update: Partial<QuoteSurface>;
         Relationships: [];
       };
       quote_line_items: {
         Row: QuoteLineItem;
-        Insert: InsertOf<QuoteLineItem, "id" | "qty" | "unit_cost" | "markup">;
+        Insert: InsertOf<
+          QuoteLineItem,
+          | "id"
+          | "qty"
+          | "unit_cost"
+          | "markup"
+          | "source"
+          | "room_id"
+          | "is_optional"
+          | "sort_order"
+          | "company_paint_product_id"
+          | "paint_role"
+        >;
         Update: Partial<QuoteLineItem>;
         Relationships: [];
       };
       quote_tiers: {
         Row: QuoteTier;
-        Insert: InsertOf<QuoteTier, "id" | "price" | "margin" | "features" | "benefits">;
+        Insert: InsertOf<
+          QuoteTier,
+          "id" | "price" | "margin" | "features" | "benefits" | "display_name"
+        >;
         Update: Partial<QuoteTier>;
         Relationships: [
           {
@@ -415,6 +709,30 @@ export type Database = {
         Insert: InsertOf<QuoteUpgradeRules, "id" | "per_gallon_premium" | "premium_service_fee" | "tier_multipliers">;
         Update: Partial<QuoteUpgradeRules>;
         Relationships: [];
+      };
+      quote_templates: {
+        Row: QuoteTemplate;
+        Insert: InsertOf<
+          QuoteTemplate,
+          "id" | "description" | "source_quote_id" | "created_at" | "updated_at"
+        >;
+        Update: Partial<QuoteTemplate>;
+        Relationships: [
+          {
+            foreignKeyName: "quote_templates_company_id_fkey";
+            columns: ["company_id"];
+            isOneToOne: false;
+            referencedRelation: "companies";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "quote_templates_source_quote_id_fkey";
+            columns: ["source_quote_id"];
+            isOneToOne: false;
+            referencedRelation: "quotes";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       jobs: {
         Row: Job;
@@ -436,7 +754,7 @@ export type Database = {
       };
       paint_products: {
         Row: PaintProduct;
-        Insert: InsertOf<PaintProduct, "id" | "resin_type" | "base_type" | "source_url" | "can_image_url" | "can_image_storage_path" | "product_description" | "sheen_options" | "paint_system_features" | "paint_system_feature_options" | "enrichment_status" | "enriched_at" | "enrichment_source_url" | "is_discontinued" | "discovered_at" | "created_by" | "created_at" | "updated_at">;
+        Insert: InsertOf<PaintProduct, "id" | "resin_type" | "base_type" | "coverage_sqft_per_gallon" | "source_url" | "can_image_url" | "can_image_storage_path" | "product_description" | "sheen_options" | "paint_system_features" | "paint_system_feature_options" | "enrichment_status" | "enriched_at" | "enrichment_source_url" | "is_discontinued" | "discovered_at" | "created_by" | "created_at" | "updated_at">;
         Update: Partial<PaintProduct>;
         Relationships: [
           {
@@ -447,6 +765,155 @@ export type Database = {
             referencedColumns: ["id"];
           },
         ];
+      };
+      company_paint_products: {
+        Row: CompanyPaintProduct;
+        Insert: InsertOf<
+          CompanyPaintProduct,
+          | "id"
+          | "paint_product_id"
+          | "manufacturer_name"
+          | "unit_price"
+          | "coverage_sqft_per_gallon"
+          | "sheen"
+          | "is_self_priming"
+          | "is_stain_blocking"
+          | "is_mold_mildew_resistant"
+          | "is_scrubbable"
+          | "is_one_coat"
+          | "paint_system_features"
+          | "paint_system_feature_options"
+          | "product_description"
+          | "product_uses"
+          | "substrates"
+          | "recommended_uses"
+          | "base_type"
+          | "resin_type"
+          | "resin_system"
+          | "voc_level"
+          | "volume_solids_pct"
+          | "volume_solids_label"
+          | "sheen_options"
+          | "source_url"
+          | "can_image_url"
+          | "can_image_storage_path"
+          | "gallons_per_labor_hour"
+          | "is_active"
+          | "sort_order"
+          | "created_at"
+          | "updated_at"
+        >;
+        Update: Partial<CompanyPaintProduct>;
+        Relationships: [];
+      };
+      company_paint_presets: {
+        Row: CompanyPaintPreset;
+        Insert: InsertOf<
+          CompanyPaintPreset,
+          | "id"
+          | "description"
+          | "primer_product_id"
+          | "topcoat_product_id"
+          | "primer_coats"
+          | "topcoat_coats"
+          | "labor_hours_delta_pct"
+          | "labor_hours_delta_hours"
+          | "prep_hours_delta"
+          | "value_add_features"
+          | "is_active"
+          | "sort_order"
+          | "created_at"
+          | "updated_at"
+        >;
+        Update: Partial<CompanyPaintPreset>;
+        Relationships: [];
+      };
+      company_baseline_paint_systems: {
+        Row: CompanyBaselinePaintSystem;
+        Insert: InsertOf<
+          CompanyBaselinePaintSystem,
+          | "id"
+          | "primer_product_id"
+          | "topcoat_product_id"
+          | "primer_coats"
+          | "topcoat_coats"
+          | "primer_spot_prime"
+          | "created_at"
+          | "updated_at"
+        >;
+        Update: Partial<CompanyBaselinePaintSystem>;
+        Relationships: [];
+      };
+      company_tier_defaults: {
+        Row: CompanyTierDefault;
+        Insert: InsertOf<
+          CompanyTierDefault,
+          | "id"
+          | "application_scope"
+          | "primer_product_id"
+          | "topcoat_product_id"
+          | "primer_coats"
+          | "topcoat_coats"
+          | "preset_id"
+          | "labor_hours_delta_pct"
+          | "labor_hours_delta_hours"
+          | "prep_hours_delta"
+          | "value_add_features"
+          | "created_at"
+          | "updated_at"
+        >;
+        Update: Partial<CompanyTierDefault>;
+        Relationships: [];
+      };
+      quote_tier_paint_config: {
+        Row: QuoteTierPaintConfig;
+        Insert: InsertOf<
+          QuoteTierPaintConfig,
+          | "id"
+          | "primer_product_id"
+          | "topcoat_product_id"
+          | "primer_coats"
+          | "topcoat_coats"
+          | "primer_spot_prime"
+          | "labor_hours_delta_pct"
+          | "labor_hours_delta_hours"
+          | "prep_hours_delta"
+          | "value_add_features"
+          | "snapshot"
+          | "created_at"
+          | "updated_at"
+        >;
+        Update: Partial<QuoteTierPaintConfig>;
+        Relationships: [];
+      };
+      quote_baseline_paint_systems: {
+        Row: QuoteBaselinePaintSystem;
+        Insert: InsertOf<
+          QuoteBaselinePaintSystem,
+          | "id"
+          | "primer_product_id"
+          | "topcoat_product_id"
+          | "primer_coats"
+          | "topcoat_coats"
+          | "primer_spot_prime"
+          | "created_at"
+          | "updated_at"
+        >;
+        Update: Partial<QuoteBaselinePaintSystem>;
+        Relationships: [];
+      };
+      quote_paint_defaults: {
+        Row: QuotePaintDefault;
+        Insert: InsertOf<
+          QuotePaintDefault,
+          | "id"
+          | "company_paint_product_id"
+          | "coats"
+          | "created_at"
+          | "updated_at"
+        >;
+        Update: Partial<QuotePaintDefault>;
+        Relationships: [];
       };
       paint_product_enrichment_proposals: {
         Row: PaintProductEnrichmentProposal;
@@ -488,6 +955,18 @@ export type Database = {
       ensure_profile: {
         Args: Record<string, never>;
         Returns: Profile;
+      };
+      save_quote_draft_children: {
+        Args: {
+          p_quote_id: string;
+          p_rooms?: Json;
+          p_surfaces?: Json;
+          p_line_items?: Json;
+          p_tiers?: Json;
+          p_tier_paint_config?: Json;
+          p_paint_defaults?: Json;
+        };
+        Returns: undefined;
       };
     };
     Enums: {

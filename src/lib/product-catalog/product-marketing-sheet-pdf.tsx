@@ -345,7 +345,7 @@ export function ProductMarketingSheetPdfDocument({
 
   return (
     <Document>
-      <Page size="LETTER" orientation="portrait" style={styles.page} wrap={false}>
+      <Page size="LETTER" orientation="portrait" style={styles.page}>
         <View style={styles.header} wrap={false}>
           <View style={styles.brand}>
             {manufacturerLogoUrl ? (

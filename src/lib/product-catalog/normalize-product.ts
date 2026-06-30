@@ -1,3 +1,4 @@
+import { DEFAULT_PRODUCT_COVERAGE_SQFT_PER_GALLON } from "@/lib/paint-library/coverage";
 import { parseStringArray } from "@/lib/product-catalog/enrichment-status";
 import type {
   PaintProductRow,
@@ -49,6 +50,9 @@ export function normalizeProductRow(row: Record<string, unknown>): PaintProductR
       typeof row.volume_solids_label === "string"
         ? row.volume_solids_label
         : null,
+    coverage_sqft_per_gallon:
+      parseNumeric(row.coverage_sqft_per_gallon) ??
+      DEFAULT_PRODUCT_COVERAGE_SQFT_PER_GALLON,
     attribute_source_url:
       typeof row.attribute_source_url === "string"
         ? row.attribute_source_url
@@ -80,6 +84,17 @@ export function normalizeProductRow(row: Record<string, unknown>): PaintProductR
         : null,
     is_discontinued:
       typeof row.is_discontinued === "boolean" ? row.is_discontinued : false,
+    catalog_origin:
+      (row.catalog_origin as PaintProductRow["catalog_origin"]) ?? "admin",
+    catalog_review_status:
+      (row.catalog_review_status as PaintProductRow["catalog_review_status"]) ??
+      "approved",
+    submitted_by_company_id:
+      typeof row.submitted_by_company_id === "string"
+        ? row.submitted_by_company_id
+        : null,
+    submitted_at:
+      typeof row.submitted_at === "string" ? row.submitted_at : null,
     discovered_at: row.discovered_at as string,
     created_by:
       typeof row.created_by === "string" ? row.created_by : null,

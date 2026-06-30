@@ -1,6 +1,16 @@
 import { format } from "date-fns";
 
-import type { CatalogProductRow } from "@/lib/product-catalog/types";
+import { resolveDisplayAttributes } from "@/lib/product-catalog/infer-product-display-attributes";
+import type { CompanyPaintProductRow } from "@/lib/paint-library/types";
+import type {
+  CatalogProductRow,
+  PaintProductApplication,
+  PaintProductCategory,
+  PaintProductUse,
+  PaintResinSystem,
+  PaintSubstrate,
+} from "@/lib/product-catalog/types";
+import type { CompanyPaintProductRole } from "@/types/database";
 import {
   formatApplicationType,
   formatBaseType,
@@ -81,9 +91,83 @@ export function baseLabel(value: string): string {
   return value;
 }
 
+function companyRoleToCategory(role: CompanyPaintProductRole): PaintProductCategory {
+  if (role === "primer" || role === "undercoater" || role === "sealer") {
+    return role;
+  }
+  return "paint";
+}
+
+export function buildCompanyProductMarketingSheetView(
+  product: CompanyPaintProductRow,
+  options?: { manufacturerLogoUrl?: string | null },
+): ProductMarketingSheetView {
+  const category = companyRoleToCategory(product.role);
+  const display = resolveDisplayAttributes({
+    application_type: product.application_type as PaintProductApplication,
+    category,
+    product_description: product.product_description,
+    paint_system_features: product.paint_system_features,
+    paint_system_feature_options: product.paint_system_feature_options,
+    recommended_uses: product.recommended_uses,
+    product_uses: product.product_uses as PaintProductUse[],
+    substrates: product.substrates as PaintSubstrate[],
+    is_self_priming: product.is_self_priming,
+    is_stain_blocking: product.is_stain_blocking,
+    is_mold_mildew_resistant: product.is_mold_mildew_resistant,
+    is_scrubbable: product.is_scrubbable,
+    is_one_coat: product.is_one_coat,
+  });
+
+  return {
+    id: product.id,
+    manufacturerName: product.manufacturer_name?.trim() || "—",
+    manufacturerLogoUrl: options?.manufacturerLogoUrl ?? null,
+    productName: product.name,
+    applicationLabel: applicationLabel(product.application_type),
+    categoryLabel: categoryLabel(category),
+    baseLabel: baseLabel(product.base_type),
+    resinType: product.resin_type,
+    resinSystemLabel: formatResinSystem(
+      (product.resin_system ?? "unknown") as PaintResinSystem,
+    ),
+    description: product.product_description,
+    sheenOptions: formatSheenOptionsForDisplay(product.sheen_options, []),
+    productUses: display.productUses.map((use) => formatSlugLabel(use)),
+    substrates: display.substrates.map((substrate) =>
+      formatSlugLabel(substrate),
+    ),
+    vocLevelLabel: formatVocLevel(
+      product.voc_level as "zero" | "low" | "standard" | "unknown",
+    ),
+    volumeSolidsLabel: formatVolumeSolids(
+      product.volume_solids_pct,
+      product.volume_solids_label,
+    ),
+    productCapabilities: listProductCapabilities(display.capabilityFlags),
+    recommendedUses: product.recommended_uses,
+    paintSystemFeatures: product.paint_system_features,
+    paintSystemFeatureOptions: product.paint_system_feature_options,
+    canImageUrl: productCanImageDisplayUrl(
+      product.can_image_url,
+      product.can_image_updated_at ?? product.updated_at,
+    ),
+    isDiscontinued: false,
+    enrichmentStatus: "complete",
+    lastGatheredLabel: formatMarketingSheetLastGathered(
+      null,
+      product.updated_at,
+    ),
+    sourceUrl: product.source_url,
+    attributeSourceUrl: product.source_url,
+  };
+}
+
 export function buildProductMarketingSheetView(
   product: CatalogProductRow,
 ): ProductMarketingSheetView {
+  const display = resolveDisplayAttributes(product);
+
   return {
     id: product.id,
     manufacturerName: product.manufacturer_name,
@@ -99,8 +183,8 @@ export function buildProductMarketingSheetView(
       product.sheen_options,
       product.sheens,
     ),
-    productUses: product.product_uses.map((use) => formatSlugLabel(use)),
-    substrates: product.substrates.map((substrate) =>
+    productUses: display.productUses.map((use) => formatSlugLabel(use)),
+    substrates: display.substrates.map((substrate) =>
       formatSlugLabel(substrate),
     ),
     vocLevelLabel: formatVocLevel(product.voc_level),
@@ -108,13 +192,7 @@ export function buildProductMarketingSheetView(
       product.volume_solids_pct,
       product.volume_solids_label,
     ),
-    productCapabilities: listProductCapabilities({
-      isSelfPriming: product.is_self_priming,
-      isStainBlocking: product.is_stain_blocking,
-      isMoldMildewResistant: product.is_mold_mildew_resistant,
-      isScrubbable: product.is_scrubbable,
-      isOneCoat: product.is_one_coat,
-    }),
+    productCapabilities: listProductCapabilities(display.capabilityFlags),
     recommendedUses: product.recommended_uses,
     paintSystemFeatures: product.paint_system_features,
     paintSystemFeatureOptions: product.paint_system_feature_options,

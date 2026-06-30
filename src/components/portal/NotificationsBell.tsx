@@ -21,6 +21,7 @@ import {
   markNotificationRead,
   type NotificationRow,
 } from "@/app/app/(portal)/notifications/actions";
+import { signalNavigationStart } from "@/lib/ui/navigation-progress";
 
 export function NotificationsBell() {
   const router = useRouter();
@@ -49,20 +50,20 @@ export function NotificationsBell() {
     if (open) await loadNotifications();
   }
 
-  async function handleItemClick(notification: NotificationRow) {
-    if (!notification.read_at) {
-      await markNotificationRead(notification.id);
-      setNotifications((prev) =>
-        prev.map((item) =>
-          item.id === notification.id
-            ? { ...item, read_at: new Date().toISOString() }
-            : item,
-        ),
-      );
+  function handleItemClick(notification: NotificationRow) {
+    if (notification.href) {
+      signalNavigationStart();
+      router.push(notification.href);
     }
 
-    if (notification.href) {
-      router.push(notification.href);
+    if (!notification.read_at) {
+      const readAt = new Date().toISOString();
+      setNotifications((prev) =>
+        prev.map((item) =>
+          item.id === notification.id ? { ...item, read_at: readAt } : item,
+        ),
+      );
+      void markNotificationRead(notification.id);
     }
   }
 

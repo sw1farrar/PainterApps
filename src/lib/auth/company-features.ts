@@ -25,9 +25,9 @@ export type CompanyFeatureMeta = {
 export const COMPANY_FEATURE_META: Record<CompanyFeature, CompanyFeatureMeta> = {
   free_tools_sell_sheets: {
     id: "free_tools_sell_sheets",
-    label: "Sell sheets",
-    description: "Free tools build-sell-sheet and saved sell sheets",
-    routePrefixes: ["/free-tools", "/app/sell-sheets"],
+    label: "Products",
+    description: "Sell sheets, product catalog, and free tools build-sell-sheet",
+    routePrefixes: ["/free-tools", "/app/products", "/app/sell-sheets"],
   },
   customers: {
     id: "customers",
@@ -37,7 +37,7 @@ export const COMPANY_FEATURE_META: Record<CompanyFeature, CompanyFeatureMeta> = 
   },
   quotes: {
     id: "quotes",
-    label: "Quotes",
+    label: "Estimates",
     description: "Quote builder and proposals",
     routePrefixes: ["/app/quotes"],
   },
@@ -169,7 +169,7 @@ export function filterNavByFeatures(
 
 export function safePortalHome(enabledFeatures: CompanyFeature[]): string {
   if (enabledFeatures.includes("free_tools_sell_sheets")) {
-    return "/app/sell-sheets";
+    return "/app/products";
   }
   return "/app/dashboard";
 }

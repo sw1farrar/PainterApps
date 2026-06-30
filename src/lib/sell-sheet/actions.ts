@@ -272,8 +272,9 @@ export async function saveSellSheetForUser(
           .eq("id", companyResult.companyId);
       }
 
+      revalidatePath("/app/products/sell-sheets");
+      revalidatePath(`/app/products/sell-sheets/${sellSheetId}`);
       revalidatePath("/app/sell-sheets");
-      revalidatePath(`/app/sell-sheets/${sellSheetId}`);
       revalidatePath("/free-tools/build-sell-sheet");
       return { success: true, data: { sellSheetId } };
     } catch (error) {
@@ -295,6 +296,7 @@ export async function saveSellSheetForUser(
     return { success: false, error: inserted.error };
   }
 
+  revalidatePath("/app/products/sell-sheets");
   revalidatePath("/app/sell-sheets");
   return { success: true, data: { sellSheetId: inserted.sellSheetId } };
 }
@@ -364,6 +366,7 @@ async function persistPaintCanAiResultToDatabase(input: {
 
   if (updateError) return;
 
+  revalidatePath(`/app/products/sell-sheets/${input.sellSheetId}`);
   revalidatePath(`/app/sell-sheets/${input.sellSheetId}`);
   revalidatePath("/free-tools/build-sell-sheet");
 }

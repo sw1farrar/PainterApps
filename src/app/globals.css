@@ -288,18 +288,63 @@ body:has(.portal-app-shell) {
   -webkit-overflow-scrolling: touch;
 }
 
-.site-scroll-main:has(.sell-sheet-preview-page) {
+.site-scroll-main:has(.sell-sheet-preview-page),
+.site-scroll-main:has(.quote-editor-page),
+.site-scroll-main:has(.quote-document-workspace-root) {
   display: flex;
   flex-direction: column;
   overflow: hidden;
 }
 
-.site-scroll-main:has(.sell-sheet-preview-page) > .page-enter {
+.site-scroll-main:has(.sell-sheet-preview-page) > .page-enter,
+.site-scroll-main:has(.quote-editor-page) > .page-enter,
+.site-scroll-main:has(.quote-document-workspace-root) > .page-enter {
   display: flex;
   flex: 1 1 0%;
   min-height: 0;
   flex-direction: column;
+  width: 100%;
+  max-width: none;
+  margin-inline: 0;
   padding-bottom: 0;
+}
+
+.site-scroll-main:has(.quote-editor-page) > .page-enter,
+.site-scroll-main:has(.quote-document-workspace-root) > .page-enter {
+  padding: 0.375rem 0.625rem 0.625rem;
+}
+
+@media (min-width: 640px) {
+  .site-scroll-main:has(.quote-editor-page) > .page-enter,
+  .site-scroll-main:has(.quote-document-workspace-root) > .page-enter {
+    padding: 0.5rem 0.75rem 0.75rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .site-scroll-main:has(.quote-editor-page) > .page-enter,
+  .site-scroll-main:has(.quote-document-workspace-root) > .page-enter {
+    padding: 0.5rem 1rem 1rem;
+  }
+}
+
+.quote-editor-page,
+.quote-document-workspace-root {
+  display: flex;
+  flex: 1 1 0%;
+  min-height: 0;
+  height: 100%;
+  flex-direction: column;
+  width: 100%;
+  overflow: hidden;
+}
+
+.quote-editor-workspace {
+  display: flex;
+  flex: 1 1 0%;
+  min-height: 0;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 .sell-sheet-preview-page {
@@ -694,6 +739,182 @@ body:has(.portal-app-shell) {
   .skeleton-shimmer {
     animation: none;
     background: rgba(22, 42, 74, 0.45);
+  }
+}
+
+/* Sheet drawer — keyframe animations so Radix can wait for animationend on close */
+@keyframes sheet-from-right-in {
+  from {
+    transform: translate3d(100%, 0, 0);
+  }
+  to {
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes sheet-from-right-out {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(100%, 0, 0);
+  }
+}
+
+@keyframes sheet-from-left-in {
+  from {
+    transform: translate3d(-100%, 0, 0);
+  }
+  to {
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes sheet-from-left-out {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(-100%, 0, 0);
+  }
+}
+
+@keyframes sheet-from-bottom-in {
+  from {
+    transform: translate3d(0, 100%, 0);
+  }
+  to {
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes sheet-from-bottom-out {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(0, 100%, 0);
+  }
+}
+
+@keyframes sheet-from-top-in {
+  from {
+    transform: translate3d(0, -100%, 0);
+  }
+  to {
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes sheet-from-top-out {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(0, -100%, 0);
+  }
+}
+
+@keyframes sheet-overlay-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes sheet-overlay-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+.sheet-ease {
+  --sheet-duration: 500ms;
+  --sheet-easing: cubic-bezier(0.32, 0.72, 0, 1);
+  animation-duration: var(--sheet-duration);
+  animation-timing-function: var(--sheet-easing);
+  animation-fill-mode: both;
+}
+
+.sheet-overlay[data-state="open"] {
+  animation: sheet-overlay-in var(--sheet-duration, 500ms)
+    var(--sheet-easing, cubic-bezier(0.32, 0.72, 0, 1)) both;
+}
+
+.sheet-overlay[data-state="closed"] {
+  animation: sheet-overlay-out var(--sheet-duration, 500ms)
+    var(--sheet-easing, cubic-bezier(0.32, 0.72, 0, 1)) both;
+}
+
+.sheet-animate-right[data-state="open"] {
+  animation-name: sheet-from-right-in;
+}
+
+.sheet-animate-right[data-state="closed"] {
+  animation-name: sheet-from-right-out;
+}
+
+.sheet-animate-left[data-state="open"] {
+  animation-name: sheet-from-left-in;
+}
+
+.sheet-animate-left[data-state="closed"] {
+  animation-name: sheet-from-left-out;
+}
+
+.sheet-animate-bottom[data-state="open"] {
+  animation-name: sheet-from-bottom-in;
+}
+
+.sheet-animate-bottom[data-state="closed"] {
+  animation-name: sheet-from-bottom-out;
+}
+
+.sheet-animate-top[data-state="open"] {
+  animation-name: sheet-from-top-in;
+}
+
+.sheet-animate-top[data-state="closed"] {
+  animation-name: sheet-from-top-out;
+}
+
+.sheet-animate-responsive[data-state="open"] {
+  animation-name: sheet-from-bottom-in;
+}
+
+.sheet-animate-responsive[data-state="closed"] {
+  animation-name: sheet-from-bottom-out;
+}
+
+@media (min-width: 768px) {
+  .sheet-animate-responsive[data-state="open"] {
+    animation-name: sheet-from-right-in;
+  }
+
+  .sheet-animate-responsive[data-state="closed"] {
+    animation-name: sheet-from-right-out;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sheet-overlay[data-state="open"],
+  .sheet-overlay[data-state="closed"],
+  .sheet-animate-right[data-state="open"],
+  .sheet-animate-right[data-state="closed"],
+  .sheet-animate-left[data-state="open"],
+  .sheet-animate-left[data-state="closed"],
+  .sheet-animate-bottom[data-state="open"],
+  .sheet-animate-bottom[data-state="closed"],
+  .sheet-animate-top[data-state="open"],
+  .sheet-animate-top[data-state="closed"],
+  .sheet-animate-responsive[data-state="open"],
+  .sheet-animate-responsive[data-state="closed"] {
+    animation: none;
   }
 }
 
@@ -1912,7 +2133,42 @@ body:has(.portal-app-shell) {
 }
 
 /* Product catalog — single-product marketing sheet (tokens: product-marketing-sheet-display-tokens.ts) */
+.product-marketing-sheet-preview-stage {
+  container-type: size;
+  container-name: product-marketing-sheet-preview;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  padding: 2rem 1rem 2.5rem;
+}
+
+.product-marketing-sheet-preview-stage--modal {
+  flex: 1 1 0%;
+}
+
+.product-marketing-sheet-preview-stage .product-marketing-sheet {
+  box-sizing: border-box;
+  flex-shrink: 0;
+}
+
+/* Modal: US Letter width (8.5 in); min height 11 in — scroll the stage for overflow */
+.product-marketing-sheet-preview-stage--modal .product-marketing-sheet,
+.product-marketing-sheet--single-page {
+  width: var(--pms-page-width, 8.5in);
+  max-width: var(--pms-page-width, 8.5in);
+  min-height: var(--pms-page-height, 11in);
+  aspect-ratio: auto;
+}
+
 .product-marketing-sheet {
+  box-sizing: border-box;
   width: 100%;
   max-width: var(--pms-page-width, 8.5in);
   min-height: var(--pms-page-min-height, 11in);
@@ -2213,25 +2469,29 @@ body:has(.portal-app-shell) {
 }
 
 @media (max-width: 720px) {
-  .product-marketing-sheet {
+  .product-marketing-sheet:not(:where(.product-marketing-sheet-preview-stage *)) {
     min-height: auto;
     padding: 1rem 1rem 1.2rem;
   }
 
-  .pms-header {
+  .product-marketing-sheet:not(:where(.product-marketing-sheet-preview-stage *))
+    .pms-header {
     margin: -1rem -1rem 1rem;
     padding: 1rem;
     flex-direction: column;
     align-items: stretch;
   }
 
-  .pms-header-aside {
+  .product-marketing-sheet:not(:where(.product-marketing-sheet-preview-stage *))
+    .pms-header-aside {
     max-width: none;
     align-items: flex-end;
   }
 
-  .pms-hero,
-  .pms-columns {
+  .product-marketing-sheet:not(:where(.product-marketing-sheet-preview-stage *))
+    .pms-hero,
+  .product-marketing-sheet:not(:where(.product-marketing-sheet-preview-stage *))
+    .pms-columns {
     grid-template-columns: 1fr;
   }
 }

@@ -17,7 +17,7 @@ export const CHEAPEST_XAI_MODEL_ID = "grok-build-0.1";
 export const XAI_MODEL_TIER_META: Record<XaiModelTier, XaiModelTierMeta> = {
   premium: {
     tier: "premium",
-    label: "Grok 4.3 (Latest)",
+    label: "Premium (latest)",
     description:
       "Best quality for product enrichment, can-image vision, and web search.",
     modelId: "grok-4.3",
@@ -26,9 +26,9 @@ export const XAI_MODEL_TIER_META: Record<XaiModelTier, XaiModelTierMeta> = {
   },
   economy: {
     tier: "economy",
-    label: "Grok Build 0.1 (Cheapest)",
+    label: "Economy",
     description:
-      "Lowest-cost xAI model ($1.00 / $2.00 per 1M tokens). Supports vision, web search, and structured JSON for catalog work.",
+      "Lower cost ($1.00 / $2.00 per 1M tokens). Supports vision, web search, and structured JSON for catalog work.",
     modelId: CHEAPEST_XAI_MODEL_ID,
     inputPricePerMillion: "$1.00",
     outputPricePerMillion: "$2.00",

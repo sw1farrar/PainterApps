@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 
 import { AddressFields } from "@/components/forms/AddressFields";
@@ -19,21 +20,26 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toAddressInput, type AddressFields as AddressValue } from "@/lib/address";
 import { ONBOARDING_DEFAULTS } from "@/lib/onboarding/defaults";
+import { SURFACE_PRODUCTIVITY_REFERENCE } from "@/lib/quotes/surface-productivity";
 import { formatPhoneDisplay } from "@/lib/phone";
 import { getSupabaseEnvError } from "@/lib/supabase/env";
+import { QUOTE_PAINT_TIERS } from "@/lib/paint-library/types";
+import { QUOTE_TIER_LABELS } from "@/lib/quotes/tier-labels";
 import type { Company, QuoteTierName, QuoteUpgradeRules } from "@/types/database";
+import { PaintLibrarySettings } from "@/components/paint-library/PaintLibrarySettings";
 import {
   updateCompanySettings,
   updatePricingSettings,
   updateUpgradeSettings,
 } from "./actions";
 
-const TIER_LABELS: Record<QuoteTierName, string> = {
-  good: "Good",
-  better: "Better",
-  best: "Best",
-  beautiful: "Beautiful",
-};
+const SETTINGS_TABS = [
+  "company",
+  "pricing",
+  "upgrades",
+  "paint-library",
+] as const;
+type SettingsTab = (typeof SETTINGS_TABS)[number];
 
 type SettingsClientProps = {
   company: Company;
@@ -41,9 +47,24 @@ type SettingsClientProps = {
 };
 
 export function SettingsClient({ company, upgradeRules }: SettingsClientProps) {
+  const searchParams = useSearchParams();
+  const tabParam = searchParams.get("tab");
+  const initialTab: SettingsTab = SETTINGS_TABS.includes(
+    tabParam as SettingsTab,
+  )
+    ? (tabParam as SettingsTab)
+    : "company";
+
   const defaults = ONBOARDING_DEFAULTS;
   const envError = getSupabaseEnvError();
   const [loading, setLoading] = React.useState(false);
+  const [activeTab, setActiveTab] = React.useState<SettingsTab>(initialTab);
+
+  React.useEffect(() => {
+    if (SETTINGS_TABS.includes(tabParam as SettingsTab)) {
+      setActiveTab(tabParam as SettingsTab);
+    }
+  }, [tabParam]);
 
   const [name, setName] = React.useState(company.name);
   const [logoUrl, setLogoUrl] = React.useState(company.logo_url ?? "");
@@ -61,8 +82,14 @@ export function SettingsClient({ company, upgradeRules }: SettingsClientProps) {
   const [materialMarkup, setMaterialMarkup] = React.useState(
     String(company.material_markup),
   );
+  const [laborMarkupPct, setLaborMarkupPct] = React.useState(
+    String(company.labor_markup_pct ?? defaults.laborMarkupPct),
+  );
+  const [sundriesPct, setSundriesPct] = React.useState(
+    String(company.sundries_pct ?? defaults.sundriesPct),
+  );
   const [overheadPct, setOverheadPct] = React.useState(
-    String(company.overhead_pct),
+    String(company.overhead_pct ?? defaults.overheadPct),
   );
   const [coverage, setCoverage] = React.useState(
     String(company.coverage_sqft_per_gallon),
@@ -77,6 +104,16 @@ export function SettingsClient({ company, upgradeRules }: SettingsClientProps) {
     String(
       (company.labor_rates as Record<string, number>).prep ??
         defaults.laborRates.prep,
+    ),
+  );
+  const [gallonsPerHour, setGallonsPerHour] = React.useState(
+    String(company.gallons_per_labor_hour ?? defaults.gallonsPerLaborHour),
+  );
+  const [avgLaborCost, setAvgLaborCost] = React.useState(
+    String(
+      company.avg_labor_cost_per_hour ??
+        (company.labor_rates as Record<string, number>).painter ??
+        defaults.avgLaborCostPerHour,
     ),
   );
 
@@ -125,8 +162,12 @@ export function SettingsClient({ company, upgradeRules }: SettingsClientProps) {
     const result = await updatePricingSettings({
       taxRate: Number(taxRate) || 0,
       materialMarkup: Number(materialMarkup) || 0,
+      laborMarkupPct: Number(laborMarkupPct) || 0,
+      sundriesPct: Number(sundriesPct) || 0,
       overheadPct: Number(overheadPct) || 0,
       coverageSqftPerGallon: Number(coverage) || 350,
+      gallonsPerLaborHour: Number(gallonsPerHour) || defaults.gallonsPerLaborHour,
+      avgLaborCostPerHour: Number(avgLaborCost) || null,
       laborRates: {
         painter: Number(painterRate) || defaults.laborRates.painter,
         prep: Number(prepRate) || defaults.laborRates.prep,
@@ -187,11 +228,16 @@ export function SettingsClient({ company, upgradeRules }: SettingsClientProps) {
         </Card>
       ) : null}
 
-      <Tabs defaultValue="company" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-3">
+      <Tabs
+        value={activeTab}
+        onValueChange={(value) => setActiveTab(value as SettingsTab)}
+        className="space-y-4"
+      >
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="company">Company</TabsTrigger>
           <TabsTrigger value="pricing">Pricing</TabsTrigger>
           <TabsTrigger value="upgrades">Upgrades</TabsTrigger>
+          <TabsTrigger value="paint-library">Paint library</TabsTrigger>
         </TabsList>
 
         <TabsContent value="company">
@@ -270,7 +316,16 @@ export function SettingsClient({ company, upgradeRules }: SettingsClientProps) {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="settings-markup">Material markup (%)</Label>
+                  <Label htmlFor="settings-labor-margin">Labor margin (%)</Label>
+                  <Input
+                    id="settings-labor-margin"
+                    type="number"
+                    value={laborMarkupPct}
+                    onChange={(e) => setLaborMarkupPct(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="settings-markup">Product margin (%)</Label>
                   <Input
                     id="settings-markup"
                     type="number"
@@ -279,7 +334,16 @@ export function SettingsClient({ company, upgradeRules }: SettingsClientProps) {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="settings-overhead">Overhead (%)</Label>
+                  <Label htmlFor="settings-sundries">Sundries (% of paint cost)</Label>
+                  <Input
+                    id="settings-sundries"
+                    type="number"
+                    value={sundriesPct}
+                    onChange={(e) => setSundriesPct(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="settings-overhead">Overhead (% of direct cost)</Label>
                   <Input
                     id="settings-overhead"
                     type="number"
@@ -295,6 +359,43 @@ export function SettingsClient({ company, upgradeRules }: SettingsClientProps) {
                     value={coverage}
                     onChange={(e) => setCoverage(e.target.value)}
                   />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="settings-gph">Crew productivity (gal / hr)</Label>
+                  <Input
+                    id="settings-gph"
+                    type="number"
+                    min="0.5"
+                    step="0.5"
+                    value={gallonsPerHour}
+                    onChange={(e) => setGallonsPerHour(e.target.value)}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Converts estimated gallons to painting labor hours. ≈{" "}
+                    {Math.round(
+                      (Number(gallonsPerHour) || defaults.gallonsPerLaborHour) *
+                        (Number(coverage) || 350),
+                    )}{" "}
+                    sq ft/hr at current coverage.
+                  </p>
+                </div>
+                <div className="space-y-2 sm:col-span-2">
+                  <Label htmlFor="settings-avg-labor">
+                    Average labor cost ($/hr)
+                  </Label>
+                  <Input
+                    id="settings-avg-labor"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={avgLaborCost}
+                    onChange={(e) => setAvgLaborCost(e.target.value)}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Blended hourly crew cost — average wages plus insurance,
+                    benefits, and other employer costs per hour worked. Prep still
+                    uses the prep rate below.
+                  </p>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="settings-painter">Painter rate ($/hr)</Label>
@@ -313,6 +414,52 @@ export function SettingsClient({ company, upgradeRules }: SettingsClientProps) {
                     value={prepRate}
                     onChange={(e) => setPrepRate(e.target.value)}
                   />
+                </div>
+              </div>
+              <div className="rounded-lg border border-border/80 bg-muted/20 p-4">
+                <p className="text-sm font-medium text-white">
+                  Production rate defaults
+                </p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Estimates use these industry-standard labor production rates by
+                  surface. Material coverage comes from each product (default 350
+                  sq ft/gal). Interior vs exterior follows the quote job type.
+                </p>
+                <div className="mt-4 grid gap-4 lg:grid-cols-2">
+                  {SURFACE_PRODUCTIVITY_REFERENCE.map((section) => (
+                    <div key={section.scope}>
+                      <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                        {section.scope === "interior" ? "Interior" : "Exterior"}
+                      </p>
+                      <div className="overflow-x-auto rounded-md border border-border/70">
+                        <table className="min-w-full text-left text-xs">
+                          <thead className="bg-muted/30">
+                            <tr>
+                              <th className="px-2 py-1.5 font-medium text-muted-foreground">
+                                Surface
+                              </th>
+                              <th className="px-2 py-1.5 font-medium text-muted-foreground">
+                                Production
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {section.rows.map((row) => (
+                              <tr
+                                key={row.surface}
+                                className="border-t border-border/50"
+                              >
+                                <td className="px-2 py-1.5">{row.surface}</td>
+                                <td className="px-2 py-1.5 text-muted-foreground">
+                                  {row.production}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
               <Button onClick={handleSavePricing} disabled={loading}>
@@ -353,13 +500,13 @@ export function SettingsClient({ company, upgradeRules }: SettingsClientProps) {
               </div>
               <div className="space-y-3">
                 <Label>Tier multipliers</Label>
-                {(Object.keys(TIER_LABELS) as QuoteTierName[]).map((tier) => (
+                {QUOTE_PAINT_TIERS.map((tier) => (
                   <div
                     key={tier}
                     className="flex items-center justify-between gap-4"
                   >
                     <span className="text-sm text-muted-foreground">
-                      {TIER_LABELS[tier]}
+                      {QUOTE_TIER_LABELS[tier]}
                     </span>
                     <Input
                       type="number"
@@ -382,6 +529,10 @@ export function SettingsClient({ company, upgradeRules }: SettingsClientProps) {
               </Button>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="paint-library">
+          <PaintLibrarySettings company={company} />
         </TabsContent>
       </Tabs>
     </div>

@@ -69,9 +69,8 @@ function BillingActions({
   if (!stripeConfigured) {
     return (
       <p className="text-sm text-muted-foreground">
-        Add <code className="text-foreground">STRIPE_SECRET_KEY</code> and{" "}
-        <code className="text-foreground">STRIPE_PRICE_ID</code> to enable
-        subscriptions.
+        Subscriptions are not available on this server yet. Contact your
+        administrator to enable billing.
       </p>
     );
   }

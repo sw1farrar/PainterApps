@@ -66,8 +66,13 @@ export async function updateCompanySettings(data: {
 export async function updatePricingSettings(data: {
   taxRate: number;
   materialMarkup: number;
+  laborMarkupPct: number;
+  sundriesPct: number;
   overheadPct: number;
   coverageSqftPerGallon: number;
+  gallonsPerLaborHour: number;
+  materialWastePct?: number;
+  avgLaborCostPerHour?: number | null;
   laborRates: Record<string, number>;
 }): Promise<ActionResult> {
   const envError = getSupabaseEnvError();
@@ -88,8 +93,13 @@ export async function updatePricingSettings(data: {
     .update({
       tax_rate: data.taxRate,
       material_markup: data.materialMarkup,
+      labor_markup_pct: data.laborMarkupPct,
+      sundries_pct: data.sundriesPct,
       overhead_pct: data.overheadPct,
       coverage_sqft_per_gallon: data.coverageSqftPerGallon,
+      gallons_per_labor_hour: data.gallonsPerLaborHour,
+      material_waste_pct: data.materialWastePct ?? 10,
+      avg_labor_cost_per_hour: data.avgLaborCostPerHour ?? null,
       labor_rates: data.laborRates,
     })
     .eq("id", session.company.id);

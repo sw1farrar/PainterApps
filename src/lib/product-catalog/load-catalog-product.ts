@@ -32,6 +32,11 @@ export async function loadCatalogProduct(
 
   return toCatalogProductRow(
     normalizeProductRow(row),
-    manufacturerRow ?? { name: "Unknown", logo_url: null },
+    manufacturerRow ?? {
+      name: "Unknown",
+      logo_url: null,
+      logo_storage_path: null,
+    },
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
   );
 }

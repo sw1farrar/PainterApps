@@ -82,7 +82,7 @@ export function AdminSiteSettingsClient({
 
       <Card className="border-border bg-card/60">
         <CardHeader>
-          <CardTitle className="text-white">xAI model</CardTitle>
+          <CardTitle className="text-white">AI model</CardTitle>
           <CardDescription>
             Applies to AI workflows on sell sheets and free tools.
           </CardDescription>
@@ -96,11 +96,8 @@ export function AdminSiteSettingsClient({
 
           <div className="rounded-lg border border-border/80 bg-background/20 px-4 py-3 text-sm">
             <p className="text-white">
-              Active model:{" "}
-              <span className="font-medium">{activeMeta.label}</span>{" "}
-              <span className="text-muted-foreground">
-                ({initialSettings.activeModelId})
-              </span>
+              Active tier:{" "}
+              <span className="font-medium">{activeMeta.label}</span>
             </p>
             {updatedLabel ? (
               <p className="mt-1 text-xs text-muted-foreground">
@@ -135,8 +132,6 @@ export function AdminSiteSettingsClient({
                       {meta.description}
                     </p>
                     <p className="mt-1 text-xs text-muted-foreground">
-                      API model <code className="text-foreground/80">{meta.modelId}</code>
-                      {" · "}
                       {meta.inputPricePerMillion} input /{" "}
                       {meta.outputPricePerMillion} output per 1M tokens
                     </p>

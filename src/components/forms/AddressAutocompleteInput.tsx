@@ -17,6 +17,8 @@ type AddressAutocompleteInputProps = {
   value: string;
   placeholder?: string;
   disabled?: boolean;
+  showHint?: boolean;
+  inputClassName?: string;
   onValueChange: (value: string) => void;
   onAddressSelect: (address: AddressFields) => void;
 };
@@ -33,6 +35,8 @@ export function AddressAutocompleteInput({
   value,
   placeholder = "Start typing an address…",
   disabled = false,
+  showHint = true,
+  inputClassName,
   onValueChange,
   onAddressSelect,
 }: AddressAutocompleteInputProps) {
@@ -193,6 +197,7 @@ export function AddressAutocompleteInput({
         onChange={(event) => onValueChange(event.target.value)}
         placeholder={placeholder}
         disabled={disabled}
+        className={inputClassName}
       />
     );
   }
@@ -213,6 +218,7 @@ export function AddressAutocompleteInput({
           aria-autocomplete="list"
           aria-expanded={open}
           aria-controls={`${id}-suggestions`}
+          className={inputClassName}
         />
         <div className="pointer-events-none absolute inset-y-0 right-3 flex items-center gap-1 text-muted-foreground">
           {loading || resolving ? (
@@ -246,14 +252,16 @@ export function AddressAutocompleteInput({
             </li>
           ))}
           <li className="border-t border-border px-3 py-1.5 text-[10px] text-muted-foreground">
-            Powered by Google
+            Address suggestions
           </li>
         </ul>
       ) : null}
 
-      <p className="mt-1.5 text-xs text-muted-foreground">
-        Search verified US addresses as you type.
-      </p>
+      {showHint ? (
+        <p className="mt-1.5 text-xs text-muted-foreground">
+          Search verified US addresses as you type.
+        </p>
+      ) : null}
     </div>
   );
 }
