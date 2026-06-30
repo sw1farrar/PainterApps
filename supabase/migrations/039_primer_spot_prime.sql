@@ -152,7 +152,7 @@ begin
       paint_role
     ) values (
       p_quote_id,
-      coalesce(li->>'type', 'labor')::quote_line_item_type,
+      coalesce(li->>'type', 'labor')::line_item_type,
       coalesce(li->>'description', ''),
       coalesce((li->>'qty')::numeric, 1),
       coalesce((li->>'unit_cost')::numeric, 0),

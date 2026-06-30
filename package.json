@@ -20,6 +20,7 @@
     "db:migrate:037": "node scripts/apply-migration-037.mjs",
     "db:migrate:045": "node scripts/apply-migration-045.mjs",
     "db:migrate:046": "node scripts/apply-migration-046.mjs",
+    "db:migrate:047": "node scripts/apply-migration-047.mjs",
     "sync:manufacturer-logos": "npx tsx scripts/sync-manufacturer-logos.mjs"
   },
   "dependencies": {
