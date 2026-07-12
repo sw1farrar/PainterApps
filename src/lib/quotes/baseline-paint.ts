@@ -117,6 +117,16 @@ export function baselineSystemsToPaintDefaults(
       ([, kind]) => kind === row.surface_type,
     )?.[0] as BaselineSurfaceCategory | undefined;
     if (!category) return row;
+    if (row.surface_type === "window") {
+      const trim = scoped.find((s) => s.surface_category === "trim");
+      if (!trim?.topcoat_product_id) return row;
+      return {
+        ...row,
+        company_paint_product_id: trim.topcoat_product_id,
+        coats: trim.topcoat_coats || row.coats,
+      };
+    }
+
     const match = scoped.find((s) => s.surface_category === category);
     if (!match?.topcoat_product_id) return row;
     return {

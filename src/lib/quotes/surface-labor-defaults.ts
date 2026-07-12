@@ -5,8 +5,8 @@ import {
   getSystemSurfaceLaborValues,
   type SurfaceLaborScope,
 } from "@/lib/quotes/surface-labor-system-defaults";
+import { DEFAULT_COAT_BASIS } from "@/lib/quotes/surface-labor-constants";
 import {
-  DEFAULT_COAT_BASIS,
   productivityScopeForJobType,
   type SurfaceProductivityProfile,
 } from "@/lib/quotes/surface-productivity";

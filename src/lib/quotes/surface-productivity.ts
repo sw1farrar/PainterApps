@@ -6,14 +6,15 @@ import type {
   QuoteSurfaceKind,
 } from "@/types/database";
 import type { SurfaceInput } from "@/app/app/(portal)/quotes/actions";
+import { DEFAULT_COAT_BASIS } from "@/lib/quotes/surface-labor-constants";
 import {
   parseSurfaceLaborDefaults,
   surfaceProfileFromOverride,
   type CompanySurfaceLaborDefaults,
+  type SurfaceLaborOverride,
 } from "@/lib/quotes/surface-labor-defaults";
 
-/** Production rates assume this many coats unless noted (e.g. windows). */
-export const DEFAULT_COAT_BASIS = 2;
+export { DEFAULT_COAT_BASIS } from "@/lib/quotes/surface-labor-constants";
 
 export type SurfaceProductivityProfile = {
   label: string;
@@ -169,6 +170,27 @@ export function resolveSurfaceProductivity(
   return table[surfaceType] ?? INTERIOR_WALL;
 }
 
+export function surfaceProfileFromLaborOverride(
+  surfaceType: QuoteSurfaceKind,
+  jobType: QuoteJobType,
+  override: SurfaceLaborOverride,
+  surfaceLaborDefaults?: CompanySurfaceLaborDefaults | null,
+): SurfaceProductivityProfile {
+  const base = resolveSurfaceProductivity(
+    surfaceType,
+    jobType,
+    surfaceLaborDefaults,
+  );
+  return {
+    ...base,
+    sqFtPerLaborHour: override.sqFtPerLaborHour ?? base.sqFtPerLaborHour,
+    linearFtPerLaborHour:
+      override.linearFtPerLaborHour ?? base.linearFtPerLaborHour,
+    hoursPerUnit: override.hoursPerUnit ?? base.hoursPerUnit,
+    coatBasis: override.coatBasis ?? base.coatBasis,
+  };
+}
+
 export function getLaborCostPerHour(company: Company): number {
   const avg = company.avg_labor_cost_per_hour;
   if (avg != null && avg > 0) return avg;
@@ -191,16 +213,24 @@ export function estimateSurfaceLaborHours(
   >,
   jobType: QuoteJobType = "interior",
   surfaceLaborDefaults?: CompanySurfaceLaborDefaults | null,
+  productivityOverride?: SurfaceLaborOverride | null,
 ): number {
   const coats = Math.max(surface.coats || DEFAULT_COAT_BASIS, 1);
   const qty = surface.sq_ft ?? 0;
   if (qty <= 0 && surface.rate_type !== "each") return 0;
 
-  const profile = resolveSurfaceProductivity(
-    surface.surface_type,
-    jobType,
-    surfaceLaborDefaults,
-  );
+  const profile = productivityOverride
+    ? surfaceProfileFromLaborOverride(
+        surface.surface_type,
+        jobType,
+        productivityOverride,
+        surfaceLaborDefaults,
+      )
+    : resolveSurfaceProductivity(
+        surface.surface_type,
+        jobType,
+        surfaceLaborDefaults,
+      );
 
   if (surface.rate_type === "each") {
     const count = Math.max(qty, 1);
@@ -245,6 +275,36 @@ export function resolveSurfaceCoverage(
       ? { coverage_sqft_per_gallon: productCoverage }
       : null,
   );
+}
+
+function formatCoatPhrase(coatBasis: number): string {
+  if (coatBasis === 1) return "1 coat";
+  return `${coatBasis} coats`;
+}
+
+export function formatProductionRateSummary(
+  profile: Pick<
+    SurfaceProductivityProfile,
+    | "sqFtPerLaborHour"
+    | "linearFtPerLaborHour"
+    | "hoursPerUnit"
+    | "coatBasis"
+  >,
+  rateType: "sqft" | "linear" | "each",
+): string | null {
+  const coatBasis = profile.coatBasis || DEFAULT_COAT_BASIS;
+  const coatPhrase = formatCoatPhrase(coatBasis);
+
+  if (rateType === "sqft" && profile.sqFtPerLaborHour) {
+    return `${profile.sqFtPerLaborHour} sq ft/hr (${coatPhrase})`;
+  }
+  if (rateType === "linear" && profile.linearFtPerLaborHour) {
+    return `${profile.linearFtPerLaborHour} ln ft/hr (${coatPhrase})`;
+  }
+  if (rateType === "each" && profile.hoursPerUnit) {
+    return `${profile.hoursPerUnit} hr each (${coatPhrase})`;
+  }
+  return null;
 }
 
 export function formatLaborHours(hours: number): string {

@@ -8,7 +8,6 @@ import {
   useState,
   useTransition,
 } from "react";
-import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
   createQuote,
@@ -20,7 +19,12 @@ import {
   type TierInput,
 } from "@/app/app/(portal)/quotes/actions";
 import { useSimpleQuoteAreas } from "@/components/quotes/simple/useSimpleQuoteAreas";
-import { hasMinimumJobAddress, type JobAddressFields } from "@/lib/address";
+import {
+  hasMinimumEstimateStart,
+  hasMinimumJobAddress,
+  type JobAddressFields,
+} from "@/lib/address";
+import { formatPaintProductLabel } from "@/lib/paint-library/product-label";
 import {
   defaultTierPaintState,
   isQuotePaintTier,
@@ -40,15 +44,21 @@ import {
 } from "@/lib/quotes/baseline-paint";
 import {
   baselineSystemsForQuoteJob,
-  readDefaultGrossMarginPct,
   tierDefaultsForJobType,
   type CompanyEstimateDefaults,
 } from "@/lib/quotes/company-estimate-defaults";
 import { enqueueQuoteSave } from "@/lib/quotes/save-coordinator";
-import { suggestQuotePriceFromLineItems } from "@/lib/quotes/suggested-quote-price";
+import {
+  readQuoteWizardSession,
+  readQuoteWizardStepFromUrl,
+  syncQuoteWizardUrl,
+  writeQuoteWizardSession,
+} from "@/lib/quotes/wizard-session";
+import type { JobPricingBreakdown } from "@/lib/quotes/pricing";
 import {
   defaultSimpleTiers,
   quotePriceFromTiers,
+  resolveEstimateJobName,
   SIMPLE_QUOTE_STEPS,
   type SimpleQuoteStep,
 } from "@/lib/quotes/simple-builder";
@@ -114,22 +124,12 @@ function tierConfigList(
   return QUOTE_PAINT_TIERS.map((tier) => record[tier]);
 }
 
-function resolveInitialStep(
-  quote: Quote | undefined,
-  address: JobAddressFields,
-  baselineRows: BaselinePaintSystemInput[],
-  jobType: QuoteJobType,
-  roomCount: number,
-): SimpleQuoteStep {
-  if (!quote?.customer_id || !hasMinimumJobAddress(address)) return "job";
-  if (!isBaselineConfigured(baselineRows, jobType)) return "baseline";
-  if (roomCount === 0) return "items";
-  return "send";
+function resolveInitialStep(quote: Quote | undefined): SimpleQuoteStep {
+  if (!quote?.customer_id || !quote?.name?.trim()) return "job";
+  return "items";
 }
 
-function resolveMaxReachedIndex(step: SimpleQuoteStep): number {
-  return SIMPLE_QUOTE_STEPS.indexOf(step);
-}
+const QUIET_SAVE = { revalidate: false as const };
 
 export function useSimpleQuoteBuilder({
   mode,
@@ -146,7 +146,6 @@ export function useSimpleQuoteBuilder({
   tierPaintConfig: initialTierPaintConfig = [],
   estimateDefaults,
 }: UseSimpleQuoteBuilderOptions) {
-  const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [customers, setCustomers] = useState(initialCustomers);
   const [error, setError] = useState<string | null>(null);
@@ -258,22 +257,6 @@ export function useSimpleQuoteBuilder({
     return resolved.topcoat ? resolved : null;
   }, [tierPaintConfig.good, paintProducts]);
 
-  const defaultGrossMarginPct = useMemo(
-    () =>
-      readDefaultGrossMarginPct(
-        company.default_margins as Record<string, number> | null,
-      ),
-    [company.default_margins],
-  );
-
-  const [projectGrossMarginPct, setProjectGrossMarginPct] = useState(
-    defaultGrossMarginPct,
-  );
-
-  useEffect(() => {
-    setProjectGrossMarginPct(defaultGrossMarginPct);
-  }, [defaultGrossMarginPct]);
-
   const areas = useSimpleQuoteAreas({
     mode,
     company,
@@ -286,13 +269,14 @@ export function useSimpleQuoteBuilder({
     seededPaintDefaults: seededPaintDefaults ?? undefined,
     goodTierPaint,
     baselinePaintSystems,
-    projectGrossMarginPct,
   });
 
   const {
     rooms,
     lineItems,
     itemsSubtotal,
+    areaCostBreakdowns,
+    customQuoteLineItems,
     replacePaintDefaults,
     buildAllLineItems,
     regenerateAllLineItems,
@@ -318,19 +302,51 @@ export function useSimpleQuoteBuilder({
     quotePriceFromTiers(initialTiers),
   );
 
-  const [step, setStep] = useState<SimpleQuoteStep>(() =>
-    resolveInitialStep(
-      quote,
-      initialAddress,
-      baselinePaintSystems,
-      initialJobType,
-      initialRooms.length,
-    ),
-  );
+  const initialWizardStep = resolveInitialStep(quote);
+
+  const [step, setStep] = useState<SimpleQuoteStep>(initialWizardStep);
 
   const [maxReachedIndex, setMaxReachedIndex] = useState(() =>
-    resolveMaxReachedIndex(step),
+    SIMPLE_QUOTE_STEPS.indexOf(initialWizardStep),
   );
+
+  const [wizardHydrated, setWizardHydrated] = useState(false);
+
+  const wizardSyncQuoteIdRef = useRef(quote?.id ?? "");
+
+  useEffect(() => {
+    if (quoteId) {
+      wizardSyncQuoteIdRef.current = quoteId;
+    }
+  }, [quoteId]);
+
+  useEffect(() => {
+    const id = quote?.id ?? "";
+    if (id) {
+      const persisted = readQuoteWizardSession(id);
+      const persistedStep = persisted?.step ?? readQuoteWizardStepFromUrl();
+      if (persistedStep) {
+        const index = SIMPLE_QUOTE_STEPS.indexOf(persistedStep);
+        setStep(persistedStep);
+        setMaxReachedIndex(
+          Math.max(index, persisted?.maxReachedIndex ?? index),
+        );
+      }
+    }
+    setWizardHydrated(true);
+  }, [quote?.id]);
+
+  useEffect(() => {
+    if (!wizardHydrated) return;
+    const id = wizardSyncQuoteIdRef.current;
+    if (!id) return;
+    writeQuoteWizardSession({
+      quoteId: id,
+      step,
+      maxReachedIndex,
+    });
+    syncQuoteWizardUrl(id, step);
+  }, [wizardHydrated, quoteId, step, maxReachedIndex]);
 
   const hasSavedBaseline = initialBaselineRows.length > 0;
 
@@ -347,16 +363,24 @@ export function useSimpleQuoteBuilder({
     [customers, customerId],
   );
 
-  const suggestedJobPricing = useMemo(
-    () =>
-      suggestQuotePriceFromLineItems(
-        lineItems,
-        company,
-        "good",
-        projectGrossMarginPct,
-      ),
-    [lineItems, company, projectGrossMarginPct],
-  );
+  const suggestedJobPricing = useMemo((): JobPricingBreakdown => {
+    const areasDirect = rooms.reduce((sum, room, index) => {
+      if (room.is_optional) return sum;
+      return sum + (areaCostBreakdowns[index]?.directCost ?? 0);
+    }, 0);
+    const customDirect = customQuoteLineItems.reduce((sum, { item }) => {
+      if (item.is_optional) return sum;
+      return sum + item.qty * item.unit_cost;
+    }, 0);
+    const directCost = Math.round((areasDirect + customDirect) * 100) / 100;
+    return {
+      directCost,
+      overhead: 0,
+      loadedCost: directCost,
+      grossMarginPct: 0,
+      sellingPrice: itemsSubtotal,
+    };
+  }, [rooms, areaCostBreakdowns, customQuoteLineItems, itemsSubtotal]);
   const isEditable = status === "draft";
 
   const syncGoodTierFromBaseline = useCallback(
@@ -368,15 +392,6 @@ export function useSimpleQuoteBuilder({
       }));
     },
     [jobType],
-  );
-
-  const applyBaselineToAreas = useCallback(
-    (systems: BaselinePaintSystemInput[]) => {
-      const paintDefaults = baselineSystemsToPaintDefaults(systems, jobType);
-      replacePaintDefaults(paintDefaults);
-      syncGoodTierFromBaseline(systems);
-    },
-    [replacePaintDefaults, jobType, syncGoodTierFromBaseline],
   );
 
   const applyEstimateDefaultsForJob = useCallback(
@@ -495,34 +510,58 @@ export function useSimpleQuoteBuilder({
 
   const ensureQuote = useCallback(async (): Promise<string | null> => {
     if (quoteId) return quoteId;
-    if (!customerId || !hasMinimumJobAddress(jobAddress)) {
-      setError("Select a customer and enter the job address.");
+
+    const resolvedName = resolveEstimateJobName(
+      quoteName,
+      selectedCustomer?.name,
+    );
+    if (!hasMinimumEstimateStart({ customerId, jobName: resolvedName })) {
+      setError("Select a customer and enter a job name.");
       return null;
     }
 
-    const result = await createQuote({
-      customer_id: customerId,
-      name: quoteName.trim() || null,
-      job_type: jobType,
-      estimation_mode: "hybrid",
-      ...jobAddress,
-      job_address: jobAddress.job_address.trim(),
-    });
+    if (!quoteName.trim() && resolvedName) {
+      setQuoteName(resolvedName);
+    }
+
+    const result = await createQuote(
+      {
+        customer_id: customerId,
+        name: resolvedName,
+        job_type: jobType,
+        estimation_mode: "hybrid",
+        ...jobAddress,
+        job_address: jobAddress.job_address.trim(),
+      },
+      QUIET_SAVE,
+    );
 
     if (!result.success) {
       setError(result.error);
       return null;
     }
 
-    setQuoteId(result.data.id);
-    router.replace(`/app/quotes/${result.data.id}`, { scroll: false });
-    return result.data.id;
-  }, [quoteId, customerId, quoteName, jobAddress, jobType, router]);
+    const newQuoteId = result.data.id;
+    setQuoteId(newQuoteId);
+    return newQuoteId;
+  }, [
+    quoteId,
+    customerId,
+    quoteName,
+    selectedCustomer?.name,
+    jobAddress,
+    jobType,
+    mode,
+  ]);
 
   const saveDraft = useCallback(
-    async (id: string, lineItemsOverride?: LineItemInput[]) => {
+    async (
+      id: string,
+      lineItemsOverride?: LineItemInput[],
+      options?: { revalidate?: boolean },
+    ) => {
       const draft = getDraft(lineItemsOverride);
-      return enqueueQuoteSave(() => saveQuoteDraft(id, draft));
+      return enqueueQuoteSave(() => saveQuoteDraft(id, draft, options));
     },
     [getDraft],
   );
@@ -533,12 +572,18 @@ export function useSimpleQuoteBuilder({
     );
   }, []);
 
-  const goToStep = useCallback((next: SimpleQuoteStep) => {
-    const index = SIMPLE_QUOTE_STEPS.indexOf(next);
-    setStep(next);
-    setMaxReachedIndex((prev) => Math.max(prev, index));
-    setError(null);
-  }, []);
+  const goToStep = useCallback(
+    (next: SimpleQuoteStep, activeQuoteId = quoteId) => {
+      const index = SIMPLE_QUOTE_STEPS.indexOf(next);
+      if (activeQuoteId) {
+        wizardSyncQuoteIdRef.current = activeQuoteId;
+      }
+      setStep(next);
+      setMaxReachedIndex((prev) => Math.max(prev, index));
+      setError(null);
+    },
+    [quoteId],
+  );
 
   const updateBaselineSystem = useCallback(
     (
@@ -583,112 +628,128 @@ export function useSimpleQuoteBuilder({
   const baselineTopcoatName = useMemo(() => {
     const patch = goodTierPaintFromBaseline(baselinePaintSystems, jobType);
     if (!patch.topcoat_product_id) return null;
-    return (
-      paintProducts.find((p) => p.id === patch.topcoat_product_id)?.name ?? null
-    );
+    const product =
+      paintProducts.find((p) => p.id === patch.topcoat_product_id) ?? null;
+    return product ? formatPaintProductLabel(product) : null;
   }, [baselinePaintSystems, jobType, paintProducts]);
 
   const handleNext = useCallback(() => {
     startTransition(async () => {
-      setError(null);
-      if (!isEditable) {
-        setError("Revise this quote to draft before editing.");
-        return;
-      }
+      try {
+        setError(null);
+        if (!isEditable) {
+          setError("Revise this quote to draft before editing.");
+          return;
+        }
 
-      if (step === "job") {
-        if (!customerId || !hasMinimumJobAddress(jobAddress)) {
-          setError("Select a customer and enter the full job address.");
-          return;
-        }
-        const id = await ensureQuote();
-        if (!id) return;
-        const result = await updateQuote(id, getDraft().header!);
-        if (!result.success) {
-          setError(result.error);
-          return;
-        }
-        applyEstimateDefaultsForJob(jobType);
-        goToStep("baseline");
-        return;
-      }
-
-      if (step === "baseline") {
-        if (!isBaselineConfigured(baselinePaintSystems, jobType)) {
-          setError("Select a wall topcoat to finish your paint systems.");
-          return;
-        }
-        const id = await ensureQuote();
-        if (!id) return;
-        applyBaselineToAreas(baselinePaintSystems);
-        const result = await saveDraft(id);
-        if (!result.success) {
-          setError(result.error);
-          return;
-        }
-        goToStep("items");
-        return;
-      }
-
-      if (step === "items") {
-        if (rooms.length === 0) {
-          setError("Add at least one area.");
-          return;
-        }
-        const missingDimensions = rooms.some(
-          (room) => room.sq_ft <= 0 && !room.length_ft,
-        );
-        if (missingDimensions) {
-          setError("Open each area and enter dimensions before continuing.");
-          return;
-        }
-        const id = await ensureQuote();
-        if (!id) return;
-        const generatedItems = buildAllLineItems();
-        regenerateAllLineItems();
-        if (quotePrice <= 0 && generatedItems.length > 0) {
-          const suggested = suggestQuotePriceFromLineItems(
-            generatedItems,
-            company,
+        if (step === "job") {
+          const resolvedName = resolveEstimateJobName(
+            quoteName,
+            selectedCustomer?.name,
           );
-          if (suggested.sellingPrice > 0) {
-            setQuotePrice(suggested.sellingPrice);
+          if (!hasMinimumEstimateStart({ customerId, jobName: resolvedName })) {
+            setError("Select a customer and enter a job name.");
+            return;
           }
-        }
-        const result = await saveDraft(id, generatedItems);
-        if (!result.success) {
-          setError(result.error);
-          return;
-        }
-        syncGoodTierFromBaseline(baselinePaintSystems);
-        goToStep("tiers");
-        return;
-      }
 
-      if (step === "tiers") {
-        const id = await ensureQuote();
-        if (!id) return;
-        const result = await saveDraft(id);
-        if (!result.success) {
-          setError(result.error);
+          const id = await ensureQuote();
+          if (!id) return;
+
+          const headerResult = await updateQuote(
+            id,
+            getDraft().header!,
+            QUIET_SAVE,
+          );
+          if (!headerResult.success) {
+            setError(headerResult.error);
+            return;
+          }
+
+          applyEstimateDefaultsForJob(jobType);
+          goToStep("items", id);
+
+          const systems =
+            estimateDefaults && !hasSavedBaseline
+              ? baselineSystemsForQuoteJob(estimateDefaults, jobType)
+              : baselinePaintSystems;
+          const draft = getDraft();
+          void saveQuoteDraft(
+            id,
+            {
+              ...draft,
+              baselinePaintSystems: systems,
+            },
+            QUIET_SAVE,
+          ).then((saveResult) => {
+            if (!saveResult.success) {
+              setError(saveResult.error);
+              toast.error(saveResult.error);
+            }
+          });
           return;
         }
-        goToStep("send");
-        return;
+
+        if (step === "items") {
+          if (rooms.length === 0) {
+            setError("Add at least one area.");
+            return;
+          }
+          const missingDimensions = rooms.some(
+            (room) => room.sq_ft <= 0 && !room.length_ft,
+          );
+          if (missingDimensions) {
+            setError("Open each area and enter dimensions before continuing.");
+            return;
+          }
+          const id = await ensureQuote();
+          if (!id) return;
+          const generatedItems = buildAllLineItems();
+          regenerateAllLineItems();
+          if (quotePrice <= 0 && itemsSubtotal > 0) {
+            setQuotePrice(itemsSubtotal);
+          }
+          const result = await saveDraft(id, generatedItems);
+          if (!result.success) {
+            setError(result.error);
+            return;
+          }
+          syncGoodTierFromBaseline(baselinePaintSystems);
+          goToStep("tiers");
+          return;
+        }
+
+        if (step === "tiers") {
+          const id = await ensureQuote();
+          if (!id) return;
+          const result = await saveDraft(id);
+          if (!result.success) {
+            setError(result.error);
+            return;
+          }
+          goToStep("send");
+        }
+      } catch (err) {
+        const message =
+          err instanceof Error ? err.message : "Could not continue. Try again.";
+        setError(message);
+        toast.error(message);
       }
     });
   }, [
     isEditable,
     step,
     customerId,
+    quoteName,
+    selectedCustomer?.name,
     jobAddress,
     ensureQuote,
     getDraft,
     goToStep,
     baselinePaintSystems,
     jobType,
-    applyBaselineToAreas,
     applyEstimateDefaultsForJob,
+    estimateDefaults,
+    hasSavedBaseline,
     saveDraft,
     rooms,
     buildAllLineItems,
@@ -712,6 +773,12 @@ export function useSimpleQuoteBuilder({
         setError("Enter a quote price before sending.");
         return;
       }
+      if (!hasMinimumJobAddress(jobAddress)) {
+        setError(
+          "Add the full job address (street, city, state, ZIP) before sending.",
+        );
+        return;
+      }
       const id = await ensureQuote();
       if (!id) return;
       const generatedItems = buildAllLineItems();
@@ -733,6 +800,7 @@ export function useSimpleQuoteBuilder({
   }, [
     quotePrice,
     itemsSubtotal,
+    jobAddress,
     ensureQuote,
     buildAllLineItems,
     regenerateAllLineItems,
@@ -767,8 +835,6 @@ export function useSimpleQuoteBuilder({
     areas,
     itemsSubtotal,
     suggestedJobPricing,
-    projectGrossMarginPct,
-    setProjectGrossMarginPct,
     quotePrice,
     setQuotePrice,
     customMessage,

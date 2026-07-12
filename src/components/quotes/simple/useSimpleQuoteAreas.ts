@@ -33,7 +33,6 @@ import {
   emptyPaintDefaults,
   inferInitialPaintDefaults,
   normalizeQuotePaintDefaults,
-  paintDefaultTypeForSurfaceKey,
   paintDefaultsRecord,
 } from "@/lib/quotes/paint-defaults";
 import { DEFAULT_PRODUCT_COVERAGE_SQFT_PER_GALLON } from "@/lib/paint-library/coverage";
@@ -41,20 +40,61 @@ import { computeSurfaceGallons } from "@/lib/quotes/surface-gallons";
 import {
   computeAreaBidPrice,
   computeAreaCostBreakdown,
+  getAreaLineItems,
   type AreaCostBreakdown,
 } from "@/lib/quotes/area-pricing";
+import {
+  activeSubstrateDefinitionsForRoom,
+  addCustomSubstrate,
+  customSubstrateSurfaceDefinition,
+  findSubstrateDefinition,
+  isCustomSurfaceKey,
+  removeCustomSubstrate,
+  resolveCustomSubstrateById,
+  resolveCustomSubstrates,
+  type CustomSubstrateId,
+} from "@/lib/quotes/area-custom-substrates";
+import {
+  rollupAreaWorkItemsFromLineItems,
+  type AreaWorkItemsRollup,
+} from "@/lib/quotes/area-substrate-pricing";
 import {
   areaNameBase,
   buildIndexMapAfterDelete,
   nextSequencedAreaName,
+  remapRoomIndices,
 } from "@/lib/quotes/area-helpers";
 import {
   buildLineItemsForArea,
   regenerateLineItems,
 } from "@/lib/quotes/estimation";
 import { getCompanyPricingSummary } from "@/lib/quotes/estimate-from-rooms";
-import { lineItemsSubtotal } from "@/lib/quotes/pricing";
-import { toggleScopeLine } from "@/lib/quotes/scope-library";
+import { lineItemLineTotal } from "@/lib/quotes/pricing";
+import { defaultScopePrepWorkForJobType } from "@/lib/quotes/scope-library";
+import {
+  activeSubstratesForRoom,
+  applySubstrateMarkupsToLineItems,
+  resolveDefaultMarkupPct,
+  setSubstrateMarkupPct,
+  updateLineItemsSubstrateMarkup,
+  type SubstrateMarkupKey,
+} from "@/lib/quotes/substrate-markup";
+import {
+  listKeysForSubstrate,
+  substrateById,
+} from "@/lib/quotes/area-substrates";
+import {
+  resetSubstrateProductivityOverride,
+  setSubstrateProductivityOverride,
+} from "@/lib/quotes/substrate-productivity";
+import {
+  clearDerivedSurfaceEstimates,
+  clearLaborHoursOverride,
+  mergeSurfaceOverrideNotes,
+  shouldRecalculateDerivedEstimates,
+} from "@/lib/quotes/surface-overrides";
+import type { SurfaceLaborOverride } from "@/lib/quotes/surface-labor-defaults";
+import type { AreaSubstrateId } from "@/lib/quotes/area-substrates";
 import type {
   Company,
   QuoteJobType,
@@ -62,7 +102,27 @@ import type {
   QuoteRoom,
   QuoteSurface,
 } from "@/types/database";
-import type { QuoteSurfaceKind } from "@/types/database";
+const EMPTY_CUSTOM_LINE_ITEM: LineItemInput = {
+  type: "extra",
+  description: "",
+  qty: 1,
+  unit_cost: 0,
+  markup: 0,
+  source: "manual",
+  room_id: null,
+  is_optional: false,
+  sort_order: 0,
+  company_paint_product_id: null,
+  paint_role: null,
+};
+
+function isGlobalCustomLineItem(item: LineItemInput): boolean {
+  return (
+    item.source === "manual" &&
+    item.room_index === undefined &&
+    !item.room_id
+  );
+}
 
 export const EMPTY_ROOM: RoomInput = {
   name: "",
@@ -229,8 +289,6 @@ type UseSimpleQuoteAreasOptions = {
   seededPaintDefaults?: QuotePaintDefaultInput[];
   goodTierPaint?: ResolvedTierPaintConfig | null;
   baselinePaintSystems?: BaselinePaintSystemInput[];
-  /** Project gross margin % (defaults from estimate defaults; overridable per quote). */
-  projectGrossMarginPct?: number | null;
 };
 
 export function useSimpleQuoteAreas({
@@ -245,7 +303,6 @@ export function useSimpleQuoteAreas({
   seededPaintDefaults,
   goodTierPaint = null,
   baselinePaintSystems = [],
-  projectGrossMarginPct = null,
 }: UseSimpleQuoteAreasOptions) {
   const [rooms, setRooms] = useState<RoomInput[]>(() =>
     initialRooms.map(mapRoomToInput),
@@ -346,9 +403,14 @@ export function useSimpleQuoteAreas({
   const areaPricingOptions = useMemo(
     () => ({
       lineItems,
-      grossMarginPct: projectGrossMarginPct ?? undefined,
+      includeOptionalLineItems: true,
     }),
-    [lineItems, projectGrossMarginPct],
+    [lineItems],
+  );
+
+  const defaultMarkupPct = useMemo(
+    () => resolveDefaultMarkupPct(company),
+    [company],
   );
 
   const areaCostBreakdowns = useMemo(
@@ -364,33 +426,230 @@ export function useSimpleQuoteAreas({
     [areaCostBreakdowns],
   );
 
-  const itemsSubtotal = useMemo(
+  const editingAreaPreviewLineItems = useMemo(() => {
+    if (editingAreaIndex === null) return null;
+    return getAreaLineItems(editingAreaIndex, estimateContext, {
+      previewFromSurfaces: true,
+    });
+  }, [editingAreaIndex, estimateContext, rooms, surfaces]);
+
+  const editingAreaPreviewBreakdown = useMemo(() => {
+    if (editingAreaIndex === null) return null;
+    return computeAreaCostBreakdown(editingAreaIndex, estimateContext, {
+      previewFromSurfaces: true,
+    });
+  }, [editingAreaIndex, estimateContext, rooms, surfaces]);
+
+  const editingAreaWorkItemsRollup = useMemo((): AreaWorkItemsRollup | null => {
+    if (editingAreaIndex === null || !editingAreaPreviewLineItems) return null;
+    const room = rooms[editingAreaIndex];
+    if (!room) return null;
+
+    const roomSurfaces = surfaces.filter(
+      (surface) => surface.room_index === editingAreaIndex,
+    );
+    const surfaceByKey = new Map<AreaSurfaceKey, SurfaceInput>();
+    for (const surface of roomSurfaces) {
+      if (surface.surface_key) {
+        surfaceByKey.set(surface.surface_key as AreaSurfaceKey, surface);
+      }
+    }
+    const activeSubstrates = activeSubstrateDefinitionsForRoom(
+      room.prep_work,
+      new Set(surfaceByKey.keys()),
+    );
+
+    return rollupAreaWorkItemsFromLineItems(
+      editingAreaPreviewLineItems,
+      activeSubstrates,
+      surfaceByKey,
+      room,
+      editingAreaIndex,
+      company,
+      jobType,
+      paintProducts,
+      paintDefaults,
+    );
+  }, [
+    company,
+    editingAreaIndex,
+    editingAreaPreviewLineItems,
+    estimateContext,
+    jobType,
+    paintDefaults,
+    paintProducts,
+    rooms,
+    surfaces,
+  ]);
+
+  const markedLineItems = useMemo(() => {
+    const marked = lineItems.map((item) => ({ ...item }));
+    for (let roomIndex = 0; roomIndex < rooms.length; roomIndex++) {
+      const room = rooms[roomIndex];
+      const activeSubstrates = activeSubstratesForRoom(
+        surfaces,
+        roomIndex,
+        room?.prep_work,
+      );
+      const roomItemIndexes = marked
+        .map((item, index) => ({ item, index }))
+        .filter(
+          ({ item }) =>
+            item.room_index === roomIndex || item.room_id === room?.id,
+        );
+      if (roomItemIndexes.length === 0) continue;
+
+      const roomItems = roomItemIndexes.map(({ item }) => item);
+      const withMarkup = applySubstrateMarkupsToLineItems(
+        roomItems,
+        activeSubstrates,
+        room?.prep_work,
+        defaultMarkupPct,
+      );
+      roomItemIndexes.forEach(({ index }, i) => {
+        marked[index] = { ...marked[index], markup: withMarkup[i].markup };
+      });
+    }
+    return marked;
+  }, [lineItems, rooms, surfaces, defaultMarkupPct]);
+
+  const customQuoteLineItems = useMemo(
     () =>
-      lineItemsSubtotal(
-        lineItems.map((item, i) => ({
-          id: item.id ?? `temp-${i}`,
-          quote_id: "",
-          type: item.type,
-          description: item.description,
-          qty: item.qty,
-          unit_cost: item.unit_cost,
-          markup: item.markup ?? 0,
-          source: item.source ?? "manual",
-          room_id: item.room_id ?? null,
-          is_optional: item.is_optional ?? false,
-          sort_order: item.sort_order ?? i,
-          company_paint_product_id: item.company_paint_product_id ?? null,
-          paint_role: item.paint_role ?? null,
-        })),
-        { excludeOptional: true },
-      ),
+      lineItems
+        .map((item, index) => ({ item, index }))
+        .filter(({ item }) => isGlobalCustomLineItem(item)),
     [lineItems],
+  );
+
+  const itemsSubtotal = useMemo(() => {
+    const areasTotal = rooms.reduce((sum, room, index) => {
+      if (room.is_optional) return sum;
+      return sum + (areaSubtotals[index] ?? 0);
+    }, 0);
+    const customTotal = customQuoteLineItems.reduce((sum, { item }) => {
+      if (item.is_optional) return sum;
+      return sum + lineItemLineTotal(item);
+    }, 0);
+    return Math.round((areasTotal + customTotal) * 100) / 100;
+  }, [areaSubtotals, customQuoteLineItems, rooms]);
+
+  const addCustomQuoteLineItem = useCallback(
+    (draft: Pick<LineItemInput, "type" | "description" | "qty" | "unit_cost" | "markup">) => {
+      const trimmed = draft.description.trim();
+      if (!trimmed) {
+        toast.error("Line item description is required.");
+        return;
+      }
+      setLineItems((prev) => [
+        ...prev,
+        {
+          ...EMPTY_CUSTOM_LINE_ITEM,
+          ...draft,
+          description: trimmed,
+          markup: draft.markup ?? defaultMarkupPct,
+          sort_order: prev.length,
+        },
+      ]);
+    },
+    [defaultMarkupPct],
+  );
+
+  const updateCustomQuoteLineItem = useCallback(
+    (
+      index: number,
+      draft: Pick<LineItemInput, "type" | "description" | "qty" | "unit_cost" | "markup">,
+    ) => {
+      const trimmed = draft.description.trim();
+      if (!trimmed) {
+        toast.error("Line item description is required.");
+        return;
+      }
+      setLineItems((prev) =>
+        prev.map((item, i) =>
+          i === index
+            ? {
+                ...item,
+                ...draft,
+                description: trimmed,
+                source: "manual" as const,
+              }
+            : item,
+        ),
+      );
+    },
+    [],
+  );
+
+  const removeCustomQuoteLineItem = useCallback((index: number) => {
+    setLineItems((prev) => prev.filter((_, i) => i !== index));
+  }, []);
+
+  const toggleAreaIncluded = useCallback((index: number) => {
+    const room = roomsRef.current[index];
+    if (!room) return;
+    const nextOptional = !room.is_optional;
+    setRooms((prev) =>
+      prev.map((row, i) =>
+        i === index ? { ...row, is_optional: nextOptional } : row,
+      ),
+    );
+    setLineItems((prev) =>
+      prev.map((item) => {
+        const linked =
+          item.room_index === index || item.room_id === room.id;
+        if (!linked) return item;
+        return { ...item, is_optional: nextOptional };
+      }),
+    );
+  }, []);
+
+  const toggleCustomQuoteLineItemIncluded = useCallback((index: number) => {
+    setLineItems((prev) =>
+      prev.map((item, i) =>
+        i === index ? { ...item, is_optional: !item.is_optional } : item,
+      ),
+    );
+  }, []);
+
+  const applyMarkupsToGeneratedItems = useCallback(
+    (items: LineItemInput[]) => {
+      const next = items.map((item) => ({ ...item }));
+      for (let roomIndex = 0; roomIndex < rooms.length; roomIndex++) {
+        const room = rooms[roomIndex];
+        const activeSubstrates = activeSubstratesForRoom(
+          surfaces,
+          roomIndex,
+          room?.prep_work,
+        );
+        const indexes = next
+          .map((item, index) => ({ item, index }))
+          .filter(
+            ({ item }) =>
+              item.room_index === roomIndex || item.room_id === room?.id,
+          );
+        if (indexes.length === 0) continue;
+        const roomItems = indexes.map(({ item }) => item);
+        const withMarkup = applySubstrateMarkupsToLineItems(
+          roomItems,
+          activeSubstrates,
+          room?.prep_work,
+          defaultMarkupPct,
+        );
+        indexes.forEach(({ index }, i) => {
+          next[index] = { ...next[index], markup: withMarkup[i].markup };
+        });
+      }
+      return next;
+    },
+    [rooms, surfaces, defaultMarkupPct],
   );
 
   const buildAllLineItems = useCallback(() => {
     if (!rooms.length) return [];
-    return regenerateLineItems(estimateContext, lineItems);
-  }, [estimateContext, lineItems, rooms.length]);
+    return applyMarkupsToGeneratedItems(
+      regenerateLineItems(estimateContext, lineItems),
+    );
+  }, [applyMarkupsToGeneratedItems, estimateContext, lineItems, rooms.length]);
 
   const regenerateAllLineItems = useCallback(() => {
     const next = buildAllLineItems();
@@ -400,14 +659,26 @@ export function useSimpleQuoteAreas({
 
   const regenerateAreaLineItems = useCallback(
     (roomIndex: number) => {
-      const newItems = buildLineItemsForArea(roomIndex, {
+      const room = rooms[roomIndex];
+      const activeSubstrates = activeSubstratesForRoom(
+        surfaces,
+        roomIndex,
+        room?.prep_work,
+      );
+      const generated = buildLineItemsForArea(roomIndex, {
         ...estimateContext,
         manualItems: [],
       }).map((item) => ({
         ...item,
         room_index: roomIndex,
-        room_id: rooms[roomIndex]?.id ?? null,
+        room_id: room?.id ?? null,
       }));
+      const newItems = applySubstrateMarkupsToLineItems(
+        generated,
+        activeSubstrates,
+        room?.prep_work,
+        defaultMarkupPct,
+      );
 
       setLineItems((prev) => {
         const kept = prev.filter((item) => {
@@ -420,24 +691,145 @@ export function useSimpleQuoteAreas({
         return [...kept, ...newItems];
       });
     },
-    [estimateContext, rooms],
+    [estimateContext, rooms, surfaces, defaultMarkupPct],
   );
 
-  const addAreaFromTemplate = useCallback((baseName: string) => {
-    let newIndex = -1;
-    let addedName = "";
+  const updateSubstrateMargin = useCallback(
+    (roomIndex: number, markupKey: SubstrateMarkupKey, marginPct: number) => {
+      const room = rooms[roomIndex];
+      if (!room) return;
 
-    setRooms((prev) => {
-      const name = nextSequencedAreaName(baseName, prev);
-      newIndex = prev.length;
-      addedName = name;
-      return [...prev, { ...EMPTY_ROOM, name, sort_order: newIndex }];
-    });
+      const nextPrepWork = setSubstrateMarkupPct(
+        room.prep_work,
+        markupKey,
+        marginPct,
+        defaultMarkupPct,
+      );
+      setRooms((prev) =>
+        prev.map((row, index) =>
+          index === roomIndex ? { ...row, prep_work: nextPrepWork } : row,
+        ),
+      );
 
-    if (newIndex >= 0) {
-      toast.success(`Added ${addedName}`);
-    }
-  }, []);
+      const substrate =
+        markupKey === "sundries"
+          ? null
+          : findSubstrateDefinition(room.prep_work, markupKey) ?? null;
+
+      setLineItems((prev) =>
+        updateLineItemsSubstrateMarkup(
+          prev,
+          roomIndex,
+          room.id,
+          substrate,
+          marginPct,
+          markupKey === "sundries",
+        ),
+      );
+    },
+    [rooms, defaultMarkupPct],
+  );
+
+  const clearLaborOverridesForSubstrate = useCallback(
+    (roomIndex: number, substrateId: AreaSubstrateId) => {
+      const room = rooms[roomIndex];
+      if (!room) return;
+      const substrate =
+        findSubstrateDefinition(room.prep_work, substrateId) ??
+        substrateById(substrateId);
+      if (!substrate) return;
+
+      const keys = new Set(listKeysForSubstrate(substrate));
+      setSurfaces((prev) =>
+        prev.map((surface) => {
+          if (surface.room_index !== roomIndex) return surface;
+          if (
+            !surface.surface_key ||
+            !keys.has(surface.surface_key as AreaSurfaceKey)
+          ) {
+            return surface;
+          }
+          return {
+            ...surface,
+            notes: clearLaborHoursOverride(surface.notes),
+          };
+        }),
+      );
+    },
+    [rooms],
+  );
+
+  const updateSubstrateProductivity = useCallback(
+    (
+      roomIndex: number,
+      substrateId: AreaSubstrateId,
+      patch: Partial<SurfaceLaborOverride>,
+    ) => {
+      const room = rooms[roomIndex];
+      if (!room) return;
+
+      const nextPrepWork = setSubstrateProductivityOverride(
+        room.prep_work,
+        substrateId,
+        patch,
+      );
+      setRooms((prev) =>
+        prev.map((row, index) =>
+          index === roomIndex ? { ...row, prep_work: nextPrepWork } : row,
+        ),
+      );
+      clearLaborOverridesForSubstrate(roomIndex, substrateId);
+      queueMicrotask(() => regenerateAreaLineItems(roomIndex));
+    },
+    [rooms, clearLaborOverridesForSubstrate, regenerateAreaLineItems],
+  );
+
+  const resetSubstrateProductivity = useCallback(
+    (roomIndex: number, substrateId: AreaSubstrateId) => {
+      const room = rooms[roomIndex];
+      if (!room) return;
+
+      const nextPrepWork = resetSubstrateProductivityOverride(
+        room.prep_work,
+        substrateId,
+      );
+      setRooms((prev) =>
+        prev.map((row, index) =>
+          index === roomIndex ? { ...row, prep_work: nextPrepWork } : row,
+        ),
+      );
+      clearLaborOverridesForSubstrate(roomIndex, substrateId);
+      queueMicrotask(() => regenerateAreaLineItems(roomIndex));
+    },
+    [rooms, clearLaborOverridesForSubstrate, regenerateAreaLineItems],
+  );
+
+  const addAreaFromTemplate = useCallback(
+    (baseName: string) => {
+      let newIndex = -1;
+      let addedName = "";
+
+      setRooms((prev) => {
+        const name = nextSequencedAreaName(baseName, prev);
+        newIndex = prev.length;
+        addedName = name;
+        return [
+          ...prev,
+          {
+            ...EMPTY_ROOM,
+            name,
+            sort_order: newIndex,
+            prep_work: defaultScopePrepWorkForJobType(jobType),
+          },
+        ];
+      });
+
+      if (newIndex >= 0) {
+        toast.success(`Added ${addedName}`);
+      }
+    },
+    [jobType],
+  );
 
   const duplicateArea = useCallback(
     (index: number) => {
@@ -498,49 +890,90 @@ export function useSimpleQuoteAreas({
     [rooms, surfaces, lineItems, regenerateAllLineItems],
   );
 
-  const updateArea = useCallback((index: number, patch: Partial<RoomInput>) => {
-    setRooms((prev) =>
-      prev.map((room, i) => (i === index ? { ...room, ...patch } : room)),
-    );
-  }, []);
+  const updateArea = useCallback(
+    (index: number, patch: Partial<RoomInput>) => {
+      setRooms((prev) =>
+        prev.map((room, i) => (i === index ? { ...room, ...patch } : room)),
+      );
+
+      if (patch.coats == null || !Number.isFinite(patch.coats)) return;
+
+      setSurfaces((prev) => {
+        const next = prev.map((surface) => {
+          if (surface.room_index !== index) return surface;
+          const updated = {
+            ...surface,
+            coats: patch.coats!,
+            notes: clearDerivedSurfaceEstimates(surface.notes),
+          };
+          return withGallonsEstimated(updated, company, productsById, jobType);
+        });
+        surfacesRef.current = next;
+        return next;
+      });
+      queueMicrotask(() => regenerateAreaLineItems(index));
+    },
+    [company, productsById, jobType, regenerateAreaLineItems],
+  );
 
   const deleteArea = useCallback((index: number) => {
-    const map = buildIndexMapAfterDelete(rooms.length, index);
-    setRooms((prev) =>
-      prev
-        .filter((_, i) => i !== index)
-        .map((room, i) => ({ ...room, sort_order: i })),
-    );
-    setSurfaces((prev) =>
-      prev
-        .filter((surface) => surface.room_index !== index)
-        .map((surface) => {
-          if (surface.room_index === undefined) return surface;
-          const mapped = map.get(surface.room_index);
-          return mapped !== undefined
-            ? { ...surface, room_index: mapped }
-            : surface;
-        }),
-    );
-    setLineItems((prev) =>
-      prev.filter(
+    const deletedRoomId = roomsRef.current[index]?.id;
+    const map = buildIndexMapAfterDelete(roomsRef.current.length, index);
+
+    const nextRooms = roomsRef.current
+      .filter((_, i) => i !== index)
+      .map((room, i) => ({ ...room, sort_order: i }));
+
+    const nextSurfaces = remapRoomIndices(
+      surfacesRef.current.filter((surface) => surface.room_index !== index),
+      map,
+    ).map((surface) => ({ ...surface, room_id: undefined }));
+
+    const nextLineItems = remapRoomIndices(
+      lineItemsRef.current.filter(
         (item) =>
-          item.room_index !== index && item.room_id !== rooms[index]?.id,
+          item.room_index !== index && item.room_id !== deletedRoomId,
       ),
-    );
+      map,
+    ).map((item) => ({ ...item, room_id: null }));
+
+    roomsRef.current = nextRooms;
+    surfacesRef.current = nextSurfaces;
+    lineItemsRef.current = nextLineItems;
+
+    setRooms(nextRooms);
+    setSurfaces(nextSurfaces);
+    setLineItems(nextLineItems);
     setEditingAreaIndex(null);
     setEditingSnapshot(null);
-  }, [rooms]);
+  }, []);
 
   const buildSurfaceForKey = useCallback(
     (
       roomIndex: number,
-      surfaceKey: AreaSurfaceKey,
+      surfaceKey: string,
       closet?: ClosetDimensions | null,
     ): SurfaceInput | null => {
       const room = rooms[roomIndex];
-      const definition = areaSurfaceByKey(surfaceKey);
-      if (!room || !definition) return null;
+      if (!room) return null;
+
+      let definition = areaSurfaceByKey(surfaceKey);
+      let catalogIndex = AREA_SURFACE_CATALOG.findIndex(
+        (row) => row.key === surfaceKey,
+      );
+
+      if (!definition && isCustomSurfaceKey(surfaceKey)) {
+        const entry = resolveCustomSubstrateById(room.prep_work, surfaceKey);
+        if (!entry) return null;
+        definition = customSubstrateSurfaceDefinition(entry);
+        catalogIndex =
+          900 +
+          resolveCustomSubstrates(room.prep_work).findIndex(
+            (row) => row.id === surfaceKey,
+          );
+      }
+
+      if (!definition) return null;
 
       const painterRate =
         (company.labor_rates as Record<string, number>).painter ?? 45;
@@ -553,9 +986,10 @@ export function useSimpleQuoteAreas({
 
       const defaults = paintDefaultsRecord(paintDefaults);
       const defaultRow = defaults[definition.paint_default_type];
-      const sqFt = sqFtForAreaSurfaceKey(surfaceKey, room, closet);
-      const catalogIndex = AREA_SURFACE_CATALOG.findIndex(
-        (row) => row.key === surfaceKey,
+      const sqFt = sqFtForAreaSurfaceKey(
+        surfaceKey as AreaSurfaceKey,
+        room,
+        closet,
       );
 
       return {
@@ -623,13 +1057,19 @@ export function useSimpleQuoteAreas({
         return next.map((surface) => {
           if (surface.room_index !== index) return surface;
           const key = surface.surface_key as AreaSurfaceKey | undefined;
+          const clearedNotes = clearDerivedSurfaceEstimates(surface.notes);
           if (!key) {
-            return withGallonsEstimated(surface, company, productsById, jobType);
+            return withGallonsEstimated(
+              { ...surface, notes: clearedNotes },
+              company,
+              productsById,
+              jobType,
+            );
           }
           if (ROOM_SYNC_SURFACE_KEYS.includes(key)) {
             const sqFt = sqFtForAreaSurfaceKey(key, room);
             return withGallonsEstimated(
-              { ...surface, sq_ft: sqFt },
+              { ...surface, sq_ft: sqFt, notes: clearedNotes },
               company,
               productsById,
               jobType,
@@ -638,13 +1078,18 @@ export function useSimpleQuoteAreas({
           if (CLOSET_SYNC_SURFACE_KEYS.includes(key) && closetDims) {
             const sqFt = sqFtForAreaSurfaceKey(key, room, closetDims);
             return withGallonsEstimated(
-              { ...surface, sq_ft: sqFt },
+              { ...surface, sq_ft: sqFt, notes: clearedNotes },
               company,
               productsById,
               jobType,
             );
           }
-          return withGallonsEstimated(surface, company, productsById, jobType);
+          return withGallonsEstimated(
+            { ...surface, notes: clearedNotes },
+            company,
+            productsById,
+            jobType,
+          );
         });
       });
       queueMicrotask(() => regenerateAreaLineItems(index));
@@ -662,7 +1107,7 @@ export function useSimpleQuoteAreas({
   const addSurfaceToArea = useCallback(
     (
       roomIndex: number,
-      surfaceKey: AreaSurfaceKey,
+      surfaceKey: string,
       closet?: ClosetDimensions | null,
     ) => {
       if (findAreaSurface(surfaces, roomIndex, surfaceKey)) return;
@@ -677,7 +1122,7 @@ export function useSimpleQuoteAreas({
   );
 
   const removeSurfaceFromArea = useCallback(
-    (roomIndex: number, surfaceKey: AreaSurfaceKey) => {
+    (roomIndex: number, surfaceKey: string) => {
       setSurfaces((prev) =>
         prev.filter(
           (surface) =>
@@ -715,10 +1160,33 @@ export function useSimpleQuoteAreas({
     [addSurfaceToArea],
   );
 
+  const addCustomSubstrateToArea = useCallback(
+    (roomIndex: number, label: string) => {
+      const room = rooms[roomIndex];
+      if (!room) return;
+      const { prepWork } = addCustomSubstrate(room.prep_work, label);
+      updateArea(roomIndex, { prep_work: prepWork });
+    },
+    [rooms, updateArea],
+  );
+
+  const removeCustomSubstrateFromArea = useCallback(
+    (roomIndex: number, substrateId: CustomSubstrateId) => {
+      const room = rooms[roomIndex];
+      if (!room) return;
+      removeSurfaceFromArea(roomIndex, substrateId);
+      updateArea(roomIndex, {
+        prep_work: removeCustomSubstrate(room.prep_work, substrateId),
+      });
+      queueMicrotask(() => regenerateAreaLineItems(roomIndex));
+    },
+    [rooms, updateArea, removeSurfaceFromArea, regenerateAreaLineItems],
+  );
+
   const toggleAreaSurface = useCallback(
     (
       roomIndex: number,
-      surfaceKey: AreaSurfaceKey,
+      surfaceKey: string,
       enabled: boolean,
       closet?: ClosetDimensions | null,
     ) => {
@@ -766,7 +1234,7 @@ export function useSimpleQuoteAreas({
   const updateSurface = useCallback(
     (
       roomIndex: number,
-      surfaceKey: AreaSurfaceKey,
+      surfaceKey: string,
       patch: Partial<SurfaceInput>,
     ) => {
       setSurfaces((prev) => {
@@ -777,7 +1245,14 @@ export function useSimpleQuoteAreas({
           ) {
             return surface;
           }
-          const updated = { ...surface, ...patch };
+          const notes = shouldRecalculateDerivedEstimates(patch)
+            ? clearDerivedSurfaceEstimates(
+                patch.notes !== undefined ? patch.notes : surface.notes,
+              )
+            : patch.notes !== undefined
+              ? patch.notes
+              : surface.notes;
+          const updated = { ...surface, ...patch, notes };
           return withGallonsEstimated(updated, company, productsById, jobType);
         });
         surfacesRef.current = next;
@@ -785,74 +1260,71 @@ export function useSimpleQuoteAreas({
       });
       queueMicrotask(() => regenerateAreaLineItems(roomIndex));
     },
-    [company, productsById, regenerateAreaLineItems],
+    [company, productsById, jobType, regenerateAreaLineItems],
   );
 
-  const setPaintDefault = useCallback(
-    (
-      surfaceType: QuoteSurfaceKind,
-      productId: string | null,
-      coats?: number,
-    ) => {
-      const defaultPatch: QuotePaintDefaultInput = {
-        surface_type: surfaceType,
-        company_paint_product_id: productId,
-        coats: coats ?? 2,
-      };
+  const updateSubstrateCoats = useCallback(
+    (roomIndex: number, substrateId: AreaSubstrateId, coats: number) => {
+      const room = rooms[roomIndex];
+      if (!room) return;
 
-      setPaintDefaults((prev) => {
-        const next = normalizeQuotePaintDefaults(prev).map((row) =>
-          row.surface_type === surfaceType
-            ? {
-                ...row,
-                company_paint_product_id: productId,
-                coats: coats ?? row.coats,
-              }
-            : row,
-        );
-        paintDefaultsRef.current = next;
-        return next;
-      });
+      const substrate =
+        findSubstrateDefinition(room.prep_work, substrateId) ??
+        substrateById(substrateId);
+      if (!substrate) return;
+
+      const keys = new Set(listKeysForSubstrate(substrate));
 
       setSurfaces((prev) => {
-        const next = applyDefaultsToSurfaces(
-          prev.map((surface) => {
-            if (surface.product_override) return surface;
-            const kind = paintDefaultTypeForSurfaceKey(
-              surface.surface_key,
-              surface.surface_type,
-            );
-            if (kind !== surfaceType) return surface;
-            return {
-              ...surface,
-              company_paint_product_id: productId,
-              coats: coats ?? surface.coats,
-              product_override: false,
-            };
-          }),
-          [defaultPatch],
-          true,
-        ).map((surface) => withGallonsEstimated(surface, company, productsById, jobType));
+        const next = prev.map((surface) => {
+          if (surface.room_index !== roomIndex) return surface;
+          const key = surface.surface_key as AreaSurfaceKey | undefined;
+          if (!key || !keys.has(key)) return surface;
+          const updated = {
+            ...surface,
+            coats,
+            notes: clearDerivedSurfaceEstimates(surface.notes),
+          };
+          return withGallonsEstimated(updated, company, productsById, jobType);
+        });
         surfacesRef.current = next;
         return next;
       });
+      queueMicrotask(() => regenerateAreaLineItems(roomIndex));
     },
-    [company, productsById],
+    [rooms, company, productsById, jobType, regenerateAreaLineItems],
   );
 
   const resetSurfaceProduct = useCallback(
-    (roomIndex: number, surfaceKey: AreaSurfaceKey) => {
-      const definition = areaSurfaceByKey(surfaceKey);
+    (roomIndex: number, surfaceKey: string) => {
+      const room = rooms[roomIndex];
+      const definition =
+        areaSurfaceByKey(surfaceKey) ??
+        (room
+          ? resolveCustomSubstrateById(room.prep_work, surfaceKey)
+            ? customSubstrateSurfaceDefinition(
+                resolveCustomSubstrateById(room.prep_work, surfaceKey)!,
+              )
+            : null
+          : null);
       if (!definition) return;
       const defaults = paintDefaultsRecord(paintDefaults);
       const def = defaults[definition.paint_default_type];
+      const existing = findAreaSurface(surfaces, roomIndex, surfaceKey);
       updateSurface(roomIndex, surfaceKey, {
         company_paint_product_id: def?.company_paint_product_id ?? null,
         product_override: false,
         coats: def?.coats,
+        ...(definition.key === "window"
+          ? {
+              notes: mergeSurfaceOverrideNotes(existing?.notes, {
+                primerProductId: null,
+              }),
+            }
+          : {}),
       });
     },
-    [paintDefaults, updateSurface],
+    [paintDefaults, surfaces, updateSurface],
   );
 
   const updateClosetSurface = useCallback(
@@ -911,19 +1383,6 @@ export function useSimpleQuoteAreas({
       regenerateAreaLineItems,
       rooms,
     ],
-  );
-
-  const toggleScopeCategory = useCallback(
-    (roomIndex: number, labels: string[], enabled: boolean) => {
-      const room = rooms[roomIndex];
-      if (!room) return;
-      let prepWork = room.prep_work ?? "";
-      for (const label of labels) {
-        prepWork = toggleScopeLine(prepWork, label, enabled);
-      }
-      updateArea(roomIndex, { prep_work: prepWork });
-    },
-    [rooms, updateArea],
   );
 
   const isAreaDirty = useCallback(
@@ -1021,10 +1480,21 @@ export function useSimpleQuoteAreas({
     rooms,
     surfaces,
     lineItems,
+    pricedLineItems: markedLineItems,
     setLineItems,
     areaSubtotals,
     areaCostBreakdowns,
+    editingAreaPreviewBreakdown,
+    editingAreaPreviewLineItems,
+    editingAreaWorkItemsRollup,
     itemsSubtotal,
+    customQuoteLineItems,
+    addCustomQuoteLineItem,
+    updateCustomQuoteLineItem,
+    removeCustomQuoteLineItem,
+    toggleAreaIncluded,
+    toggleCustomQuoteLineItemIncluded,
+    defaultMarkupPct,
     pricingSummary,
     coverage,
     editingAreaIndex,
@@ -1037,14 +1507,18 @@ export function useSimpleQuoteAreas({
     surfacesForArea,
     updateSurface,
     updateClosetSurface,
-    setPaintDefault,
     resetSurfaceProduct,
-    toggleScopeCategory,
     paintDefaults,
     paintProducts,
     isAreaDirty,
     revertAreaEdits,
     saveAreaEdits,
+    updateSubstrateMargin,
+    updateSubstrateCoats,
+    updateSubstrateProductivity,
+    resetSubstrateProductivity,
+    addCustomSubstrateToArea,
+    removeCustomSubstrateFromArea,
     openAreaEditor,
     closeAreaEditor,
     replacePaintDefaults,

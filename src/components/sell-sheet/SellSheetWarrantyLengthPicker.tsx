@@ -43,11 +43,11 @@ export function SellSheetWarrantyLengthPicker({
 
   return (
     <fieldset className="rounded-lg border border-blue-500/20 bg-gradient-to-br from-blue-50/80 to-white px-4 py-4">
-      <legend className="flex items-center gap-2 text-sm font-bold text-navy-900">
+      <legend className="flex items-center gap-2 text-sm font-bold text-foreground">
         <Shield className="h-4 w-4 text-blue-600" strokeWidth={2.25} />
         {legend}
       </legend>
-      <p className="mt-1 text-sm text-silver-600">{hint}</p>
+      <p className="mt-1 text-sm text-muted-foreground">{hint}</p>
 
       <div
         className="mt-3 flex flex-wrap gap-2"
@@ -62,8 +62,8 @@ export function SellSheetWarrantyLengthPicker({
             onClick={() => onChange(null)}
             className={`rounded-lg border px-3 py-2 text-sm font-semibold transition ${
               !selectedLabel
-                ? "border-blue-500/40 bg-white text-blue-800 shadow-sm ring-1 ring-blue-500/20"
-                : "border-silver-300/80 bg-white/90 text-navy-800 hover:border-blue-500/25 hover:bg-blue-50/40"
+                ? "border-blue-500/40 bg-card text-blue-800 shadow-sm ring-1 ring-blue-500/20"
+                : "border-input bg-card/90 text-foreground hover:border-blue-500/25 hover:bg-blue-50/40"
             }`}
           >
             {noneLabel}
@@ -91,10 +91,10 @@ export function SellSheetWarrantyLengthPicker({
               onClick={() => onChange(option.label)}
               className={`rounded-lg border px-3 py-2 text-sm font-semibold transition ${
                 disabled
-                  ? "cursor-not-allowed border-silver-200 bg-silver-50 text-silver-400"
+                  ? "cursor-not-allowed border-border bg-muted text-muted-foreground/80"
                   : selected
-                    ? "border-blue-500/40 bg-white text-blue-800 shadow-sm ring-1 ring-blue-500/20"
-                    : "border-silver-300/80 bg-white/90 text-navy-800 hover:border-blue-500/25 hover:bg-blue-50/40"
+                    ? "border-blue-500/40 bg-card text-blue-800 shadow-sm ring-1 ring-blue-500/20"
+                    : "border-input bg-card/90 text-foreground hover:border-blue-500/25 hover:bg-blue-50/40"
               }`}
             >
               {shortWarrantyLabel(option.label)}

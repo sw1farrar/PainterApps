@@ -25,8 +25,8 @@ export function QuoteDocumentHotspot({
       className={cn(
         "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition",
         variant === "primary"
-          ? "border-blue-600 bg-blue-600 text-white shadow-sm hover:bg-blue-700"
-          : "border-slate-200 bg-white/95 text-slate-700 shadow-sm hover:border-blue-300 hover:text-blue-700",
+          ? "border-primary bg-primary text-primary-foreground shadow-theme-sm hover:bg-primary/90"
+          : "border-border bg-card text-foreground shadow-theme-sm hover:border-primary/40 hover:text-primary",
         className,
       )}
     >

@@ -15,7 +15,9 @@ import * as React from "react";
 import { toast } from "sonner";
 
 import Logo from "@/components/Logo";
+import { ThemeToggleMenuItem } from "@/components/theme/ThemeToggleMenuItem";
 import { NotificationsBell } from "@/components/portal/NotificationsBell";
+import { useOptionalQuoteEditorChrome } from "@/providers/QuoteEditorChromeProvider";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -69,8 +71,10 @@ function SettingsNavItem({
 export function TopBar({ profile, company, onMenuClick }: TopBarProps) {
   const router = useRouter();
   const pathname = usePathname();
+  const quoteEditorChrome = useOptionalQuoteEditorChrome();
   const [isPending, startTransition] = React.useTransition();
   const [pendingHref, setPendingHref] = React.useState<string | null>(null);
+  const quoteHeaderDetail = quoteEditorChrome?.headerDetail ?? null;
 
   React.useEffect(() => {
     setPendingHref(null);
@@ -106,8 +110,8 @@ export function TopBar({ profile, company, onMenuClick }: TopBarProps) {
   }
 
   return (
-    <header className="flex min-h-14 items-center justify-between gap-2 border-b border-border bg-navy-900/50 px-3 pt-[env(safe-area-inset-top,0px)] backdrop-blur-md sm:gap-3 sm:px-4 md:gap-4 md:px-6">
-      <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3">
+    <header className="flex min-h-14 items-center justify-between gap-2 border-b border-border bg-header px-3 pt-[env(safe-area-inset-top,0px)] shadow-theme-sm backdrop-blur-md sm:gap-3 sm:px-4 md:gap-4 md:px-6">
+      <div className="flex min-w-0 flex-1 items-center justify-start gap-2 sm:gap-3">
         <Button
           variant="ghost"
           size="icon"
@@ -118,21 +122,25 @@ export function TopBar({ profile, company, onMenuClick }: TopBarProps) {
           <Menu className="h-5 w-5" />
         </Button>
 
-        <div className="flex min-w-0 items-center gap-2 sm:gap-3 md:hidden">
-          {isAbsoluteHttpUrl(company?.logo_url) ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={company!.logo_url!}
-              alt={company?.name ?? "Company logo"}
-              className="h-7 w-7 shrink-0 rounded-md object-cover sm:h-8 sm:w-8"
-            />
-          ) : (
-            <Logo variant="icon" size="sm" />
-          )}
-          <span className="truncate text-sm font-semibold text-foreground">
-            {company?.name ?? "PainterApps"}
-          </span>
-        </div>
+        {quoteHeaderDetail ? (
+          <div className="min-w-0 flex-1">{quoteHeaderDetail}</div>
+        ) : (
+          <div className="flex min-w-0 items-center gap-2 sm:gap-3 md:hidden">
+            {isAbsoluteHttpUrl(company?.logo_url) ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={company!.logo_url!}
+                alt={company?.name ?? "Company logo"}
+                className="h-7 w-7 shrink-0 rounded-md object-cover sm:h-8 sm:w-8"
+              />
+            ) : (
+              <Logo variant="icon" size="sm" />
+            )}
+            <span className="truncate text-sm font-semibold text-foreground">
+              {company?.name ?? "PainterApps"}
+            </span>
+          </div>
+        )}
       </div>
 
       <div className="flex shrink-0 items-center gap-0.5 sm:gap-1">
@@ -148,7 +156,7 @@ export function TopBar({ profile, company, onMenuClick }: TopBarProps) {
                   src={profile.avatar_url ?? undefined}
                   alt={profile.full_name ?? "User"}
                 />
-                <AvatarFallback className="bg-navy-700 text-blue-200">
+                <AvatarFallback className="bg-primary/15 text-primary">
                   {getUserInitials(profile.full_name)}
                 </AvatarFallback>
               </Avatar>
@@ -190,6 +198,8 @@ export function TopBar({ profile, company, onMenuClick }: TopBarProps) {
                 </DropdownMenuItem>
               </>
             ) : null}
+            <DropdownMenuSeparator />
+            <ThemeToggleMenuItem />
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleLogout} className="text-destructive">
               <LogOut className="mr-2 h-4 w-4" />

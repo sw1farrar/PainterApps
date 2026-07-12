@@ -70,7 +70,7 @@ export default async function JobDetailPage({ params }: PageProps) {
           </Button>
           <div>
             <p className="type-eyebrow">Job detail</p>
-            <h1 className="font-display mt-1 text-2xl text-white md:text-3xl">
+            <h1 className="font-display mt-1 text-2xl text-foreground md:text-3xl">
               {customer?.name ?? "Job"}
             </h1>
             <p className="mt-1 text-sm text-muted-foreground">

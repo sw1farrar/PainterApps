@@ -18,7 +18,7 @@ export default function LanguageToggle() {
 
   return (
     <div
-      className="flex items-center rounded-lg border border-silver-400/15 bg-navy-900/50 p-1 backdrop-blur-sm"
+      className="flex items-center rounded-lg border border-border bg-card/80 p-1 backdrop-blur-sm"
       role="group"
       aria-label={lang.groupLabel}
     >
@@ -33,8 +33,8 @@ export default function LanguageToggle() {
             aria-label={option.ariaLabel}
             className={`rounded-md px-2.5 py-1.5 text-xs font-semibold transition sm:px-3 ${
               active
-                ? "bg-blue-500 text-white shadow-sm"
-                : "text-silver-400 hover:text-silver-200"
+                ? "bg-primary text-primary-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
             }`}
             aria-pressed={active}
           >

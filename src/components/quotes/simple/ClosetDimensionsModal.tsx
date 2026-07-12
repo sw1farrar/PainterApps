@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -54,14 +55,14 @@ export function ClosetDimensionsModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="w-[min(96vw,28rem)] max-w-[min(96vw,28rem)] sm:max-w-[min(96vw,28rem)]">
         <DialogHeader>
           <DialogTitle>Closet size</DialogTitle>
+          <DialogDescription>
+            Enter inside dimensions. We estimate paintable wall area inside the
+            closet.
+          </DialogDescription>
         </DialogHeader>
-        <p className="text-sm text-muted-foreground">
-          Enter inside dimensions. We estimate paintable wall area inside the
-          closet.
-        </p>
         <div className="grid grid-cols-3 gap-3">
           <div className="space-y-1">
             <Label className="text-xs text-muted-foreground">Length (ft)</Label>

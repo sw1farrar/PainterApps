@@ -13,12 +13,47 @@ const DEFAULT_MULTIPLIERS: Record<string, number> = {
   beautiful: 1.5,
 };
 
+function roundMoney(value: number): number {
+  return Math.round(value * 100) / 100;
+}
+
+/**
+ * Selling price from at-cost and target gross margin % on the selling price.
+ * sell = cost ÷ (1 − margin%/100)
+ */
+export function sellPriceFromMargin(
+  costAtCost: number,
+  marginPct: number,
+): number {
+  if (costAtCost <= 0) return 0;
+  if (marginPct >= 100) return roundMoney(costAtCost);
+  return roundMoney(costAtCost / (1 - marginPct / 100));
+}
+
+export function markupAmountFromMargin(
+  costAtCost: number,
+  marginPct: number,
+): number {
+  return roundMoney(sellPriceFromMargin(costAtCost, marginPct) - costAtCost);
+}
+
+/** Blended gross margin on a bid price: profit ÷ sell × 100. */
+export function grossMarginPctFromParts(
+  directCost: number,
+  bidPrice: number,
+): number {
+  if (bidPrice <= 0) return 0;
+  const profit = bidPrice - directCost;
+  if (profit <= 0) return 0;
+  return Math.round((profit / bidPrice) * 1000) / 10;
+}
+
+/** Stored `markup` field is gross margin % on selling price. */
 export function lineItemLineTotal(
   item: Pick<QuoteLineItem, "qty" | "unit_cost" | "markup">,
 ): number {
   const cost = item.qty * item.unit_cost;
-  const markupAmount = cost * (item.markup / 100);
-  return cost + markupAmount;
+  return sellPriceFromMargin(cost, item.markup ?? 0);
 }
 
 export type LineItemsSubtotalOptions = {
@@ -99,9 +134,7 @@ export function calculateSellingPrice(
   loadedCost: number,
   grossMarginPct: number,
 ): number {
-  if (loadedCost <= 0) return 0;
-  if (grossMarginPct >= 100) return Math.round(loadedCost);
-  return Math.round(loadedCost / (1 - grossMarginPct / 100));
+  return Math.round(sellPriceFromMargin(loadedCost, grossMarginPct));
 }
 
 export function calculateJobPricing(

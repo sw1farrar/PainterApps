@@ -15,7 +15,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SURFACE_QUICK_ADD } from "@/lib/quotes/area-helpers";
-import { estimateGallons } from "@/lib/quotes/pricing";
+import { estimateGallons, lineItemLineTotal } from "@/lib/quotes/pricing";
 import { formatCurrency } from "@/lib/utils";
 import type { LineItemInput, RoomInput, SurfaceInput } from "@/app/app/(portal)/quotes/actions";
 import type { Company, QuoteRateType, QuoteSurfaceKind } from "@/types/database";
@@ -256,11 +256,7 @@ export function AreaDetailPanel({
                     <span className="truncate">{item.description}</span>
                   </div>
                   <span className="shrink-0 font-medium">
-                    {formatCurrency(
-                      item.qty *
-                        item.unit_cost *
-                        (1 + (item.markup ?? 0) / 100),
-                    )}
+                    {formatCurrency(lineItemLineTotal(item))}
                   </span>
                 </li>
               ))}

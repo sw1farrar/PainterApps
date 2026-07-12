@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { lineItemTotal } from "@/lib/quotes/area-helpers";
+import { lineItemLineTotal } from "@/lib/quotes/pricing";
 import {
   QUOTE_OPTION_PRESETS,
   type OptionPreset,
@@ -86,10 +87,11 @@ export function OptionsStep({
             <div className="grid gap-3 sm:grid-cols-2">
               {filteredPresets.map((preset) => {
                 const added = alreadyAdded(preset);
-                const previewTotal =
-                  preset.qty *
-                  preset.unit_cost *
-                  (1 + preset.markup / 100);
+                const previewTotal = lineItemLineTotal({
+                  qty: preset.qty,
+                  unit_cost: preset.unit_cost,
+                  markup: preset.markup,
+                });
                 return (
                   <button
                     key={preset.id}

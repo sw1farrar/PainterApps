@@ -42,7 +42,7 @@ export default async function ProductsSellSheetsPage() {
           <CardContent className="flex flex-col items-center gap-4 py-12 text-center">
             <FileStack className="h-10 w-10 text-muted-foreground" />
             <div>
-              <p className="font-medium text-white">No sell sheets yet</p>
+              <p className="font-medium text-foreground">No sell sheets yet</p>
               <p className="mt-1 text-sm text-muted-foreground">
                 Build a comparison in Free Tools and save it to your account.
               </p>
@@ -62,7 +62,7 @@ export default async function ProductsSellSheetsPage() {
               className="border-border bg-card/60 transition hover:border-primary/30"
             >
               <CardHeader>
-                <CardTitle className="text-lg text-white">
+                <CardTitle className="text-lg text-foreground">
                   {sheet.project_name?.trim() || "Untitled sell sheet"}
                 </CardTitle>
                 <CardDescription>

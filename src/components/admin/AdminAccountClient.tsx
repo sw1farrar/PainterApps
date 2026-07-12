@@ -49,7 +49,7 @@ export function AdminAccountClient({ profile, email }: AdminAccountClientProps) 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
       <div>
-        <h1 className="font-display text-3xl text-white">Account</h1>
+        <h1 className="font-display text-3xl text-foreground">Account</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Manage your site admin sign-in and display name.
         </p>
@@ -57,7 +57,7 @@ export function AdminAccountClient({ profile, email }: AdminAccountClientProps) 
 
       <Card className="border-border bg-card/60">
         <CardHeader>
-          <CardTitle className="text-white">Profile</CardTitle>
+          <CardTitle className="text-foreground">Profile</CardTitle>
           <CardDescription>
             How your name appears in the admin console.
           </CardDescription>

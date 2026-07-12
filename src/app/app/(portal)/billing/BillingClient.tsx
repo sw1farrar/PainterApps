@@ -118,7 +118,7 @@ function BillingContent(props: BillingClientProps) {
     <div className="mx-auto max-w-2xl space-y-6">
       <div>
         <p className="type-eyebrow">Billing</p>
-        <h1 className="font-display mt-1 text-2xl text-white md:text-3xl">
+        <h1 className="font-display mt-1 text-2xl text-foreground md:text-3xl">
           Subscription
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">

@@ -31,7 +31,7 @@ const SheetOverlay = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <SheetPrimitive.Overlay
     className={cn(
-      "sheet-overlay sheet-ease fixed inset-0 z-50 bg-black/80",
+      "sheet-overlay sheet-ease fixed inset-0 z-50 bg-overlay backdrop-blur-sm",
       className
     )}
     {...props}
@@ -41,7 +41,7 @@ const SheetOverlay = React.forwardRef<
 SheetOverlay.displayName = SheetPrimitive.Overlay.displayName;
 
 const sheetVariants = cva(
-  "sheet-ease fixed z-50 flex flex-col gap-4 bg-background p-6 shadow-lg will-change-transform",
+  "sheet-ease fixed z-50 flex flex-col gap-4 border-border bg-background p-6 shadow-theme-lg will-change-transform",
   {
     variants: {
       side: {

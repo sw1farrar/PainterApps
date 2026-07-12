@@ -148,7 +148,7 @@ function SignupForm() {
   return (
     <Card className="border-border bg-card/80 backdrop-blur-sm">
       <CardHeader>
-        <CardTitle className="font-display text-2xl text-white">
+        <CardTitle className="font-display text-2xl text-card-foreground">
           {inviteCompany ? `Join ${inviteCompany}` : "Create free account"}
         </CardTitle>
         <CardDescription>

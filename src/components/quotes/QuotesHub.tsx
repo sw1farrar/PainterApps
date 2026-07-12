@@ -88,7 +88,7 @@ export function QuotesHub({ quotes: initialQuotes }: QuotesHubProps) {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="type-eyebrow">Estimates</p>
-          <h1 className="font-display mt-2 text-3xl text-white sm:text-4xl">
+          <h1 className="font-display mt-2 text-3xl sm:text-4xl">
             Your Estimates
           </h1>
           <p className="type-lead mt-2 text-sm sm:text-base">

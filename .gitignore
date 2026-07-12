@@ -21,7 +21,10 @@
 
 # misc
 .DS_Store
+Thumbs.db
+Desktop.ini
 *.pem
+*.log
 
 # debug
 npm-debug.log*
@@ -31,8 +34,26 @@ yarn-error.log*
 
 # env files
 .env*
+!.env.example
+!.env*.example
+
+# local secrets / credentials
+*secrets*
+!*secrets*.example
 
 # typescript
 *.tsbuildinfo
 next-env.d.ts
 .vercel
+
+# local agent / tooling clutter
+/terminals/
+/agent-tools/
+.cursor/
+
+# temporary files & local test outputs
+tmp/
+tmp-*
+*.tmp
+*.temp
+/tmp-*.pdf

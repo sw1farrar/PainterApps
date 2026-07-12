@@ -1,4 +1,4 @@
-import { DEFAULT_COAT_BASIS } from "@/lib/quotes/surface-productivity";
+import { DEFAULT_COAT_BASIS } from "@/lib/quotes/surface-labor-constants";
 
 export type SurfaceLaborScope = "interior" | "exterior";
 

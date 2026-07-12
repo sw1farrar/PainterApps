@@ -24,6 +24,7 @@ import {
   listCompanyPaintProducts,
   saveCompanyTierDefaults,
 } from "@/app/app/(portal)/paint-library/actions";
+import { formatPaintProductLabel } from "@/lib/paint-library/product-label";
 import {
   defaultTierPaintState,
   QUOTE_PAINT_TIERS,
@@ -138,7 +139,7 @@ export function TierDefaultsEditor() {
                           .filter((product) => product.role === "primer")
                           .map((product) => (
                             <SelectItem key={product.id} value={product.id}>
-                              {product.name}
+                              {formatPaintProductLabel(product)}
                             </SelectItem>
                           ))}
                       </SelectContent>
@@ -177,7 +178,7 @@ export function TierDefaultsEditor() {
                         .filter((product) => product.role === "topcoat")
                         .map((product) => (
                           <SelectItem key={product.id} value={product.id}>
-                            {product.name}
+                            {formatPaintProductLabel(product)}
                           </SelectItem>
                         ))}
                     </SelectContent>

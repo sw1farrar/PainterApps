@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { SimpleStepHeader } from "@/components/quotes/simple/SimpleStepHeader";
+import { formatPaintProductLabel } from "@/lib/paint-library/product-label";
 import type { CompanyPaintProductRow } from "@/lib/paint-library/types";
 import {
   BASELINE_SCOPE_LABELS,
@@ -136,11 +137,17 @@ function SurfaceSystemCard({
     [paintProducts, scope, row.topcoat_product_id],
   );
 
-  const primerName = row.primer_product_id
-    ? paintProducts.find((p) => p.id === row.primer_product_id)?.name
+  const primerProduct = row.primer_product_id
+    ? paintProducts.find((p) => p.id === row.primer_product_id) ?? null
     : null;
-  const topcoatName = row.topcoat_product_id
-    ? paintProducts.find((p) => p.id === row.topcoat_product_id)?.name
+  const topcoatProduct = row.topcoat_product_id
+    ? paintProducts.find((p) => p.id === row.topcoat_product_id) ?? null
+    : null;
+  const primerName = primerProduct
+    ? formatPaintProductLabel(primerProduct)
+    : null;
+  const topcoatName = topcoatProduct
+    ? formatPaintProductLabel(topcoatProduct)
     : null;
 
   return (
@@ -214,7 +221,7 @@ function SurfaceSystemCard({
               <SelectItem value="__none__">None — topcoat only</SelectItem>
               {primers.map((product) => (
                 <SelectItem key={product.id} value={product.id}>
-                  {product.name}
+                  {formatPaintProductLabel(product)}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -287,7 +294,7 @@ function SurfaceSystemCard({
               <SelectItem value="__none__">Not set</SelectItem>
               {topcoats.map((product) => (
                 <SelectItem key={product.id} value={product.id}>
-                  {product.name}
+                  {formatPaintProductLabel(product)}
                 </SelectItem>
               ))}
             </SelectContent>

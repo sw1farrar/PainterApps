@@ -53,7 +53,7 @@ export default function Header({ variant = "marketing" }: HeaderProps) {
 
   if (variant === "minimal") {
     return (
-      <header className="w-full border-b border-white/10 bg-navy-950/80 backdrop-blur-md">
+      <header className="w-full border-b border-border bg-header backdrop-blur-md">
         <PageShell as="nav" className="flex items-center justify-between py-4">
           <Link href="/" aria-label={nav.homeAria}>
             <Logo size="sm" />
@@ -67,7 +67,7 @@ export default function Header({ variant = "marketing" }: HeaderProps) {
   }
 
   return (
-    <header className="fixed top-0 right-0 left-0 z-50 w-full border-b border-silver-400/10 bg-navy-950/75 backdrop-blur-xl">
+    <header className="fixed top-0 right-0 left-0 z-50 w-full border-b border-border bg-header backdrop-blur-xl shadow-theme-sm">
       <PageShell as="nav" className="flex items-center justify-between py-4 lg:py-5">
         <Link href="/" aria-label={nav.homeAria}>
           <Logo size="md" />
@@ -82,7 +82,7 @@ export default function Header({ variant = "marketing" }: HeaderProps) {
           {showSignIn ? (
             <a
               href={loginHref}
-              className="type-link inline-flex shrink-0 text-sm font-semibold text-silver-200 hover:text-white"
+              className="type-link inline-flex shrink-0 text-sm font-semibold"
             >
               {nav.signIn}
             </a>

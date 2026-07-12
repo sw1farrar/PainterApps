@@ -25,7 +25,7 @@ export function SellSheetEditorModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-navy-950/70 p-0 backdrop-blur-sm sm:items-center sm:p-4"
+      className="fixed inset-0 z-50 flex items-end justify-center bg-overlay p-0 backdrop-blur-sm sm:items-center sm:p-4"
       role="dialog"
       aria-modal="true"
       aria-labelledby="sell-sheet-editor-modal-title"
@@ -37,22 +37,22 @@ export function SellSheetEditorModal({
         }`}
         onClick={(event) => event.stopPropagation()}
       >
-        <div className="flex shrink-0 items-start justify-between gap-4 border-b border-silver-300/60 px-5 py-4 sm:px-8 sm:py-5">
+        <div className="flex shrink-0 items-start justify-between gap-4 border-b border-border px-5 py-4 sm:px-8 sm:py-5">
           <div className="min-w-0">
             <h2
               id="sell-sheet-editor-modal-title"
-              className="font-display text-xl text-navy-900 sm:text-2xl"
+              className="font-display text-xl text-foreground sm:text-2xl"
             >
               {title}
             </h2>
             {subtitle ? (
-              <p className="mt-1 text-sm text-silver-600">{subtitle}</p>
+              <p className="mt-1 text-sm text-muted-foreground">{subtitle}</p>
             ) : null}
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="shrink-0 rounded p-1 text-silver-600 transition hover:bg-silver-100 hover:text-navy-900"
+            className="shrink-0 rounded p-1 text-muted-foreground transition hover:bg-accent hover:text-foreground"
             aria-label={doneLabel}
           >
             <X className="h-5 w-5" />
@@ -63,7 +63,7 @@ export function SellSheetEditorModal({
           {children}
         </div>
 
-        <div className="flex shrink-0 justify-end border-t border-silver-300/60 px-5 py-4 sm:px-8">
+        <div className="flex shrink-0 justify-end border-t border-border px-5 py-4 sm:px-8">
           <button
             type="button"
             onClick={onClose}

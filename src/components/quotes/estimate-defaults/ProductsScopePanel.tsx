@@ -15,6 +15,10 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { EstimateDefaultsNumberInput } from "@/components/quotes/estimate-defaults/EstimateDefaultsNumberInput";
+import {
+  formatPaintProductLabel,
+  formatPaintProductLabelById,
+} from "@/lib/paint-library/product-label";
 import { ONBOARDING_DEFAULTS } from "@/lib/onboarding/defaults";
 import type { CompanyEstimateDefaults } from "@/lib/quotes/company-estimate-defaults";
 import {
@@ -91,7 +95,7 @@ function ProductSelect({
         <SelectItem value="__none__">{placeholder}</SelectItem>
         {options.map((product) => (
           <SelectItem key={product.id} value={product.id}>
-            {product.name}
+            {formatPaintProductLabel(product)}
           </SelectItem>
         ))}
       </SelectContent>
@@ -225,8 +229,7 @@ function productLabel(
   productsById: Map<string, CompanyPaintProductRow>,
   fallback = "Not set",
 ): string {
-  if (!productId) return fallback;
-  return productsById.get(productId)?.name ?? fallback;
+  return formatPaintProductLabelById(productId, productsById, fallback);
 }
 
 type GoodBaselineSummaryProps = {

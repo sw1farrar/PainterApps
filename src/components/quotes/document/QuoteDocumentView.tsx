@@ -39,9 +39,9 @@ type QuoteDocumentViewProps = {
 };
 
 const TIER_ACCENT: Record<string, string> = {
-  good: "border-slate-200 bg-slate-50",
-  better: "border-blue-200 bg-blue-50/60 ring-1 ring-blue-100",
-  best: "border-amber-200 bg-amber-50/50 ring-1 ring-amber-100",
+  good: "border-border bg-muted/50",
+  better: "border-primary/25 bg-primary/5 ring-1 ring-primary/15",
+  best: "border-amber-500/30 bg-amber-500/10 ring-1 ring-amber-500/15",
 };
 
 export function QuoteDocumentView({
@@ -85,8 +85,8 @@ export function QuoteDocumentView({
         : [];
 
   return (
-    <article className="min-h-full bg-white px-8 py-10 text-slate-900 sm:px-10 sm:py-12">
-      <header className="border-b border-slate-200 pb-8 text-center">
+    <article className="min-h-full bg-card px-8 py-10 text-card-foreground sm:px-10 sm:py-12">
+      <header className="border-b border-border pb-8 text-center">
         {logoUrl ? (
           <div className="mb-6 flex justify-center">
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -97,24 +97,24 @@ export function QuoteDocumentView({
             />
           </div>
         ) : (
-          <p className="mb-2 text-xs font-bold uppercase tracking-[0.2em] text-blue-700">
+          <p className="mb-2 text-xs font-bold uppercase tracking-[0.2em] text-primary">
             {companyName}
           </p>
         )}
 
-        <h1 className="font-display text-3xl font-semibold tracking-tight text-slate-900 sm:text-[2rem]">
+        <h1 className="font-display text-3xl font-semibold tracking-tight text-foreground sm:text-[2rem]">
           Painting Proposal
         </h1>
 
         <div className="mt-4 space-y-2">
           {hasCustomer ? (
-            <p className="text-base text-slate-600">
+            <p className="text-base text-muted-foreground">
               Prepared for{" "}
-              <span className="font-semibold text-slate-900">{customerName}</span>
+              <span className="font-semibold text-foreground">{customerName}</span>
             </p>
           ) : editable ? (
             <div className="flex flex-wrap items-center justify-center gap-2">
-              <span className="text-sm text-slate-500">Add who this is for</span>
+              <span className="text-sm text-muted-foreground">Add who this is for</span>
               <QuoteDocumentHotspot
                 icon={UserRound}
                 label="Set customer"
@@ -125,7 +125,7 @@ export function QuoteDocumentView({
           ) : null}
 
           {hasAddress ? (
-            <p className="inline-flex items-center justify-center gap-1.5 text-sm text-slate-500">
+            <p className="inline-flex items-center justify-center gap-1.5 text-sm text-muted-foreground">
               <MapPin className="h-3.5 w-3.5 shrink-0" />
               {formatJobAddress(quote)}
             </p>
@@ -141,7 +141,7 @@ export function QuoteDocumentView({
         </div>
 
         {(companyPhone || companyEmail) && (
-          <div className="mt-4 flex flex-wrap items-center justify-center gap-4 text-xs text-slate-500">
+          <div className="mt-4 flex flex-wrap items-center justify-center gap-4 text-xs text-muted-foreground">
             {companyPhone ? (
               <span>{formatPhoneDisplay(companyPhone)}</span>
             ) : null}
@@ -167,7 +167,7 @@ export function QuoteDocumentView({
 
       <section className="mt-8">
         <div className="mb-4 flex items-center justify-between gap-3">
-          <h2 className="text-sm font-bold uppercase tracking-wider text-blue-800">
+          <h2 className="text-sm font-bold uppercase tracking-wider text-primary">
             Project scope
           </h2>
           {editable ? (
@@ -192,10 +192,10 @@ export function QuoteDocumentView({
             {rooms.map((room) => (
               <li
                 key={room.id}
-                className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50/80 px-4 py-3 text-sm"
+                className="flex items-center justify-between rounded-lg border border-border bg-muted/40 px-4 py-3 text-sm"
               >
-                <span className="font-medium text-slate-800">{room.name}</span>
-                <span className="text-slate-500">
+                <span className="font-medium text-foreground">{room.name}</span>
+                <span className="text-muted-foreground">
                   {room.sq_ft > 0 ? `${room.sq_ft} sq ft` : "—"}
                 </span>
               </li>
@@ -205,24 +205,24 @@ export function QuoteDocumentView({
           <button
             type="button"
             onClick={() => onAddArea?.()}
-            className="flex w-full flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-slate-200 bg-slate-50/50 px-6 py-10 text-center transition hover:border-blue-300 hover:bg-blue-50/30"
+            className="flex w-full flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-border bg-muted/30 px-6 py-10 text-center transition hover:border-primary/40 hover:bg-primary/5"
           >
-            <Plus className="h-6 w-6 text-blue-600" />
-            <span className="text-sm font-semibold text-slate-700">
+            <Plus className="h-6 w-6 text-primary" />
+            <span className="text-sm font-semibold text-foreground">
               Add your first area
             </span>
-            <span className="text-xs text-slate-500">
+            <span className="text-xs text-muted-foreground">
               Living room, exterior siding, cabinets — anything you&apos;re painting
             </span>
           </button>
         ) : (
-          <p className="text-sm text-slate-500">Scope details coming soon.</p>
+          <p className="text-sm text-muted-foreground">Scope details coming soon.</p>
         )}
       </section>
 
       <section className="mt-10">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-          <h2 className="text-sm font-bold uppercase tracking-wider text-blue-800">
+          <h2 className="text-sm font-bold uppercase tracking-wider text-primary">
             Your options
           </h2>
           {editable ? (
@@ -252,16 +252,16 @@ export function QuoteDocumentView({
               return (
                 <div
                   key={tier.id}
-                  className={`flex h-full flex-col rounded-xl border p-5 ${TIER_ACCENT[tier.tier] ?? "border-slate-200 bg-white"}`}
+                  className={`flex h-full flex-col rounded-xl border p-5 ${TIER_ACCENT[tier.tier] ?? "border-border bg-card"}`}
                 >
-                  <p className="text-xs font-bold uppercase tracking-wide text-slate-500">
+                  <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
                     {formatQuoteTierLabel(tier.tier)}
                   </p>
-                  <p className="mt-2 font-display text-2xl font-semibold text-slate-900">
+                  <p className="mt-2 font-display text-2xl font-semibold text-foreground">
                     {isPlaceholder ? "—" : formatCurrency(tier.price)}
                   </p>
                   {paintSummary?.topcoatName ? (
-                    <p className="mt-2 text-xs text-slate-600">
+                    <p className="mt-2 text-xs text-muted-foreground">
                       {paintSummary.topcoatName}
                       {paintSummary.primerName
                         ? ` · ${paintSummary.primerName}`
@@ -269,16 +269,16 @@ export function QuoteDocumentView({
                     </p>
                   ) : null}
                   {tier.features.length > 0 ? (
-                    <ul className="mt-4 flex-1 space-y-1.5 text-xs text-slate-600">
+                    <ul className="mt-4 flex-1 space-y-1.5 text-xs text-muted-foreground">
                       {tier.features.slice(0, 4).map((feature) => (
                         <li key={feature} className="flex gap-2">
-                          <Sparkles className="mt-0.5 h-3 w-3 shrink-0 text-blue-500" />
+                          <Sparkles className="mt-0.5 h-3 w-3 shrink-0 text-primary" />
                           <span>{feature}</span>
                         </li>
                       ))}
                     </ul>
                   ) : isPlaceholder && editable ? (
-                    <p className="mt-4 text-xs text-slate-500">
+                    <p className="mt-4 text-xs text-muted-foreground">
                       Set pricing in the wizard
                     </p>
                   ) : null}
@@ -290,10 +290,10 @@ export function QuoteDocumentView({
           <button
             type="button"
             onClick={() => onEditPackages?.()}
-            className="w-full rounded-xl border-2 border-dashed border-slate-200 bg-slate-50/50 px-6 py-10 text-center transition hover:border-blue-300"
+            className="w-full rounded-xl border-2 border-dashed border-border bg-muted/30 px-6 py-10 text-center transition hover:border-primary/40"
           >
-            <Package className="mx-auto h-6 w-6 text-blue-600" />
-            <p className="mt-2 text-sm font-semibold text-slate-700">
+            <Package className="mx-auto h-6 w-6 text-primary" />
+            <p className="mt-2 text-sm font-semibold text-foreground">
               Build Good · Better · Best packages
             </p>
           </button>
@@ -302,7 +302,7 @@ export function QuoteDocumentView({
 
       <section className="mt-10">
         <div className="mb-3 flex items-center justify-between gap-2">
-          <h2 className="text-sm font-bold uppercase tracking-wider text-blue-800">
+          <h2 className="text-sm font-bold uppercase tracking-wider text-primary">
             A note from us
           </h2>
           {editable ? (
@@ -314,21 +314,21 @@ export function QuoteDocumentView({
           ) : null}
         </div>
         {quote.custom_message?.trim() ? (
-          <p className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm leading-relaxed text-slate-700">
+          <p className="rounded-lg border border-border bg-muted/40 px-4 py-3 text-sm leading-relaxed text-foreground">
             {quote.custom_message}
           </p>
         ) : editable ? (
           <button
             type="button"
             onClick={() => onEditMessage?.()}
-            className="w-full rounded-lg border border-dashed border-slate-200 px-4 py-3 text-left text-sm text-slate-500 transition hover:border-blue-300 hover:text-slate-700"
+            className="w-full rounded-lg border border-dashed border-border px-4 py-3 text-left text-sm text-muted-foreground transition hover:border-primary/40 hover:text-foreground"
           >
             Add a personal message your customer will see here…
           </button>
         ) : null}
       </section>
 
-      <footer className="mt-10 border-t border-slate-100 pt-6 text-center text-[10px] uppercase tracking-widest text-slate-400">
+      <footer className="mt-10 border-t border-border/60 pt-6 text-center text-[10px] uppercase tracking-widest text-muted-foreground">
         {companyName} · Professional painting services
       </footer>
     </article>

@@ -1,4 +1,5 @@
 import type { LineItemInput } from "@/app/app/(portal)/quotes/actions";
+import { lineItemLineTotal } from "@/lib/quotes/pricing";
 import type { Company } from "@/types/database";
 import type { QuoteSurfaceKind, QuoteRateType } from "@/types/database";
 
@@ -75,7 +76,7 @@ export const SURFACE_QUICK_ADD: {
 ];
 
 export function lineItemTotal(item: LineItemInput): number {
-  return item.qty * item.unit_cost * (1 + (item.markup ?? 0) / 100);
+  return lineItemLineTotal(item);
 }
 
 export function wallSqFtFromDimensions(

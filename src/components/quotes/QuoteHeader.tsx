@@ -128,7 +128,7 @@ export function QuoteHeader({
               onChange={(e) => onQuoteNameChange(e.target.value)}
               placeholder={customerName ? `${customerName} estimate` : "Job name"}
               aria-label="Quote name"
-              className="h-auto border-0 bg-transparent p-0 font-display text-xl text-white shadow-none focus-visible:ring-2 focus-visible:ring-ring sm:text-2xl"
+              className="h-auto border-0 bg-transparent p-0 font-display text-xl text-foreground shadow-none focus-visible:ring-2 focus-visible:ring-ring sm:text-2xl"
             />
             <div className="flex flex-wrap items-center gap-2">
               {customerName ? (

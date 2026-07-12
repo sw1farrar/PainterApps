@@ -9,7 +9,7 @@ export default async function AdminProductCatalogPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="font-display text-3xl text-white">Product Catalog</h1>
+        <h1 className="font-display text-3xl text-foreground">Product Catalog</h1>
         <p className="mt-1 max-w-3xl text-sm text-muted-foreground">
           Browse and manage the paint product library used across sell sheets and
           company catalogs.

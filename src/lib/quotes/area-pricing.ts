@@ -9,11 +9,18 @@ import type { QuoteEstimateContext, TaggedLineItem } from "@/lib/quotes/estimati
 import {
   isSundriesLineItem,
 } from "@/lib/quotes/estimate-pricing-defaults";
-import { readDefaultGrossMarginPct } from "@/lib/quotes/company-estimate-defaults";
 import {
-  calculateJobPricing,
-  lineItemsDirectCostAtCost,
-} from "@/lib/quotes/pricing";
+  computeAreaOverheadAtCost,
+  resolveAreaOverhead,
+} from "@/lib/quotes/area-overhead";
+import {
+  activeSubstratesForRoom,
+  applySubstrateMarkupsToLineItems,
+  markupAmountFromCost,
+  resolveDefaultMarkupPct,
+  sellPriceFromCost,
+  sumMarkedUpLineItems,
+} from "@/lib/quotes/substrate-markup";
 import { computeSurfaceGallons } from "@/lib/quotes/surface-gallons";
 import type { Company, QuoteJobType } from "@/types/database";
 
@@ -26,11 +33,11 @@ export type AreaCostBreakdown = {
   prepLaborHours: number;
   totalLaborHours: number;
   laborCostAtCost: number;
+  overheadCostAtCost: number;
+  overheadMaterialsAmount: number;
+  overheadLaborAmount: number;
   directCost: number;
-  overheadPct: number;
-  overheadAmount: number;
-  loadedCost: number;
-  grossMarginPct: number;
+  markupAmount: number;
   bidPrice: number;
   blendedLaborRatePerHour: number;
 };
@@ -38,16 +45,18 @@ export type AreaCostBreakdown = {
 export type AreaPricingOptions = {
   /** Use persisted line items when present; otherwise preview from surfaces. */
   lineItems?: LineItemInput[];
-  grossMarginPct?: number;
+  /** Ignore saved line items and estimate live from surfaces (area editor preview). */
+  previewFromSurfaces?: boolean;
+  /** Count line items marked optional (excluded areas) in area pricing. */
+  includeOptionalLineItems?: boolean;
 };
 
 function isPrepLaborLine(
   item: Pick<TaggedLineItem, "type" | "description">,
 ): boolean {
-  return (
-    item.type === "labor" &&
-    item.description.toLowerCase().includes("prep")
-  );
+  if (item.type !== "labor") return false;
+  const desc = item.description.toLowerCase();
+  return desc.endsWith("(prep)") || desc.includes("surface prep");
 }
 
 function areaLineItems(
@@ -61,7 +70,7 @@ function areaLineItems(
       item.room_index === roomIndex || item.room_id === room?.id,
   );
 
-  if (linked.length > 0) {
+  if (!options?.previewFromSurfaces && linked.length > 0) {
     return linked.map((item) => ({
       ...item,
       source: (item.source ?? "surface") as TaggedLineItem["source"],
@@ -71,16 +80,28 @@ function areaLineItems(
   return buildLineItemsForArea(roomIndex, ctx);
 }
 
-function parseLineItemCosts(items: TaggedLineItem[]): Omit<
+export function getAreaLineItems(
+  roomIndex: number,
+  ctx: QuoteEstimateContext,
+  options?: AreaPricingOptions,
+): TaggedLineItem[] {
+  return areaLineItems(roomIndex, ctx, options);
+}
+
+type ParsedLineItemCosts = Pick<
   AreaCostBreakdown,
-  | "directCost"
-  | "overheadPct"
-  | "overheadAmount"
-  | "loadedCost"
-  | "grossMarginPct"
-  | "bidPrice"
-  | "blendedLaborRatePerHour"
-> {
+  | "materialCostAtCost"
+  | "sundriesCostAtCost"
+  | "paintingLaborHours"
+  | "prepLaborHours"
+  | "totalLaborHours"
+  | "laborCostAtCost"
+>;
+
+function parseLineItemCosts(
+  items: TaggedLineItem[],
+  options?: Pick<AreaPricingOptions, "includeOptionalLineItems">,
+): ParsedLineItemCosts {
   let materialCostAtCost = 0;
   let sundriesCostAtCost = 0;
   let paintingLaborHours = 0;
@@ -89,7 +110,7 @@ function parseLineItemCosts(items: TaggedLineItem[]): Omit<
   let prepLaborCostAtCost = 0;
 
   for (const item of items) {
-    if (item.is_optional) continue;
+    if (!options?.includeOptionalLineItems && item.is_optional) continue;
     const atCost = item.qty * item.unit_cost;
 
     if (item.type === "material") {
@@ -132,13 +153,24 @@ function roundHours(value: number): number {
   return Math.round(value * 100) / 100;
 }
 
-function resolveGrossMarginPct(
-  company: Pick<Company, "default_margins">,
-  override?: number,
+/** Paint + sundries at cost — matches the Materials tile in the area header. */
+export function areaMaterialsAtCost(
+  breakdown: Pick<AreaCostBreakdown, "materialCostAtCost" | "sundriesCostAtCost">,
 ): number {
-  if (override != null && override >= 0 && override < 100) return override;
-  return readDefaultGrossMarginPct(
-    company.default_margins as Record<string, number> | null,
+  return roundMoney(breakdown.materialCostAtCost + breakdown.sundriesCostAtCost);
+}
+
+/** Direct cost from displayed material and labor parts (always sums cleanly). */
+export function areaDirectCostFromParts(
+  breakdown: Pick<
+    AreaCostBreakdown,
+    "materialCostAtCost" | "sundriesCostAtCost" | "laborCostAtCost"
+  >,
+): number {
+  return roundMoney(
+    breakdown.materialCostAtCost +
+      breakdown.sundriesCostAtCost +
+      breakdown.laborCostAtCost,
   );
 }
 
@@ -147,15 +179,42 @@ export function computeAreaCostBreakdown(
   ctx: QuoteEstimateContext,
   options?: AreaPricingOptions,
 ): AreaCostBreakdown {
+  const room = ctx.rooms[roomIndex];
   const items = areaLineItems(roomIndex, ctx, options);
-  const parsed = parseLineItemCosts(items);
-  const directCost = lineItemsDirectCostAtCost(items, { excludeOptional: true });
-  const overheadPct = ctx.company.overhead_pct ?? 0;
-  const grossMarginPct = resolveGrossMarginPct(
-    ctx.company,
-    options?.grossMarginPct,
+  const parsed = parseLineItemCosts(items, options);
+  const materialsAtCost = areaMaterialsAtCost(parsed);
+  const overheadSettings = resolveAreaOverhead(room?.prep_work);
+  const overheadParts = computeAreaOverheadAtCost(
+    materialsAtCost,
+    parsed.laborCostAtCost,
+    overheadSettings,
   );
-  const pricing = calculateJobPricing(directCost, overheadPct, grossMarginPct);
+  const directCost = roundMoney(
+    areaDirectCostFromParts(parsed) + overheadParts.total,
+  );
+  const defaultMarkupPct = resolveDefaultMarkupPct(ctx.company);
+  const activeSubstrates = activeSubstratesForRoom(
+    ctx.surfaces,
+    roomIndex,
+    room?.prep_work,
+  );
+  const markedItems = applySubstrateMarkupsToLineItems(
+    items,
+    activeSubstrates,
+    room?.prep_work,
+    defaultMarkupPct,
+  );
+  const priced = sumMarkedUpLineItems(markedItems, {
+    includeOptional: options?.includeOptionalLineItems,
+  });
+  const overheadSell = sellPriceFromCost(
+    overheadParts.total,
+    defaultMarkupPct,
+  );
+  const overheadMarkup = markupAmountFromCost(
+    overheadParts.total,
+    defaultMarkupPct,
+  );
   const blendedLaborRatePerHour =
     parsed.totalLaborHours > 0
       ? roundMoney(parsed.laborCostAtCost / parsed.totalLaborHours)
@@ -163,12 +222,12 @@ export function computeAreaCostBreakdown(
 
   return {
     ...parsed,
-    directCost: roundMoney(directCost),
-    overheadPct,
-    overheadAmount: roundMoney(pricing.overhead),
-    loadedCost: roundMoney(pricing.loadedCost),
-    grossMarginPct,
-    bidPrice: pricing.sellingPrice,
+    overheadCostAtCost: overheadParts.total,
+    overheadMaterialsAmount: overheadParts.materialsOverhead,
+    overheadLaborAmount: overheadParts.laborOverhead,
+    directCost,
+    markupAmount: roundMoney(priced.markupAmount + overheadMarkup),
+    bidPrice: roundMoney(priced.bidPrice + overheadSell),
     blendedLaborRatePerHour,
   };
 }
@@ -240,6 +299,5 @@ export function computeAreaSubtotal(
   };
   return computeAreaBidPrice(roomIndex, ctx, {
     lineItems,
-    grossMarginPct: options?.grossMarginPct,
   });
 }

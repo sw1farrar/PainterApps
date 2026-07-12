@@ -54,7 +54,7 @@ export function ProfileClient({ profile, company }: ProfileClientProps) {
     <div className="mx-auto max-w-2xl space-y-6">
       <div>
         <p className="type-eyebrow">Account</p>
-        <h1 className="font-display mt-1 text-2xl text-white md:text-3xl">
+        <h1 className="font-display mt-1 text-2xl text-foreground md:text-3xl">
           Profile settings
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">

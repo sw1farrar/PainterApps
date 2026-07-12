@@ -11,7 +11,8 @@ import { createNotification } from "@/lib/notifications/create";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireOnboarded } from "@/lib/auth/session";
-import { formatJobAddress } from "@/lib/address";
+import { formatJobAddress, hasMinimumJobAddress } from "@/lib/address";
+import { lineItemLineTotal } from "@/lib/quotes/pricing";
 import { formatCurrency } from "@/lib/utils";
 import { formatQuoteTierLabel } from "@/lib/quotes/tier-labels";
 import type { TierPaintConfigInput } from "@/lib/paint-library/types";
@@ -148,6 +149,10 @@ function normalizeJobAddressInput(
   return normalized;
 }
 
+type QuoteMutationOptions = {
+  revalidate?: boolean;
+};
+
 export async function createQuote(
   input: JobAddressInput & {
     customer_id: string;
@@ -156,6 +161,7 @@ export async function createQuote(
     job_type?: QuoteJobType;
     estimation_mode?: QuoteEstimationMode;
   },
+  options?: QuoteMutationOptions,
 ): Promise<ActionResult<{ id: string }>> {
   try {
     const companyId = await getCompanyId();
@@ -165,18 +171,23 @@ export async function createQuote(
       return { success: false, error: "Customer not found" };
     }
 
+    const jobName = input.name?.trim();
+    if (!jobName) {
+      return { success: false, error: "Job name is required" };
+    }
+
     const { data, error } = await supabase
       .from("quotes")
       .insert({
         company_id: companyId,
         customer_id: input.customer_id,
-        job_address: input.job_address.trim(),
+        job_address: input.job_address?.trim() ?? "",
         job_address_line2: input.job_address_line2?.trim() || null,
         job_city: input.job_city?.trim() || null,
         job_state: input.job_state?.trim() || null,
         job_zip: input.job_zip?.trim() || null,
         before_photos: input.before_photos ?? [],
-        name: input.name?.trim() || null,
+        name: jobName,
         job_type: input.job_type ?? "interior",
         estimation_mode: input.estimation_mode ?? "hybrid",
         status: "draft",
@@ -186,7 +197,9 @@ export async function createQuote(
 
     if (error) return { success: false, error: error.message };
 
-    revalidatePath("/app/quotes");
+    if (options?.revalidate !== false) {
+      revalidatePath("/app/quotes");
+    }
     return { success: true, data: { id: data.id } };
   } catch (err) {
     return {
@@ -199,6 +212,7 @@ export async function createQuote(
 export async function updateQuote(
   quoteId: string,
   input: QuoteHeaderInput,
+  options?: QuoteMutationOptions,
 ): Promise<ActionResult> {
   try {
     const companyId = await getCompanyId();
@@ -237,8 +251,10 @@ export async function updateQuote(
 
     if (error) return { success: false, error: error.message };
 
-    revalidatePath("/app/quotes");
-    revalidatePath(`/app/quotes/${quoteId}`);
+    if (options?.revalidate !== false) {
+      revalidatePath("/app/quotes");
+      revalidatePath(`/app/quotes/${quoteId}`);
+    }
     return { success: true, data: undefined };
   } catch (err) {
     return {
@@ -612,7 +628,7 @@ function lineItemSellingTotal(item: {
   unit_cost: number;
   markup: number;
 }): number {
-  return item.qty * item.unit_cost * (1 + (item.markup ?? 0) / 100);
+  return lineItemLineTotal(item);
 }
 
 async function verifyQuoteOwnership(quoteId: string, companyId: string) {
@@ -866,6 +882,7 @@ async function loadDraftChildrenForRpc(
 export async function saveQuoteDraft(
   quoteId: string,
   draft: QuoteDraftInput,
+  options?: QuoteMutationOptions,
 ): Promise<ActionResult> {
   try {
     const companyId = await getCompanyId();
@@ -890,8 +907,10 @@ export async function saveQuoteDraft(
       draft.baselinePaintSystems !== undefined;
 
     if (!hasChildUpdates) {
-      revalidatePath("/app/quotes");
-      revalidatePath(`/app/quotes/${quoteId}`);
+      if (options?.revalidate !== false) {
+        revalidatePath("/app/quotes");
+        revalidatePath(`/app/quotes/${quoteId}`);
+      }
       return { success: true, data: undefined };
     }
 
@@ -953,8 +972,10 @@ export async function saveQuoteDraft(
       if (!tierNameResult.success) return tierNameResult;
     }
 
-    revalidatePath("/app/quotes");
-    revalidatePath(`/app/quotes/${quoteId}`);
+    if (options?.revalidate !== false) {
+      revalidatePath("/app/quotes");
+      revalidatePath(`/app/quotes/${quoteId}`);
+    }
     return { success: true, data: undefined };
   } catch (err) {
     return {
@@ -1015,6 +1036,22 @@ export async function sendQuote(quoteId: string): Promise<ActionResult> {
       return {
         success: false,
         error: "Add an email address to the customer before sending.",
+      };
+    }
+
+    if (
+      !hasMinimumJobAddress({
+        job_address: quote.job_address ?? "",
+        job_address_line2: quote.job_address_line2,
+        job_city: quote.job_city,
+        job_state: quote.job_state,
+        job_zip: quote.job_zip,
+      })
+    ) {
+      return {
+        success: false,
+        error:
+          "Add the full job address (street, city, state, ZIP) before sending.",
       };
     }
 

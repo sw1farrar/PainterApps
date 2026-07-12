@@ -72,10 +72,10 @@ export function AdminShell({ session, children }: AdminShellProps) {
 
   return (
     <div className="portal-app-shell portal-shell flex min-h-0 h-dvh overflow-hidden">
-      <aside className="hidden h-dvh w-64 shrink-0 flex-col border-r border-border bg-navy-900/50 md:flex">
+      <aside className="hidden h-dvh w-64 shrink-0 flex-col border-r border-border bg-sidebar shadow-theme-sm md:flex">
         <div className="flex items-center gap-2 border-b border-border px-5 py-5">
           <Logo size="sm" />
-          <span className="text-xs font-semibold uppercase tracking-wide text-amber-200/90">
+          <span className="text-xs font-semibold uppercase tracking-wide text-amber-800 dark:text-amber-100">
             Site admin
           </span>
         </div>
@@ -94,7 +94,7 @@ export function AdminShell({ session, children }: AdminShellProps) {
                 className={cn(
                   "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition",
                   isActive
-                    ? "bg-primary/15 text-blue-200"
+                    ? "bg-primary/12 text-primary dark:bg-primary/15"
                     : "text-muted-foreground hover:bg-accent hover:text-foreground",
                 )}
               >
@@ -130,11 +130,11 @@ export function AdminShell({ session, children }: AdminShellProps) {
       </aside>
 
       <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-        <header className="flex items-center justify-between gap-3 border-b border-border bg-navy-900/50 px-4 py-4 md:px-6">
+        <header className="flex items-center justify-between gap-3 border-b border-border bg-header px-4 py-4 shadow-theme-sm backdrop-blur-md md:px-6">
           <div className="flex min-w-0 items-center gap-3">
-            <Shield className="h-5 w-5 shrink-0 text-amber-300" />
+            <Shield className="h-5 w-5 shrink-0 text-amber-600 dark:text-amber-300" />
             <div className="min-w-0">
-              <p className="text-sm font-semibold text-white">
+              <p className="text-sm font-semibold text-foreground">
                 PainterApps administration
               </p>
               <p className="text-xs text-muted-foreground">
@@ -154,7 +154,7 @@ export function AdminShell({ session, children }: AdminShellProps) {
                     src={session.profile.avatar_url ?? undefined}
                     alt={session.profile.full_name ?? "Site admin"}
                   />
-                  <AvatarFallback className="bg-navy-700 text-blue-200">
+                  <AvatarFallback className="bg-primary/15 text-primary">
                     {getUserInitials(session.profile.full_name)}
                   </AvatarFallback>
                 </Avatar>

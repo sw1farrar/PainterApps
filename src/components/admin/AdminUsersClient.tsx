@@ -93,7 +93,7 @@ export function AdminUsersClient({
   return (
     <Card className="border-border bg-card/60">
       <CardHeader>
-        <CardTitle className="text-white">All users</CardTitle>
+        <CardTitle className="text-foreground">All users</CardTitle>
         <CardDescription>
           {users.length} account{users.length === 1 ? "" : "s"} across all
           companies
@@ -128,7 +128,7 @@ export function AdminUsersClient({
                       className="border-b border-border/60 last:border-0"
                     >
                       <td className="px-3 py-3">
-                        <p className="font-medium text-white">
+                        <p className="font-medium text-foreground">
                           {row.profile.full_name ?? "Unnamed user"}
                         </p>
                         <p className="text-xs text-muted-foreground">

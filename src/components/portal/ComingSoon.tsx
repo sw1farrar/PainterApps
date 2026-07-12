@@ -18,10 +18,10 @@ export function ComingSoon({ title, description }: ComingSoonProps) {
     <div className="mx-auto max-w-lg">
       <Card className="border-border bg-card/80 text-center backdrop-blur-sm">
         <CardHeader className="items-center">
-          <div className="mb-2 flex h-14 w-14 items-center justify-center rounded-full bg-primary/15 text-blue-200">
+          <div className="mb-2 flex h-14 w-14 items-center justify-center rounded-full bg-primary/15 text-primary">
             <Construction className="h-7 w-7" />
           </div>
-          <CardTitle className="font-display text-2xl text-white">
+          <CardTitle className="font-display text-2xl text-foreground">
             {title}
           </CardTitle>
           <CardDescription>

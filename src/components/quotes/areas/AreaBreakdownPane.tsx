@@ -59,7 +59,7 @@ export function AreaBreakdownPane({
           <p className="type-stat-value text-3xl text-foreground">
             {formatCurrency(areaSubtotal)}
           </p>
-          <p className="text-xs text-muted-foreground">Area bid price (direct + overhead + margin)</p>
+          <p className="text-xs text-muted-foreground">Area total (cost + markup)</p>
         </div>
 
         <div className="space-y-2">

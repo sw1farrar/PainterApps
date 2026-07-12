@@ -91,7 +91,7 @@ export function SellSheetSaveModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-navy-950/70 p-4 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-overlay p-4 backdrop-blur-sm"
       role="dialog"
       aria-modal="true"
       aria-labelledby="sell-sheet-save-title"
@@ -100,7 +100,7 @@ export function SellSheetSaveModal({
         <button
           type="button"
           onClick={onClose}
-          className="absolute right-4 top-4 rounded p-1 text-silver-600 transition hover:bg-silver-100 hover:text-navy-900"
+          className="absolute right-4 top-4 rounded p-1 text-muted-foreground transition hover:bg-accent hover:text-foreground"
           aria-label={labels.cancel}
         >
           <X className="h-5 w-5" />
@@ -108,11 +108,11 @@ export function SellSheetSaveModal({
 
         <h2
           id="sell-sheet-save-title"
-          className="font-display text-2xl text-navy-900"
+          className="font-display text-2xl text-foreground"
         >
           {isLoggedIn ? labels.loggedInTitle : labels.title}
         </h2>
-        <p className="mt-2 text-sm text-silver-600">
+        <p className="mt-2 text-sm text-muted-foreground">
           {isLoggedIn ? labels.loggedInSubtitle : labels.subtitle}
         </p>
 

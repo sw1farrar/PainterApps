@@ -14,13 +14,15 @@ import {
 type AreaDeleteConfirmProps = {
   open: boolean;
   areaName: string;
+  isDeleting?: boolean;
   onOpenChange: (open: boolean) => void;
-  onConfirm: () => void;
+  onConfirm: () => void | Promise<void>;
 };
 
 export function AreaDeleteConfirm({
   open,
   areaName,
+  isDeleting = false,
   onOpenChange,
   onConfirm,
 }: AreaDeleteConfirmProps) {
@@ -42,12 +44,18 @@ export function AreaDeleteConfirm({
           <Button
             type="button"
             variant="outline"
+            disabled={isDeleting}
             onClick={() => onOpenChange(false)}
           >
             Keep area
           </Button>
-          <Button type="button" variant="destructive" onClick={onConfirm}>
-            Remove area
+          <Button
+            type="button"
+            variant="destructive"
+            disabled={isDeleting}
+            onClick={() => void onConfirm()}
+          >
+            {isDeleting ? "Removing…" : "Remove area"}
           </Button>
         </DialogFooter>
       </DialogContent>

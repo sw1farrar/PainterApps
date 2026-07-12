@@ -18,11 +18,11 @@ export function QuoteDocumentCanvas({
       <div
         className={cn(
           "quote-document-canvas relative w-full max-w-[min(100%,42rem)]",
-          "shadow-[0_24px_80px_-12px_rgba(15,23,42,0.35)]",
+          "shadow-theme-md",
           className,
         )}
       >
-        <div className="aspect-[8.5/11] max-h-[calc(100dvh-11rem)] w-full overflow-hidden rounded-sm bg-white ring-1 ring-slate-200/80">
+        <div className="aspect-[8.5/11] max-h-[calc(100dvh-11rem)] w-full overflow-hidden rounded-sm bg-card ring-1 ring-border/80">
           <div className="h-full overflow-y-auto overscroll-contain">
             {children}
           </div>

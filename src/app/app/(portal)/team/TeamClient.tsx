@@ -134,7 +134,7 @@ export function TeamClient({
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="type-eyebrow">Team</p>
-          <h1 className="font-display mt-1 text-2xl text-white md:text-3xl">
+          <h1 className="font-display mt-1 text-2xl text-foreground md:text-3xl">
             Team members
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">

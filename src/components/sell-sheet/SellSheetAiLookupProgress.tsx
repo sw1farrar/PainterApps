@@ -113,7 +113,7 @@ export function SellSheetAiLookupProgress({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-navy-950/75 p-4 backdrop-blur-md"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-overlay p-4 backdrop-blur-sm"
       role="dialog"
       aria-modal="true"
       aria-labelledby="ai-lookup-progress-title"
@@ -139,7 +139,7 @@ export function SellSheetAiLookupProgress({
         <button
           type="button"
           onClick={onClose}
-          className="absolute right-3 top-3 rounded-lg p-1.5 text-silver-500 transition hover:bg-silver-100 hover:text-navy-900"
+          className="absolute right-3 top-3 rounded-lg p-1.5 text-muted-foreground transition hover:bg-accent hover:text-foreground"
           aria-label={labels.close}
         >
           <X className="h-4 w-4" />
@@ -167,7 +167,7 @@ export function SellSheetAiLookupProgress({
             <div className="min-w-0 pr-6">
               <h2
                 id="ai-lookup-progress-title"
-                className="font-display text-xl text-navy-900"
+                className="font-display text-xl text-foreground"
               >
                 {errorPresentation
                   ? errorPresentation.headline
@@ -175,9 +175,9 @@ export function SellSheetAiLookupProgress({
                     ? labels.complete
                     : labels.title}
               </h2>
-              <p className="mt-1 text-sm text-silver-600">
-                <span className="font-medium text-navy-800">{manufacturer}</span>
-                <span className="mx-1.5 text-silver-400">·</span>
+              <p className="mt-1 text-sm text-muted-foreground">
+                <span className="font-medium text-foreground">{manufacturer}</span>
+                <span className="mx-1.5 text-muted-foreground/80">·</span>
                 <span>{paintType}</span>
               </p>
             </div>
@@ -218,7 +218,7 @@ export function SellSheetAiLookupProgress({
                             ? "border-red-500 bg-red-50 text-red-600 shadow-[0_0_0_4px_rgba(239,68,68,0.12)]"
                             : status === "active"
                               ? "border-blue-500 bg-blue-50 text-blue-600 shadow-[0_0_0_4px_rgba(43,108,184,0.15)]"
-                              : "border-silver-300 bg-white text-silver-400"
+                              : "border-input bg-card text-muted-foreground/80"
                       }`}
                     >
                       {status === "done" ? (
@@ -237,12 +237,10 @@ export function SellSheetAiLookupProgress({
                     <p
                       className={`text-sm font-semibold transition-colors duration-300 ${
                         status === "pending"
-                          ? "text-silver-400"
+                          ? "text-muted-foreground/80"
                           : status === "failed"
                             ? "text-red-700"
-                            : status === "active"
-                              ? "text-navy-900"
-                              : "text-navy-800"
+                            : "text-foreground"
                       }`}
                     >
                       {step.label}
@@ -261,7 +259,7 @@ export function SellSheetAiLookupProgress({
           </ol>
 
           {errorPresentation ? (
-            <div className="space-y-4 border-t border-silver-300/60 pt-5">
+            <div className="space-y-4 border-t border-border pt-5">
               <p className="rounded-xl border border-red-200/80 bg-red-50/90 px-4 py-3 text-sm leading-relaxed text-red-800">
                 {errorPresentation.detail}
               </p>
@@ -271,7 +269,7 @@ export function SellSheetAiLookupProgress({
                   {errorPresentation.tips.map((tip) => (
                     <li
                       key={tip}
-                      className="flex gap-2 text-sm leading-snug text-navy-800"
+                      className="flex gap-2 text-sm leading-snug text-foreground"
                     >
                       <span
                         className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-blue-500"

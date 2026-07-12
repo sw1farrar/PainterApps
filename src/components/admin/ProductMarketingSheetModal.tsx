@@ -55,24 +55,24 @@ export function ProductMarketingSheetModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex flex-col bg-navy-950/80 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex flex-col bg-overlay backdrop-blur-sm"
       role="dialog"
       aria-modal="true"
       aria-labelledby="product-marketing-sheet-title"
       onClick={onClose}
     >
       <div
-        className="flex shrink-0 items-center justify-between gap-4 border-b border-white/10 bg-navy-900/90 px-4 py-3 sm:px-6"
+        className="flex shrink-0 items-center justify-between gap-4 border-b border-border bg-header px-4 py-3 shadow-theme-sm sm:px-6"
         onClick={(event) => event.stopPropagation()}
       >
         <div className="min-w-0">
           <h2
             id="product-marketing-sheet-title"
-            className="truncate font-display text-lg text-white sm:text-xl"
+            className="truncate font-display text-lg text-foreground sm:text-xl"
           >
             {view.productName}
           </h2>
-          <p className="truncate text-sm text-silver-400">
+          <p className="truncate text-sm text-muted-foreground">
             {view.manufacturerName} · Product marketing sheet
           </p>
         </div>
@@ -93,7 +93,7 @@ export function ProductMarketingSheetModal({
             variant="ghost"
             size="icon"
             onClick={onClose}
-            className="text-silver-300 hover:bg-white/10 hover:text-white"
+            className="text-muted-foreground hover:bg-accent hover:text-foreground"
             aria-label="Close marketing sheet"
           >
             <X className="h-5 w-5" />
@@ -111,7 +111,7 @@ export function ProductMarketingSheetModal({
           </div>
           {isEnriching ? (
             <div
-              className="pointer-events-none absolute right-4 top-4 flex items-center gap-2 rounded-full border border-white/15 bg-navy-900/80 px-3 py-1.5 text-xs text-silver-300 shadow-lg backdrop-blur-sm"
+              className="pointer-events-none absolute right-4 top-4 flex items-center gap-2 rounded-full border border-border bg-card/90 px-3 py-1.5 text-xs text-muted-foreground shadow-theme-md backdrop-blur-sm"
               aria-live="polite"
             >
               <Loader2 className="h-3.5 w-3.5 animate-spin" />

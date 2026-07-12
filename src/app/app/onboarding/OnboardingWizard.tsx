@@ -200,7 +200,7 @@ export function OnboardingWizard({ company: initialCompany }: OnboardingWizardPr
     <div className="mx-auto flex min-h-full max-w-2xl flex-col justify-center px-4 py-10">
       <div className="mb-8 flex flex-col items-center gap-3 text-center">
         <Logo size="md" />
-        <h1 className="font-display text-2xl text-white md:text-3xl">
+        <h1 className="font-display text-2xl text-foreground md:text-3xl">
           Set up your company
         </h1>
         <p className="text-sm text-muted-foreground">

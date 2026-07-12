@@ -68,11 +68,11 @@ export function SellSheetImageUpload({
       <label htmlFor={id} className="form-section-title">
         {label}
       </label>
-      {hint ? <p className="mt-1 text-sm text-silver-600">{hint}</p> : null}
+      {hint ? <p className="mt-1 text-sm text-muted-foreground">{hint}</p> : null}
 
       <div className="mt-3 flex flex-wrap items-center gap-4">
         {value ? (
-          <div className="relative rounded-lg border border-silver-300 bg-white p-3">
+          <div className="relative rounded-lg border border-input bg-card p-3">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img key={value} src={value} alt="" className={previewClass} />
             <button
@@ -81,7 +81,7 @@ export function SellSheetImageUpload({
                 onChange(null);
                 if (inputRef.current) inputRef.current.value = "";
               }}
-              className="absolute -right-2 -top-2 flex h-7 w-7 items-center justify-center rounded-full border border-silver-300 bg-white text-navy-800 shadow-sm transition hover:bg-silver-100"
+              className="absolute -right-2 -top-2 flex h-7 w-7 items-center justify-center rounded-full border border-input bg-card text-foreground shadow-sm transition hover:bg-accent"
               aria-label="Remove image"
             >
               <X className="h-4 w-4" />
@@ -91,7 +91,7 @@ export function SellSheetImageUpload({
           <button
             type="button"
             onClick={() => inputRef.current?.click()}
-            className="flex h-24 w-24 flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed border-silver-400 bg-white/80 text-silver-600 transition hover:border-blue-400 hover:text-blue-600"
+            className="flex h-24 w-24 flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed border-input bg-card/80 text-muted-foreground transition hover:border-blue-400 hover:text-blue-600"
           >
             <ImagePlus className="h-6 w-6" />
             <span className="text-xs font-medium">Upload</span>

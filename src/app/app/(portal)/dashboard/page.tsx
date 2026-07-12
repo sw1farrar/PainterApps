@@ -266,7 +266,7 @@ export default async function DashboardPage() {
                         <td className="py-2.5 pr-4">
                           <Link
                             href={`/app/quotes/${item.id}`}
-                            className="font-medium text-foreground transition-colors hover:text-blue-200"
+                            className="font-medium text-foreground transition-colors hover:text-primary"
                           >
                             {item.customers?.name ?? "Customer"}
                           </Link>
@@ -319,7 +319,7 @@ export default async function DashboardPage() {
                         <td className="py-2.5 pr-4">
                           <Link
                             href={`/app/jobs/${item.id}`}
-                            className="font-medium text-foreground transition-colors hover:text-blue-200"
+                            className="font-medium text-foreground transition-colors hover:text-primary"
                           >
                             {item.customers?.name ?? "Customer"}
                           </Link>

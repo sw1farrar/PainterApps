@@ -14,6 +14,7 @@ import * as React from "react";
 import { toast } from "sonner";
 
 import LanguageToggle from "@/components/LanguageToggle";
+import { ThemeToggleButton } from "@/components/theme/ThemeToggleButton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Sheet,
@@ -68,7 +69,7 @@ export default function MarketingMobileNav({
       <SheetTrigger asChild>
         <button
           type="button"
-          className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-silver-400/15 bg-navy-900/50 text-silver-200 backdrop-blur-sm transition hover:border-silver-400/25 hover:text-white md:hidden"
+          className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-card/80 text-foreground backdrop-blur-sm transition hover:border-primary/30 hover:bg-accent md:hidden"
           aria-label={nav.openMenuAria}
         >
           {showSignedInMenu && marketingUser ? (
@@ -77,7 +78,7 @@ export default function MarketingMobileNav({
                 src={marketingUser.avatarUrl ?? undefined}
                 alt={marketingUser.fullName ?? "User"}
               />
-              <AvatarFallback className="bg-navy-700 text-[0.65rem] text-blue-200">
+              <AvatarFallback className="bg-primary/15 text-[0.65rem] text-primary">
                 {getUserInitials(marketingUser.fullName)}
               </AvatarFallback>
             </Avatar>
@@ -89,16 +90,16 @@ export default function MarketingMobileNav({
 
       <SheetContent
         side="right"
-        className="flex w-full max-w-xs flex-col gap-0 border-silver-400/10 bg-navy-950/95 p-0 text-silver-200 backdrop-blur-xl sm:max-w-sm"
+        className="flex w-full max-w-xs flex-col gap-0 border-border bg-popover/95 p-0 text-foreground backdrop-blur-xl sm:max-w-sm"
       >
-        <SheetHeader className="border-b border-silver-400/10 px-6 py-5 text-left">
-          <SheetTitle className="font-display text-lg text-white">
+        <SheetHeader className="border-b border-border px-6 py-5 text-left">
+          <SheetTitle className="font-display text-lg text-foreground">
             {showSignedInMenu && marketingUser
               ? marketingUser.fullName ?? "Account"
               : nav.menuTitle}
           </SheetTitle>
           {showSignedInMenu && marketingUser ? (
-            <p className="text-sm capitalize text-silver-500">
+            <p className="text-sm capitalize text-muted-foreground">
               {marketingUser.role.replace(/_/g, " ")}
             </p>
           ) : null}
@@ -110,7 +111,7 @@ export default function MarketingMobileNav({
               <SheetClose asChild>
                 <Link
                   href="/app/dashboard"
-                  className="inline-flex items-center gap-2 rounded-lg px-3 py-3 text-base font-semibold text-silver-200 transition hover:bg-navy-900/60 hover:text-white"
+                  className="inline-flex items-center gap-2 rounded-lg px-3 py-3 text-base font-semibold text-foreground transition hover:bg-accent"
                 >
                   <LayoutDashboard className="h-4 w-4" />
                   Dashboard
@@ -119,7 +120,7 @@ export default function MarketingMobileNav({
               <SheetClose asChild>
                 <Link
                   href="/app/profile"
-                  className="inline-flex items-center gap-2 rounded-lg px-3 py-3 text-base font-semibold text-silver-200 transition hover:bg-navy-900/60 hover:text-white"
+                  className="inline-flex items-center gap-2 rounded-lg px-3 py-3 text-base font-semibold text-foreground transition hover:bg-accent"
                 >
                   <User className="h-4 w-4" />
                   Profile settings
@@ -130,7 +131,7 @@ export default function MarketingMobileNav({
                   <SheetClose asChild>
                     <Link
                       href="/app/settings"
-                      className="inline-flex items-center gap-2 rounded-lg px-3 py-3 text-base font-semibold text-silver-200 transition hover:bg-navy-900/60 hover:text-white"
+                      className="inline-flex items-center gap-2 rounded-lg px-3 py-3 text-base font-semibold text-foreground transition hover:bg-accent"
                     >
                       <Settings className="h-4 w-4" />
                       Company settings
@@ -139,7 +140,7 @@ export default function MarketingMobileNav({
                   <SheetClose asChild>
                     <Link
                       href="/app/billing"
-                      className="inline-flex items-center gap-2 rounded-lg px-3 py-3 text-base font-semibold text-silver-200 transition hover:bg-navy-900/60 hover:text-white"
+                      className="inline-flex items-center gap-2 rounded-lg px-3 py-3 text-base font-semibold text-foreground transition hover:bg-accent"
                     >
                       <CreditCard className="h-4 w-4" />
                       Billing
@@ -150,7 +151,7 @@ export default function MarketingMobileNav({
               <button
                 type="button"
                 onClick={handleLogout}
-                className="inline-flex items-center gap-2 rounded-lg px-3 py-3 text-left text-base font-semibold text-red-300 transition hover:bg-navy-900/60"
+                className="inline-flex items-center gap-2 rounded-lg px-3 py-3 text-left text-base font-semibold text-destructive transition hover:bg-accent"
               >
                 <LogOut className="h-4 w-4" />
                 Log out
@@ -162,15 +163,19 @@ export default function MarketingMobileNav({
             <SheetClose asChild>
               <a
                 href={loginHref}
-                className="block rounded-lg px-3 py-3 text-base font-semibold text-silver-200 transition hover:bg-navy-900/60 hover:text-white"
+                className="block rounded-lg px-3 py-3 text-base font-semibold text-foreground transition hover:bg-accent"
               >
                 {nav.signIn}
               </a>
             </SheetClose>
           ) : null}
 
-          <div className="mt-4 border-t border-silver-400/10 pt-6">
-            <p className="mb-3 px-3 text-xs font-semibold uppercase tracking-wider text-silver-500">
+          <div className="mt-4 border-t border-border pt-4">
+            <ThemeToggleButton className="w-full" />
+          </div>
+
+          <div className="mt-4 border-t border-border pt-6">
+            <p className="mb-3 px-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               {nav.languageLabel}
             </p>
             <div className="px-3">

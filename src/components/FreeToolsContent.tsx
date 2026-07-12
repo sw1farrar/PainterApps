@@ -77,7 +77,7 @@ export default function FreeToolsContent({
           <Link
             id="sell-sheet-feature"
             href={buildSellSheetHref}
-            className="free-tools-feature group relative block overflow-hidden rounded-2xl border border-blue-300/20 bg-gradient-to-br from-navy-900/90 via-navy-950/95 to-navy-900/80 p-6 shadow-[0_0_60px_-12px_rgba(43,108,184,0.45)] transition duration-300 hover:border-blue-300/40 hover:shadow-[0_0_80px_-8px_rgba(107,168,232,0.55)] sm:p-8 lg:p-10"
+            className="free-tools-feature group relative block overflow-hidden rounded-2xl border border-border bg-gradient-to-br from-card via-accent/20 to-card p-6 shadow-theme-md transition duration-300 hover:border-primary/35 hover:shadow-theme-lg sm:p-8 lg:p-10"
           >
             <div
               className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-blue-500/20 blur-3xl transition group-hover:bg-blue-400/25"
@@ -90,16 +90,16 @@ export default function FreeToolsContent({
 
             <div className="relative grid gap-8 lg:grid-cols-[1.15fr_0.85fr] lg:items-center lg:gap-10">
               <div className="min-w-0 space-y-5">
-                <div className="inline-flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-blue-200">
+                <div className="inline-flex items-center gap-2 rounded-lg border border-border bg-muted/50 px-3 py-2 text-accent-foreground">
                   <FileStack className="h-5 w-5 shrink-0" />
                   <span className="text-sm font-semibold">{sheet.name}</span>
                 </div>
 
                 <div>
-                  <p className="font-display-accent text-2xl text-amber-100/95 sm:text-3xl lg:text-4xl">
+                  <p className="font-display-accent text-2xl sm:text-3xl lg:text-4xl">
                     {sheet.tagline}
                   </p>
-                  <p className="type-lead mt-4 max-w-xl text-sm leading-relaxed text-silver-300 sm:text-base">
+                  <p className="type-lead mt-4 max-w-xl text-sm leading-relaxed sm:text-base">
                     {sheet.description}
                   </p>
                 </div>
@@ -108,9 +108,9 @@ export default function FreeToolsContent({
                   {features.map((feature) => (
                     <li
                       key={feature}
-                      className="flex items-start gap-2.5 text-sm text-silver-200"
+                      className="flex items-start gap-2.5 text-sm text-foreground"
                     >
-                      <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-blue-500/20 text-blue-200">
+                      <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/20 text-accent-foreground">
                         <Check className="h-3 w-3" strokeWidth={3} />
                       </span>
                       {feature}
@@ -128,32 +128,32 @@ export default function FreeToolsContent({
                 className="relative mx-auto w-full max-w-sm lg:max-w-none"
                 aria-hidden
               >
-                <div className="surface-panel rotate-1 rounded-xl border border-white/10 bg-navy-950/80 p-5 shadow-2xl transition duration-300 group-hover:rotate-0">
-                  <div className="mb-4 flex items-center justify-between gap-2 border-b border-white/10 pb-3">
-                    <div className="h-2 w-16 rounded-full bg-white/20" />
-                    <div className="h-6 w-6 rounded-md bg-white/10" />
+                <div className="surface-panel rotate-1 rounded-xl border border-border bg-card p-5 shadow-theme-lg transition duration-300 group-hover:rotate-0">
+                  <div className="mb-4 flex items-center justify-between gap-2 border-b border-border pb-3">
+                    <div className="h-2 w-16 rounded-full bg-muted" />
+                    <div className="h-6 w-6 rounded-md bg-muted/70" />
                   </div>
                   <div className="grid grid-cols-3 gap-2 sm:gap-3">
                     {TIER_SWATCHES.map((tier) => (
                       <div
                         key={tier.label}
-                        className="rounded-lg border border-white/10 bg-white/5 p-2.5 sm:p-3"
+                        className="rounded-lg border border-border bg-muted/40 p-2.5 sm:p-3"
                       >
                         <div
                           className={`mb-2 h-2 rounded-full ${tier.className}`}
                         />
                         <div className="space-y-1.5">
-                          <div className="h-1.5 w-full rounded-full bg-white/15" />
-                          <div className="h-1.5 w-4/5 rounded-full bg-white/10" />
-                          <div className="h-1.5 w-3/5 rounded-full bg-white/10" />
+                          <div className="h-1.5 w-full rounded-full bg-muted" />
+                          <div className="h-1.5 w-4/5 rounded-full bg-muted/70" />
+                          <div className="h-1.5 w-3/5 rounded-full bg-muted/50" />
                         </div>
-                        <p className="mt-2 text-[0.6rem] font-bold uppercase tracking-wider text-silver-400">
+                        <p className="mt-2 text-[0.6rem] font-bold uppercase tracking-wider text-muted-foreground">
                           {tier.label}
                         </p>
                       </div>
                     ))}
                   </div>
-                  <p className="mt-4 text-center text-[0.65rem] uppercase tracking-[0.2em] text-silver-500">
+                  <p className="mt-4 text-center text-[0.65rem] uppercase tracking-[0.2em] text-muted-foreground">
                     Preview · PDF · Share
                   </p>
                 </div>
@@ -168,11 +168,11 @@ export default function FreeToolsContent({
               <p className="type-eyebrow">{freeTools.comingSoonBadge}</p>
               <h2
                 id="coming-soon-tools"
-                className="font-display mt-2 text-2xl text-white sm:text-3xl"
+                className="font-display mt-2 text-2xl text-foreground sm:text-3xl"
               >
                 {freeTools.comingSoonTitle}
               </h2>
-              <p className="mt-3 max-w-2xl text-sm leading-relaxed text-silver-400 sm:text-base">
+              <p className="mt-3 max-w-2xl text-sm leading-relaxed text-muted-foreground sm:text-base">
                 {freeTools.comingSoonBody}
               </p>
             </div>
@@ -184,26 +184,26 @@ export default function FreeToolsContent({
               return (
                 <li
                   key={tool.name}
-                  className="surface-panel relative overflow-hidden rounded-xl border border-silver-400/10 p-5 opacity-80"
+                  className="surface-panel relative overflow-hidden rounded-xl border border-border p-5 opacity-80"
                 >
                   <div
-                    className="pointer-events-none absolute inset-0 bg-gradient-to-b from-transparent to-navy-950/40"
+                    className="pointer-events-none absolute inset-0 bg-gradient-to-b from-transparent to-muted/30"
                     aria-hidden
                   />
                   <div className="relative">
                     <div className="mb-4 flex items-center justify-between">
-                      <span className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-silver-400/15 bg-navy-900/60 text-silver-400">
+                      <span className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-muted text-muted-foreground">
                         <Icon className="h-5 w-5" />
                       </span>
-                      <span className="inline-flex items-center gap-1 rounded-full border border-silver-400/15 bg-navy-900/50 px-2.5 py-1 text-[0.6rem] font-semibold uppercase tracking-wider text-silver-500">
+                      <span className="inline-flex items-center gap-1 rounded-full border border-border bg-muted px-2.5 py-1 text-[0.6rem] font-semibold uppercase tracking-wider text-muted-foreground">
                         <Lock className="h-3 w-3" />
                         Soon
                       </span>
                     </div>
-                    <p className="font-display text-lg text-silver-200">
+                    <p className="font-display text-lg text-foreground">
                       {tool.name}
                     </p>
-                    <p className="mt-2 text-sm leading-relaxed text-silver-500">
+                    <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
                       {tool.teaser}
                     </p>
                   </div>

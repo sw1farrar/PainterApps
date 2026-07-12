@@ -62,15 +62,20 @@ import {
   wallSqFtFromDimensions,
 } from "@/lib/quotes/area-helpers";
 import { arrayMove } from "@dnd-kit/sortable";
-import { readDefaultGrossMarginPct } from "@/lib/quotes/company-estimate-defaults";
+
 import { getCompanyPricingSummary } from "@/lib/quotes/estimate-from-rooms";
 import {
   calculateQuoteTotals,
   calculateTierPrices,
   estimateGallons,
+  lineItemLineTotal,
   lineItemsSubtotal,
 } from "@/lib/quotes/pricing";
-import { hasMinimumJobAddress, type JobAddressFields } from "@/lib/address";
+import {
+  hasMinimumEstimateStart,
+  hasMinimumJobAddress,
+  type JobAddressFields,
+} from "@/lib/address";
 import {
   getStoredEditorMode,
   setStoredEditorMode,
@@ -296,6 +301,7 @@ export function getVisibleSteps(editorMode: QuoteEditorMode): QuoteStep[] {
 
 type InferMaxReachedInput = {
   customerId: string;
+  quoteName: string;
   jobAddress: JobAddressFields;
   roomsCount: number;
   surfacesCount: number;
@@ -307,6 +313,7 @@ type InferMaxReachedInput = {
 
 export function inferMaxReachedIndex({
   customerId,
+  quoteName,
   jobAddress,
   roomsCount,
   surfacesCount,
@@ -317,7 +324,7 @@ export function inferMaxReachedIndex({
 }: InferMaxReachedInput): number {
   let max = 0;
 
-  if (customerId && hasMinimumJobAddress(jobAddress)) {
+  if (hasMinimumEstimateStart({ customerId, jobName: quoteName })) {
     max = Math.max(max, QUOTE_STEPS.indexOf("estimator"));
   }
   if (roomsCount > 0 || surfacesCount > 0) {
@@ -418,6 +425,7 @@ export function useQuoteBuilder({
 
   const initialMaxReachedIndex = inferMaxReachedIndex({
     customerId: quote?.customer_id ?? "",
+    quoteName: quote?.name ?? "",
     jobAddress: initialJobAddress,
     roomsCount: initialRooms.length,
     surfacesCount: initialSurfaces.length,
@@ -769,8 +777,7 @@ export function useQuoteBuilder({
     let materialsTotal = 0;
     for (const item of pricedLineItems) {
       if (item.is_optional) continue;
-      const lineTotal =
-        item.qty * item.unit_cost * (1 + (item.markup ?? 0) / 100);
+      const lineTotal = lineItemLineTotal(item);
       if (item.type === "labor") laborTotal += lineTotal;
       else materialsTotal += lineTotal;
     }
@@ -829,16 +836,14 @@ export function useQuoteBuilder({
 
   const ensureQuote = useCallback(async (): Promise<string | null> => {
     if (quoteId) return quoteId;
-    if (!customerId || !hasMinimumJobAddress(jobAddress)) {
-      setError(
-        "Select a customer and enter the full job address (street, city, state, ZIP).",
-      );
+    if (!hasMinimumEstimateStart({ customerId, jobName: quoteName })) {
+      setError("Select a customer and enter a job name.");
       return null;
     }
 
     const result = await createQuote({
       customer_id: customerId,
-      name: quoteName.trim() || null,
+      name: quoteName.trim(),
       job_type: jobType,
       estimation_mode: estimationMode,
       ...jobAddress,
@@ -1325,28 +1330,12 @@ export function useQuoteBuilder({
     setLineItemDrawerOpen(true);
   };
 
-  const defaultGrossMarginPct = useMemo(
-    () =>
-      readDefaultGrossMarginPct(
-        company.default_margins as Record<string, number> | null,
-      ),
-    [company.default_margins],
-  );
-
-  const [projectGrossMarginPct, setProjectGrossMarginPct] = useState(
-    defaultGrossMarginPct,
-  );
-
-  useEffect(() => {
-    setProjectGrossMarginPct(defaultGrossMarginPct);
-  }, [defaultGrossMarginPct]);
-
   const areaPricingOptions = useMemo(
     () => ({
       lineItems,
-      grossMarginPct: projectGrossMarginPct,
+      includeOptionalLineItems: true,
     }),
-    [lineItems, projectGrossMarginPct],
+    [lineItems],
   );
 
   const areaCostBreakdowns = useMemo(
@@ -1737,8 +1726,6 @@ export function useQuoteBuilder({
     setSelectedAreaIndex,
     areaSubtotals,
     areaCostBreakdowns,
-    projectGrossMarginPct,
-    setProjectGrossMarginPct,
     surfaces,
     setSurfaces,
     surfacesForSelectedArea,

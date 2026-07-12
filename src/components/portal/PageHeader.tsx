@@ -28,7 +28,7 @@ export function PageHeader({
         {eyebrow ? <p className="type-eyebrow">{eyebrow}</p> : null}
         <h1
           className={cn(
-            "font-display text-2xl text-white md:text-3xl",
+            "font-display text-2xl text-foreground md:text-3xl",
             eyebrow && "mt-1",
           )}
         >

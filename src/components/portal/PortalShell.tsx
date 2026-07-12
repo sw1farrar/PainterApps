@@ -10,6 +10,12 @@ import { SubscriptionBanner } from "@/components/portal/SubscriptionBanner";
 import { TopBar } from "@/components/portal/TopBar";
 import type { NavItem } from "@/lib/auth/roles";
 import { isSiteAdmin, type AppSession } from "@/lib/auth/app-session";
+import { cn } from "@/lib/utils";
+
+function isQuoteEditorPath(pathname: string | null): boolean {
+  if (!pathname) return false;
+  return /^\/app\/quotes\/(new|[^/]+)$/.test(pathname);
+}
 
 
 type PortalShellProps = {
@@ -24,6 +30,7 @@ export function PortalShell({ session, navItems, children }: PortalShellProps) {
   const mainRef = React.useRef<HTMLElement>(null);
   const showSiteAdminLink = isSiteAdmin(session);
   const { isNavigating, pendingHref } = usePortalNavigation();
+  const quoteEditorLayout = isQuoteEditorPath(pathname);
 
   React.useEffect(() => {
     setMobileNavOpen(false);
@@ -61,24 +68,47 @@ export function PortalShell({ session, navItems, children }: PortalShellProps) {
         <main
           ref={mainRef}
           data-site-scroll-main
-          className="site-scroll-main scroll-smooth"
+          className={cn(
+            "site-scroll-main scroll-smooth",
+            quoteEditorLayout && "flex min-h-0 flex-1 flex-col overflow-hidden",
+          )}
         >
-          <div className="mx-auto w-full min-w-0 max-w-7xl p-4 md:p-6 lg:p-8">
-            {isNavigating ? (
+          {quoteEditorLayout ? (
+            isNavigating ? (
               <div
                 key={pendingHref ?? "navigating"}
-                className="page-enter min-w-0"
+                className="page-enter quote-editor-route flex min-h-0 min-w-0 flex-1 flex-col"
                 aria-busy="true"
                 aria-live="polite"
               >
                 <NavigationRouteSkeleton href={pendingHref} />
               </div>
             ) : (
-              <div key={pathname} className="page-enter min-w-0">
+              <div
+                key={pathname}
+                className="page-enter quote-editor-route flex min-h-0 min-w-0 flex-1 flex-col"
+              >
                 {children}
               </div>
-            )}
-          </div>
+            )
+          ) : (
+            <div className="mx-auto w-full min-w-0 max-w-7xl p-4 md:p-6 lg:p-8">
+              {isNavigating ? (
+                <div
+                  key={pendingHref ?? "navigating"}
+                  className="page-enter min-w-0"
+                  aria-busy="true"
+                  aria-live="polite"
+                >
+                  <NavigationRouteSkeleton href={pendingHref} />
+                </div>
+              ) : (
+                <div key={pathname} className="page-enter min-w-0">
+                  {children}
+                </div>
+              )}
+            </div>
+          )}
         </main>
       </div>
     </div>

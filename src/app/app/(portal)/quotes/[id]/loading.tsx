@@ -24,7 +24,7 @@ export default function QuoteEditorLoading() {
 
       <div className="rounded-xl border border-border bg-card/40 p-4 sm:p-6">
         <div className="mb-6 flex gap-2">
-          {Array.from({ length: 5 }, (_, index) => (
+          {Array.from({ length: 4 }, (_, index) => (
             <SkeletonBlock key={index} className="h-8 w-20 rounded-full" />
           ))}
         </div>

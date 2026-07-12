@@ -68,7 +68,7 @@ export default async function JobsPage() {
       {!jobRows.length ? (
         <Card className="border-border bg-card/80 backdrop-blur-sm">
           <CardHeader className="items-center text-center">
-            <div className="mb-2 flex h-14 w-14 items-center justify-center rounded-full bg-primary/15 text-blue-200">
+            <div className="mb-2 flex h-14 w-14 items-center justify-center rounded-full bg-primary/15 text-primary">
               <HardHat className="h-7 w-7" />
             </div>
             <CardTitle>No jobs yet</CardTitle>

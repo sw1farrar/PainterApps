@@ -228,7 +228,7 @@ export function CatalogFilterToolbar({
 
   return (
     <>
-      <div className="border-b border-border/80 bg-navy-900/40 px-3 py-2 backdrop-blur-sm">
+      <div className="border-b border-border/80 bg-muted/40 px-3 py-2 backdrop-blur-sm">
         <div className="flex flex-col gap-2 md:flex-row md:items-center">
           <div className="relative min-w-0 flex-1">
             <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
@@ -236,7 +236,7 @@ export function CatalogFilterToolbar({
               value={filters.query}
               onChange={(event) => onChange("query", event.target.value)}
               placeholder="Search name, manufacturer, sheen…"
-              className="h-8 border-input/80 bg-navy-950/50 pl-8 pr-8 text-sm placeholder:text-muted-foreground/70 focus-visible:ring-1 focus-visible:ring-blue-400/50"
+              className="h-8 border-input bg-background pl-8 pr-8 text-sm placeholder:text-muted-foreground/70 focus-visible:ring-1 focus-visible:ring-ring"
               aria-label="Search products"
             />
             {filters.query ? (
@@ -278,7 +278,7 @@ export function CatalogFilterToolbar({
               variant="outline"
               size="sm"
               className={cn(
-                "h-8 gap-1.5 border-border/80 bg-transparent px-2.5 text-xs text-muted-foreground hover:bg-navy-800/60 hover:text-foreground",
+                "h-8 gap-1.5 border-border/80 bg-transparent px-2.5 text-xs text-muted-foreground hover:bg-accent hover:text-accent-foreground",
                 advancedCount > 0 && "border-blue-400/30 text-foreground",
               )}
               onClick={() => onFiltersOpenChange(true)}
@@ -461,7 +461,7 @@ function FilterChip({
   onRemove: () => void;
 }) {
   return (
-    <span className="inline-flex h-6 shrink-0 items-center gap-1 rounded-full border border-blue-400/25 bg-navy-700/50 px-2.5 text-xs">
+    <span className="inline-flex h-6 shrink-0 items-center gap-1 rounded-full border border-primary/25 bg-primary/10 px-2.5 text-xs">
       <span className="text-muted-foreground">{label}:</span>
       <span className="max-w-[8rem] truncate font-medium text-foreground">
         {value}

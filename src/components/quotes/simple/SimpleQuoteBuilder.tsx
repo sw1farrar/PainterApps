@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
@@ -11,17 +11,15 @@ import {
   Save,
   Send,
   Sparkles,
-  UserRound,
 } from "lucide-react";
 import { AddressFields } from "@/components/forms/AddressFields";
 import { CustomerCombobox } from "@/components/quotes/CustomerCombobox";
 import { useQuoteAutosave } from "@/components/quotes/hooks/useQuoteAutosave";
+import { JobPricingSummaryBar } from "@/components/quotes/simple/JobPricingSummaryBar";
+import { QuoteEditorHeaderDetail } from "@/components/quotes/simple/QuoteEditorHeaderDetail";
 import { SimpleAreasStep } from "@/components/quotes/simple/SimpleAreasStep";
-import { SimpleBaselineProductsStep } from "@/components/quotes/simple/SimpleBaselineProductsStep";
 import { SimpleQuoteStepper } from "@/components/quotes/simple/SimpleQuoteStepper";
 import { SimpleTierSystemsStep } from "@/components/quotes/simple/SimpleTierSystemsStep";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 
 import {
   useSimpleQuoteBuilder,
@@ -32,7 +30,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 import { Textarea } from "@/components/ui/textarea";
-import { hasMinimumJobAddress } from "@/lib/address";
+import { hasMinimumEstimateStart } from "@/lib/address";
+import { computeJobBidSummary } from "@/lib/quotes/job-bid-summary";
+import { resolveEstimateJobName } from "@/lib/quotes/simple-builder";
+import { useQuoteEditorChrome } from "@/providers/QuoteEditorChromeProvider";
 import { cn, formatCurrency } from "@/lib/utils";
 import type { QuoteJobType } from "@/types/database";
 
@@ -42,14 +43,6 @@ const JOB_TYPE_LABELS: Record<QuoteJobType, string> = {
   both: "Interior + Exterior",
   specialty: "Specialty",
 };
-
-function customerInitials(name: string) {
-  return name
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase() ?? "")
-    .join("");
-}
 
 const JOB_TYPE_OPTIONS: {
   value: QuoteJobType;
@@ -84,6 +77,7 @@ type SimpleQuoteBuilderProps = UseSimpleQuoteBuilderOptions & {
 
 export function SimpleQuoteBuilder(props: SimpleQuoteBuilderProps) {
   const router = useRouter();
+  const { setHeaderDetail } = useQuoteEditorChrome();
   const builder = useSimpleQuoteBuilder(props);
   const {
     step,
@@ -111,19 +105,16 @@ export function SimpleQuoteBuilder(props: SimpleQuoteBuilderProps) {
     areas,
     itemsSubtotal,
     suggestedJobPricing,
-    projectGrossMarginPct,
-    setProjectGrossMarginPct,
     quotePrice,
     setQuotePrice,
     customMessage,
     setCustomMessage,
-    baselinePaintSystems,
-    updateBaselineSystem,
     tierPaintConfig,
     updateTierPaint,
     tierRows,
     updateTierDisplayName,
     baselineTopcoatName,
+    baselinePaintSystems,
     paintProducts,
     getDraft,
     saveDraft,
@@ -132,14 +123,16 @@ export function SimpleQuoteBuilder(props: SimpleQuoteBuilderProps) {
 
   const {
     rooms,
+    deleteArea,
     buildAllLineItems,
     saveAreaEdits,
   } = areas;
 
   const [isSavingClose, setIsSavingClose] = useState(false);
   const [isSavingArea, setIsSavingArea] = useState(false);
+  const [isDeletingArea, setIsDeletingArea] = useState(false);
 
-  const { status: autosaveStatus, lastSavedAt, markBaseline } = useQuoteAutosave({
+  const { markBaseline } = useQuoteAutosave({
     quoteId,
     enabled: Boolean(quoteId) && status === "draft",
     draft: getDraft(),
@@ -171,26 +164,72 @@ export function SimpleQuoteBuilder(props: SimpleQuoteBuilderProps) {
     [quoteId, ensureQuote, saveDraft, markBaseline, saveAreaEdits],
   );
 
+  const handleDeleteArea = useCallback(
+    async (index: number) => {
+      setIsDeletingArea(true);
+      try {
+        deleteArea(index);
+
+        let id = quoteId;
+        if (!id) {
+          id = (await ensureQuote()) ?? "";
+          if (!id) return;
+        }
+
+        const result = await saveDraft(id);
+        if (!result.success) {
+          toast.error(result.error ?? "Could not save after removing area");
+          return;
+        }
+
+        markBaseline();
+        toast.success("Area removed");
+      } finally {
+        setIsDeletingArea(false);
+      }
+    },
+    [quoteId, ensureQuote, saveDraft, markBaseline, deleteArea],
+  );
+
   const canGoBack = step !== "job";
   const isSendStep = step === "send";
 
-  const trimmedJobName = quoteName.trim();
-  const headerCustomerLabel =
-    selectedCustomer?.name ??
-    (props.mode === "create" ? "Select customer" : "No customer");
+  const jobBidSummary = useMemo(
+    () =>
+      computeJobBidSummary({
+        rooms: areas.rooms,
+        areaCostBreakdowns: areas.areaCostBreakdowns,
+        customQuoteLineItems: areas.customQuoteLineItems,
+        itemsSubtotal,
+      }),
+    [
+      areas.rooms,
+      areas.areaCostBreakdowns,
+      areas.customQuoteLineItems,
+      itemsSubtotal,
+    ],
+  );
 
-  const autosaveLabel =
-    autosaveStatus === "saving"
-      ? "Saving…"
-      : autosaveStatus === "pending"
-        ? "Unsaved"
-        : autosaveStatus === "error"
-          ? "Save failed"
-          : lastSavedAt
-            ? `Saved ${lastSavedAt.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}`
-            : quoteId
-              ? "Saved"
-              : null;
+  useEffect(() => {
+    setHeaderDetail(
+      <QuoteEditorHeaderDetail
+        mode={props.mode}
+        customerName={selectedCustomer?.name}
+        jobName={quoteName}
+        jobType={jobType}
+        status={status}
+      />,
+    );
+
+    return () => setHeaderDetail(null);
+  }, [
+    props.mode,
+    selectedCustomer?.name,
+    quoteName,
+    jobType,
+    status,
+    setHeaderDetail,
+  ]);
 
   const handleSaveAndClose = useCallback(async () => {
     if (isSavingClose || isPending) return;
@@ -198,7 +237,13 @@ export function SimpleQuoteBuilder(props: SimpleQuoteBuilderProps) {
     try {
       if (isEditable && status === "draft") {
         let saveId = quoteId || null;
-        if (!saveId && customerId && hasMinimumJobAddress(jobAddress)) {
+        if (
+          !saveId &&
+          hasMinimumEstimateStart({
+            customerId,
+            jobName: resolveEstimateJobName(quoteName, selectedCustomer?.name),
+          })
+        ) {
           saveId = await ensureQuote();
         }
         if (saveId) {
@@ -223,6 +268,7 @@ export function SimpleQuoteBuilder(props: SimpleQuoteBuilderProps) {
     status,
     quoteId,
     customerId,
+    quoteName,
     jobAddress,
     rooms.length,
     buildAllLineItems,
@@ -232,77 +278,14 @@ export function SimpleQuoteBuilder(props: SimpleQuoteBuilderProps) {
   ]);
 
   return (
-    <div className="quote-editor-page">
-      <header className="shrink-0 border-b border-border/60 px-2 py-2 sm:px-4">
+    <div className="quote-editor-page [--quote-editor-top-bar-height:3.5rem] sm:[--quote-editor-top-bar-height:3.75rem]">
+      <header className="quote-editor-top-bar sticky top-0 z-20 shrink-0 border-b border-border/60 bg-background/95 px-2 py-2 backdrop-blur supports-[backdrop-filter]:bg-background/90 sm:px-4">
         <div className="mx-auto flex w-full max-w-6xl min-w-0 items-center gap-2 sm:gap-3">
-          {selectedCustomer ? (
-            <Avatar className="h-8 w-8 shrink-0">
-              <AvatarFallback className="bg-primary/15 text-xs font-semibold text-primary">
-                {customerInitials(selectedCustomer.name)}
-              </AvatarFallback>
-            </Avatar>
-          ) : (
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-muted/60">
-              <UserRound className="h-3.5 w-3.5 text-muted-foreground" />
-            </div>
-          )}
-          <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-1">
-            <h1 className="min-w-0 truncate text-sm text-foreground sm:text-base">
-              <span className="font-medium text-muted-foreground">
-                {props.mode === "create" ? "New quote" : "Quote"}
-              </span>
-              <span className="mx-1.5 text-border/80">·</span>
-              <span
-                className={cn(
-                  "font-semibold tracking-tight",
-                  selectedCustomer
-                    ? "text-foreground"
-                    : "text-muted-foreground",
-                )}
-              >
-                {headerCustomerLabel}
-              </span>
-              {trimmedJobName ? (
-                <>
-                  <span className="mx-1.5 text-border/80">·</span>
-                  <span className="font-display font-semibold tracking-tight text-foreground">
-                    {trimmedJobName}
-                  </span>
-                </>
-              ) : null}
-            </h1>
-            <div className="flex flex-wrap items-center gap-1">
-              <Badge
-                variant="outline"
-                className="px-1.5 py-0 text-[10px] font-normal leading-5"
-              >
-                {JOB_TYPE_LABELS[jobType]}
-              </Badge>
-              {status === "draft" && autosaveLabel ? (
-                <Badge
-                  variant={
-                    autosaveStatus === "error"
-                      ? "destructive"
-                      : autosaveStatus === "saving" ||
-                          autosaveStatus === "pending"
-                        ? "secondary"
-                        : "outline"
-                  }
-                  className="px-1.5 py-0 text-[10px] font-normal leading-5"
-                >
-                  {autosaveLabel}
-                </Badge>
-              ) : null}
-              {status !== "draft" ? (
-                <Badge
-                  variant="secondary"
-                  className="px-1.5 py-0 text-[10px] capitalize leading-5"
-                >
-                  {status}
-                </Badge>
-              ) : null}
-            </div>
-          </div>
+          <JobPricingSummaryBar
+            summary={jobBidSummary}
+            variant="header"
+            className="min-w-0 flex-1"
+          />
 
           <Button
             type="button"
@@ -322,14 +305,19 @@ export function SimpleQuoteBuilder(props: SimpleQuoteBuilderProps) {
         </div>
       </header>
 
-      <div className="quote-editor-workspace">
-        <div className="mx-auto flex min-h-0 w-full max-w-6xl flex-1 flex-col overflow-y-auto px-2 py-4 sm:px-4 sm:py-5">
+      <div className="quote-editor-stepper-bar sticky top-[var(--quote-editor-top-bar-height,3rem)] z-10 shrink-0 border-b border-border/40 bg-background/95 px-2 py-2 backdrop-blur supports-[backdrop-filter]:bg-background/90 sm:px-4">
+        <div className="mx-auto w-full max-w-6xl min-w-0">
           <SimpleQuoteStepper
-            className="mb-3"
             currentStep={step}
             maxReachedIndex={maxReachedIndex}
             onStepClick={isEditable ? goToStep : undefined}
           />
+        </div>
+      </div>
+
+      <div className="quote-editor-workspace">
+        <div className="mx-auto flex min-h-0 w-full max-w-6xl flex-1 flex-col overflow-y-auto px-2 py-4 sm:px-4 sm:py-5">
+          <div key={step} className="quote-step-panel min-w-0">
           {step === "job" ? (
             <section className="rounded-xl border border-border/50 bg-card/30 p-3 shadow-sm sm:p-4">
               <div className="grid gap-3 lg:grid-cols-2">
@@ -342,7 +330,7 @@ export function SimpleQuoteBuilder(props: SimpleQuoteBuilderProps) {
                 />
                 <div className="space-y-1">
                   <Label htmlFor="job-name" className="text-xs">
-                    Job name
+                    Job name *
                   </Label>
                   <Input
                     id="job-name"
@@ -354,6 +342,7 @@ export function SimpleQuoteBuilder(props: SimpleQuoteBuilderProps) {
                         ? `${selectedCustomer.name} estimate`
                         : "Job name"
                     }
+                    required
                     disabled={!isEditable}
                   />
                 </div>
@@ -391,7 +380,12 @@ export function SimpleQuoteBuilder(props: SimpleQuoteBuilderProps) {
 
               <div className="mt-3 space-y-1.5 border-t border-border/40 pt-3">
                 <div className="flex items-center justify-between gap-2">
-                  <Label className="text-xs">Job address</Label>
+                  <div>
+                    <Label className="text-xs">Job address</Label>
+                    <p className="text-[10px] text-muted-foreground">
+                      Optional now — required before sending
+                    </p>
+                  </div>
                   {selectedCustomer ? (
                     <Button
                       type="button"
@@ -433,19 +427,9 @@ export function SimpleQuoteBuilder(props: SimpleQuoteBuilderProps) {
                     })
                   }
                   line1Label="Street address"
-                  required
                 />
               </div>
             </section>
-          ) : null}
-
-          {step === "baseline" ? (
-            <SimpleBaselineProductsStep
-              jobType={jobType}
-              systems={baselinePaintSystems}
-              paintProducts={paintProducts}
-              onChange={updateBaselineSystem}
-            />
           ) : null}
 
           {step === "items" ? (
@@ -454,11 +438,13 @@ export function SimpleQuoteBuilder(props: SimpleQuoteBuilderProps) {
               jobType={jobType}
               rooms={areas.rooms}
               areaSubtotals={areas.areaSubtotals}
-              areaCostBreakdowns={areas.areaCostBreakdowns}
-              itemsSubtotal={itemsSubtotal}
+              editingAreaPreviewBreakdown={areas.editingAreaPreviewBreakdown}
+              editingAreaPreviewLineItems={areas.editingAreaPreviewLineItems}
+              editingAreaWorkItemsRollup={areas.editingAreaWorkItemsRollup}
               coverage={areas.coverage}
               paintDefaults={areas.paintDefaults}
               paintProducts={areas.paintProducts}
+              baselineSystems={baselinePaintSystems}
               editingAreaIndex={areas.editingAreaIndex}
               onAddAreaTemplate={areas.addAreaFromTemplate}
               onDuplicateArea={areas.duplicateArea}
@@ -470,16 +456,30 @@ export function SimpleQuoteBuilder(props: SimpleQuoteBuilderProps) {
               onConfirmCloset={(index, dims) => {
                 areas.updateClosetSurface(index, dims);
               }}
-              onSetPaintDefault={areas.setPaintDefault}
               onResetSurfaceProduct={areas.resetSurfaceProduct}
-              onToggleScopeCategory={areas.toggleScopeCategory}
               onApplyDimensions={areas.applyWallDimensions}
               onSaveArea={handleSaveArea}
               isSavingArea={isSavingArea}
-              onDeleteArea={areas.deleteArea}
+              onDeleteArea={handleDeleteArea}
+              isDeletingArea={isDeletingArea}
               isAreaDirty={areas.isAreaDirty}
               onRevertArea={areas.revertAreaEdits}
               surfacesForArea={areas.surfacesForArea}
+              onSubstrateMarginChange={areas.updateSubstrateMargin}
+              onSubstrateCoatsChange={areas.updateSubstrateCoats}
+              onSubstrateProductivityChange={areas.updateSubstrateProductivity}
+              onResetSubstrateProductivity={areas.resetSubstrateProductivity}
+              onAddCustomSubstrate={areas.addCustomSubstrateToArea}
+              onRemoveCustomSubstrate={areas.removeCustomSubstrateFromArea}
+              customQuoteLineItems={areas.customQuoteLineItems}
+              defaultMarkupPct={areas.defaultMarkupPct}
+              onAddCustomQuoteLineItem={areas.addCustomQuoteLineItem}
+              onUpdateCustomQuoteLineItem={areas.updateCustomQuoteLineItem}
+              onRemoveCustomQuoteLineItem={areas.removeCustomQuoteLineItem}
+              onToggleAreaIncluded={areas.toggleAreaIncluded}
+              onToggleCustomLineItemIncluded={
+                areas.toggleCustomQuoteLineItemIncluded
+              }
             />
           ) : null}
 
@@ -546,28 +546,7 @@ export function SimpleQuoteBuilder(props: SimpleQuoteBuilderProps) {
                 ))}
               </ul>
 
-              <div className="mt-3 grid gap-3 border-t border-border/40 pt-3 sm:grid-cols-3">
-                <div className="space-y-1">
-                  <Label htmlFor="project-gross-margin" className="text-xs">
-                    Gross margin (%)
-                  </Label>
-                  <Input
-                    id="project-gross-margin"
-                    type="number"
-                    min={0}
-                    max={99}
-                    step={1}
-                    className="h-9"
-                    value={projectGrossMarginPct}
-                    onChange={(e) =>
-                      setProjectGrossMarginPct(Number(e.target.value) || 0)
-                    }
-                    disabled={!isEditable}
-                  />
-                  <p className="text-[11px] text-muted-foreground">
-                    Default from estimate defaults; adjust per quote.
-                  </p>
-                </div>
+              <div className="mt-3 grid gap-3 border-t border-border/40 pt-3 sm:grid-cols-2">
                 <div className="space-y-1">
                   <Label htmlFor="quote-price" className="text-xs">
                     Quote price
@@ -589,13 +568,15 @@ export function SimpleQuoteBuilder(props: SimpleQuoteBuilderProps) {
                   </div>
                   {suggestedJobPricing.directCost > 0 ? (
                     <p className="text-[11px] text-muted-foreground">
-                      Direct {formatCurrency(suggestedJobPricing.directCost)}
-                      {suggestedJobPricing.overhead > 0
-                        ? ` + overhead ${formatCurrency(suggestedJobPricing.overhead)}`
+                      Cost {formatCurrency(suggestedJobPricing.directCost)}
+                      {suggestedJobPricing.sellingPrice >
+                      suggestedJobPricing.directCost
+                        ? ` + markup ${formatCurrency(
+                            suggestedJobPricing.sellingPrice -
+                              suggestedJobPricing.directCost,
+                          )}`
                         : ""}
-                      {suggestedJobPricing.grossMarginPct > 0
-                        ? ` → ${suggestedJobPricing.grossMarginPct}% margin`
-                        : ""}
+                      {` = ${formatCurrency(suggestedJobPricing.sellingPrice)}`}
                     </p>
                   ) : null}
                 </div>
@@ -643,6 +624,7 @@ export function SimpleQuoteBuilder(props: SimpleQuoteBuilderProps) {
               )}
             </section>
           ) : null}
+          </div>
 
           {error ? (
             <p

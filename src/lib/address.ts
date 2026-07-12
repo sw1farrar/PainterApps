@@ -101,6 +101,13 @@ export function hasMinimumJobAddress(quote: JobAddressFields): boolean {
   );
 }
 
+export function hasMinimumEstimateStart(input: {
+  customerId: string;
+  jobName: string;
+}): boolean {
+  return Boolean(input.customerId.trim() && input.jobName.trim());
+}
+
 export const EMPTY_ADDRESS: AddressFields = {
   address: "",
   address_line2: "",

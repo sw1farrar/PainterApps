@@ -7,6 +7,7 @@ import {
   Card,
   CardContent,
 } from "@/components/ui/card";
+import { lineItemLineTotal } from "@/lib/quotes/pricing";
 import { formatCurrency } from "@/lib/utils";
 import type { LineItemInput } from "@/app/app/(portal)/quotes/actions";
 
@@ -84,8 +85,7 @@ export function LineItemsStep({
       ) : (
         <div className="grid gap-3">
           {lineItems.map((item, index) => {
-            const lineTotal =
-              item.qty * item.unit_cost * (1 + item.markup / 100);
+            const lineTotal = lineItemLineTotal(item);
             return (
               <Card key={`${item.description}-${index}`}>
                 <CardContent className="flex items-start justify-between gap-4 p-4">

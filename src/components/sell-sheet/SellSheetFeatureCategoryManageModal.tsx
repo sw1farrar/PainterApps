@@ -191,14 +191,14 @@ export function SellSheetFeatureCategoryManageModal({
                 htmlFor={checkboxId}
                 className={`flex items-start gap-2.5 rounded-md border px-3 py-2.5 text-sm transition ${
                   included
-                    ? "border-blue-500/30 bg-blue-50/40 text-navy-800"
-                    : "border-silver-300/80 bg-white/90 text-silver-600"
+                    ? "border-blue-500/30 bg-blue-50/40 text-foreground"
+                    : "border-input bg-card/90 text-muted-foreground"
                 }`}
               >
                 <input
                   id={checkboxId}
                   type="checkbox"
-                  className="mt-0.5 h-4 w-4 shrink-0 rounded border-silver-400 text-blue-600 focus:ring-blue-500"
+                  className="mt-0.5 h-4 w-4 shrink-0 rounded border-input text-blue-600 focus:ring-blue-500"
                   checked={included}
                   disabled={busy}
                   onChange={(event) => {
@@ -208,7 +208,7 @@ export function SellSheetFeatureCategoryManageModal({
                 <span className="min-w-0 flex-1 leading-snug">
                   {item.label}
                   {!included ? (
-                    <span className="mt-0.5 block text-xs text-silver-500">
+                    <span className="mt-0.5 block text-xs text-muted-foreground">
                       {labels.includeInCatalog}
                     </span>
                   ) : null}
@@ -220,13 +220,13 @@ export function SellSheetFeatureCategoryManageModal({
 
         {customItems.map((item) => (
           <li key={`custom-${item.label}`}>
-            <div className="flex items-start gap-2 rounded-md border border-blue-500/20 bg-blue-50/30 px-3 py-2.5 text-sm text-navy-800">
+            <div className="flex items-start gap-2 rounded-md border border-blue-500/20 bg-blue-50/30 px-3 py-2.5 text-sm text-foreground">
               <span className="min-w-0 flex-1 leading-snug">{item.label}</span>
               <button
                 type="button"
                 onClick={() => void removeCustomItem(item.label)}
                 disabled={busy}
-                className="shrink-0 rounded p-0.5 text-silver-500 transition hover:bg-silver-100 hover:text-red-600 disabled:opacity-50"
+                className="shrink-0 rounded p-0.5 text-muted-foreground transition hover:bg-accent hover:text-red-600 disabled:opacity-50"
                 aria-label={labels.removeFromLibrary}
                 title={labels.removeFromLibrary}
               >
@@ -237,7 +237,7 @@ export function SellSheetFeatureCategoryManageModal({
         ))}
       </ul>
 
-      <div className="mt-5 flex gap-2 border-t border-silver-300/60 pt-5">
+      <div className="mt-5 flex gap-2 border-t border-border pt-5">
         <input
           type="text"
           className="form-input min-w-0 flex-1"

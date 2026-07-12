@@ -4,20 +4,28 @@ import type { QuoteTierName } from "@/types/database";
 
 export const SIMPLE_QUOTE_STEPS = [
   "job",
-  "baseline",
   "items",
   "tiers",
   "send",
 ] as const;
 export type SimpleQuoteStep = (typeof SIMPLE_QUOTE_STEPS)[number];
 
+export function resolveEstimateJobName(
+  jobName: string,
+  customerName?: string | null,
+): string {
+  const trimmed = jobName.trim();
+  if (trimmed) return trimmed;
+  const customer = customerName?.trim();
+  return customer ? `${customer} estimate` : "";
+}
+
 export const SIMPLE_STEP_META: {
   id: SimpleQuoteStep;
   label: string;
   description: string;
 }[] = [
-  { id: "job", label: "Job", description: "Customer and site" },
-  { id: "baseline", label: "Systems", description: "Paint per surface" },
+  { id: "job", label: "Job", description: "Customer and job name" },
   { id: "items", label: "Areas", description: "Rooms and scope" },
   { id: "tiers", label: "Options", description: "Good / Better / Best" },
   { id: "send", label: "Send", description: "Price and deliver" },

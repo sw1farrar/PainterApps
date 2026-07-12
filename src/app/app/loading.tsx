@@ -9,7 +9,7 @@ export default function AppLoading() {
       aria-busy="true"
       aria-label="Loading application"
     >
-      <aside className="hidden h-dvh w-64 shrink-0 flex-col border-r border-border bg-navy-900/50 md:flex">
+      <aside className="hidden h-dvh w-64 shrink-0 flex-col border-r border-border bg-sidebar md:flex">
         <div className="flex items-center border-b border-border px-5 py-5">
           <SkeletonBlock className="h-8 w-8 shrink-0 rounded-lg" />
         </div>
@@ -22,7 +22,7 @@ export default function AppLoading() {
       </aside>
 
       <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-        <header className="sticky top-0 z-40 flex min-h-14 shrink-0 items-center justify-between gap-3 border-b border-border bg-navy-900/50 px-3 pt-[env(safe-area-inset-top,0px)] backdrop-blur-md sm:px-4 md:px-6">
+        <header className="sticky top-0 z-40 flex min-h-14 shrink-0 items-center justify-between gap-3 border-b border-border bg-header px-3 pt-[env(safe-area-inset-top,0px)] shadow-theme-sm backdrop-blur-md sm:px-4 md:px-6">
           <SkeletonBlock className="h-8 w-8 rounded-md md:hidden" />
           <SkeletonBlock className="h-4 w-32 md:hidden" />
           <SkeletonBlock className="ml-auto h-9 w-9 rounded-full" />

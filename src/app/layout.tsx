@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Source_Sans_3 } from "next/font/google";
 import { AppToaster } from "@/components/AppToaster";
+import { ThemeScript } from "@/components/theme/ThemeScript";
 import AppProviders from "@/providers/AppProviders";
 import "./globals.css";
 
@@ -25,6 +26,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning data-scroll-behavior="smooth">
+      <head>
+        <ThemeScript />
+      </head>
       <body
         className={`${sourceSans.variable} bg-background font-sans text-foreground antialiased`}
       >

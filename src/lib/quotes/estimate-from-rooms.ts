@@ -10,6 +10,7 @@ import {
   estimateProductGallons,
 } from "@/lib/quotes/estimation/paint-products";
 import { getEstimatePricingDefaults } from "@/lib/quotes/estimate-pricing-defaults";
+import type { QuoteJobType } from "@/types/database";
 import {
   DEFAULT_PRODUCT_COVERAGE_SQFT_PER_GALLON,
   resolveProductCoverageSqFt,
@@ -25,13 +26,6 @@ export type RoomEstimateInput = {
 };
 
 const BASE_PAINT_COST_PER_GALLON = 45;
-
-function prepHoursForCondition(condition: string): number {
-  if (condition === "poor") return 4;
-  if (condition === "fair") return 2;
-  if (condition === "good") return 1;
-  return 0;
-}
 
 function productCoverage(
   product: { coverage_sqft_per_gallon: number | null } | null,
@@ -69,10 +63,10 @@ export function buildLineItemsFromRooms(
   rooms: RoomEstimateInput[],
   company: Company,
   goodTierPaint?: ResolvedTierPaintConfig | null,
+  jobType: QuoteJobType = "interior",
 ) {
   const laborRates = company.labor_rates as Record<string, number>;
   const painterRate = laborRates.painter ?? 45;
-  const prepRate = laborRates.prep ?? 40;
   const { materialMarkupPct } = getEstimatePricingDefaults(company);
   const coverage = DEFAULT_PRODUCT_COVERAGE_SQFT_PER_GALLON;
 
@@ -131,17 +125,6 @@ export function buildLineItemsFromRooms(
       }
     }
 
-    const prepHours =
-      prepHoursForCondition(room.condition) || (room.prep_work?.trim() ? 2 : 0);
-    if (prepHours > 0) {
-      items.push({
-        type: "labor",
-        description: `${room.name} — prep work`,
-        qty: prepHours,
-        unit_cost: prepRate,
-        markup: 0,
-      });
-    }
   }
 
   return items;

@@ -415,7 +415,7 @@ export function CompanyProductCatalog({
                     onMouseEnter={() => prefetchProductPreview(product)}
                     className={cn(
                       !product.is_active && "opacity-60",
-                      "cursor-pointer hover:bg-navy-900/35",
+                      "cursor-pointer hover:bg-accent",
                     )}
                   >
                     <td className="px-2 py-2.5">
@@ -447,7 +447,7 @@ export function CompanyProductCatalog({
                         <div className="h-12 w-12 shrink-0 rounded bg-muted/30" />
                       )}
                     </td>
-                    <td className="px-4 py-2.5 font-medium text-white">
+                    <td className="px-4 py-2.5 font-medium text-foreground">
                       {product.name}
                     </td>
                     <td className="px-4 py-2.5 text-muted-foreground">

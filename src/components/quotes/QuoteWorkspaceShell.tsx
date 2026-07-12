@@ -89,7 +89,7 @@ export function QuoteWorkspaceShell({
   return (
     <>
       <div
-        className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 p-1 backdrop-blur-sm sm:p-2"
+        className="fixed inset-0 z-[60] flex items-center justify-center bg-overlay p-1 backdrop-blur-sm sm:p-2"
         role="dialog"
         aria-modal="true"
         aria-labelledby="quote-workspace-title"
@@ -116,7 +116,7 @@ export function QuoteWorkspaceShell({
                 </p>
               ) : null}
               {isDirty ? (
-                <p className="text-xs font-medium text-amber-600 dark:text-amber-400">
+                <p className="text-xs font-medium text-amber-700 dark:text-amber-300">
                   Unsaved changes
                 </p>
               ) : null}

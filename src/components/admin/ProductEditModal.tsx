@@ -41,17 +41,17 @@ type ProductEditModalProps = {
 };
 
 const fieldLabelClass =
-  "text-sm font-semibold text-navy-800";
+  "text-sm font-semibold text-foreground";
 const fieldInputClass =
-  "border-silver-300 bg-white text-navy-900 placeholder:text-silver-500 shadow-sm";
+  "border-input bg-background text-foreground placeholder:text-muted-foreground shadow-sm";
 const fieldSelectTriggerClass =
-  "border-silver-300 bg-white text-navy-900 shadow-sm";
+  "border-input bg-background text-foreground shadow-sm";
 const fieldSelectContentClass =
-  "border-silver-300 bg-white text-navy-900";
+  "border-border bg-popover text-popover-foreground";
 const fieldSelectItemClass =
-  "text-navy-900 focus:bg-silver-100 focus:text-navy-900";
+  "text-foreground focus:bg-accent focus:text-accent-foreground";
 const sectionClass =
-  "rounded-lg border border-silver-200 bg-white px-4 py-4 shadow-sm";
+  "rounded-lg border border-border bg-card px-4 py-4 shadow-sm";
 
 function buildFormState(product: CatalogProductRow): UpdatePaintProductInput {
   return {
@@ -196,7 +196,7 @@ export function ProductEditModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-navy-950/70 p-4 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-overlay p-4 backdrop-blur-sm"
       role="dialog"
       aria-modal="true"
       aria-labelledby="product-edit-title"
@@ -210,17 +210,17 @@ export function ProductEditModal({
         <button
           type="button"
           onClick={requestClose}
-          className="absolute right-4 top-4 rounded p-1 text-silver-600 transition hover:bg-silver-100 hover:text-navy-900"
+          className="absolute right-4 top-4 rounded p-1 text-muted-foreground transition hover:bg-accent hover:text-foreground"
           aria-label="Close"
           disabled={loading}
         >
           <X className="h-5 w-5" />
         </button>
 
-        <h2 id="product-edit-title" className="font-display text-2xl text-navy-900">
+        <h2 id="product-edit-title" className="font-display text-2xl text-foreground">
           Edit product
         </h2>
-        <p className="mt-2 text-sm font-medium text-navy-700">
+        <p className="mt-2 text-sm font-medium text-muted-foreground">
           {product.manufacturer_name} — {product.name}
         </p>
         {isDirty ? (
@@ -231,7 +231,7 @@ export function ProductEditModal({
 
         <div className="mt-6 space-y-4">
           <div className={cn(sectionClass, "grid gap-4 sm:grid-cols-2")}>
-            <p className="text-xs font-semibold uppercase tracking-wide text-silver-600 sm:col-span-2">
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground sm:col-span-2">
               Basic details
             </p>
 
@@ -376,7 +376,7 @@ export function ProductEditModal({
           </div>
 
           <div className={cn(sectionClass, "space-y-4")}>
-            <p className="text-xs font-semibold uppercase tracking-wide text-silver-600">
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
               Sources & description
             </p>
 
@@ -431,7 +431,7 @@ export function ProductEditModal({
           </div>
 
           <div className={cn(sectionClass, "grid gap-4 sm:grid-cols-2")}>
-            <p className="text-xs font-semibold uppercase tracking-wide text-silver-600 sm:col-span-2">
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground sm:col-span-2">
               Coating data
             </p>
 
@@ -479,7 +479,7 @@ export function ProductEditModal({
           </div>
 
           <div className={cn(sectionClass, "space-y-4")}>
-            <p className="text-xs font-semibold uppercase tracking-wide text-silver-600">
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
               Can image
             </p>
 
@@ -498,7 +498,7 @@ export function ProductEditModal({
             </div>
 
             {form.can_image_url ? (
-              <div className="rounded-lg border border-silver-200 bg-silver-50 p-3">
+              <div className="rounded-lg border border-border bg-muted/30 p-3">
                 <Image
                   key={`${product?.id ?? "new"}-${product?.updated_at ?? "preview"}`}
                   src={
@@ -526,7 +526,7 @@ export function ProductEditModal({
                 onChange={(event) =>
                   updateField("is_discontinued", event.target.checked)
                 }
-                className="h-4 w-4 rounded border-silver-400 text-primary focus:ring-primary"
+                className="h-4 w-4 rounded border-input text-primary focus:ring-primary"
               />
               <Label
                 htmlFor="product-discontinued"
@@ -538,13 +538,13 @@ export function ProductEditModal({
           </div>
         </div>
 
-        <div className="mt-8 flex flex-wrap justify-end gap-3 border-t border-silver-200 pt-6">
+        <div className="mt-8 flex flex-wrap justify-end gap-3 border-t border-border pt-6">
           <Button
             type="button"
             variant="outline"
             onClick={requestClose}
             disabled={loading}
-            className="border-silver-300 bg-white text-navy-800 hover:bg-silver-100"
+            className="border-border bg-card text-foreground hover:bg-accent"
           >
             Cancel
           </Button>
@@ -562,14 +562,14 @@ export function ProductEditModal({
 
         {unsavedPromptOpen ? (
           <div
-            className="absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-navy-950/45 p-4"
+            className="absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-overlay/60 p-4 backdrop-blur-sm"
             onClick={(event) => event.stopPropagation()}
           >
-            <div className="w-full max-w-md rounded-xl border border-silver-200 bg-white p-5 shadow-xl">
-              <h3 className="font-display text-lg text-navy-900">
+            <div className="w-full max-w-md rounded-xl border border-border bg-card p-5 shadow-theme-lg">
+              <h3 className="font-display text-lg text-foreground">
                 Save changes?
               </h3>
-              <p className="mt-2 text-sm leading-relaxed text-navy-700">
+              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
                 You have unsaved edits to this product. Save them before
                 closing, or discard your changes.
               </p>
@@ -579,7 +579,7 @@ export function ProductEditModal({
                   variant="outline"
                   onClick={() => setUnsavedPromptOpen(false)}
                   disabled={loading}
-                  className="border-silver-300 bg-white text-navy-800 hover:bg-silver-100"
+                  className="border-border bg-card text-foreground hover:bg-accent"
                 >
                   Keep editing
                 </Button>
@@ -588,7 +588,7 @@ export function ProductEditModal({
                   variant="outline"
                   onClick={handleDiscardChanges}
                   disabled={loading}
-                  className="border-silver-300 bg-white text-navy-800 hover:bg-silver-100"
+                  className="border-border bg-card text-foreground hover:bg-accent"
                 >
                   Discard
                 </Button>

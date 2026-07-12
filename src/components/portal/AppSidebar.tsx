@@ -94,9 +94,9 @@ function SidebarNavLink({
       className={cn(
         "portal-nav-item nav-link-active flex min-h-11 items-center gap-3 rounded-lg border-l-2 px-3 py-2.5 text-sm font-medium transition-all duration-150 md:min-h-0",
         isActive
-          ? "scale-[1.02] border-primary bg-primary/15 text-blue-200"
+          ? "scale-[1.02] border-primary bg-primary/12 text-primary dark:bg-primary/15"
           : "border-transparent text-muted-foreground hover:scale-[1.01] hover:bg-accent hover:text-foreground",
-        isPending && "border-primary/60 bg-primary/10 text-blue-100",
+        isPending && "border-primary/60 bg-primary/10 text-primary",
       )}
     >
       <NavLinkIcon icon={Icon} showSpinner={Boolean(isPending)} />
@@ -186,9 +186,9 @@ function SiteAdminLink({
             onNavigate?.();
           }}
           className={cn(
-            "portal-nav-item mt-4 flex min-h-11 items-center gap-3 rounded-lg border border-amber-400/25 bg-amber-400/10 px-3 py-2.5 text-sm font-medium text-amber-100 transition hover:bg-amber-400/15",
+            "portal-nav-item mt-4 flex min-h-11 items-center gap-3 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2.5 text-sm font-medium text-amber-800 transition hover:bg-amber-500/15 dark:border-amber-400/25 dark:bg-amber-400/10 dark:text-amber-100 dark:hover:bg-amber-400/15",
             (pathname === href || pathname.startsWith(`${href}/`)) &&
-              "border-amber-300/40 bg-amber-400/20",
+              "border-amber-500/40 bg-amber-500/15 dark:border-amber-300/40 dark:bg-amber-400/20",
           )}
         >
           <Shield className="h-4 w-4 shrink-0" />
@@ -225,7 +225,7 @@ export function AppSidebar({
 
   return (
     <>
-      <aside className="hidden h-dvh w-64 shrink-0 flex-col border-r border-border bg-navy-900/50 md:flex">
+      <aside className="hidden h-dvh w-64 shrink-0 flex-col border-r border-border bg-sidebar shadow-theme-sm md:flex">
         {sidebarHeader}
         <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
           <NavLinks
@@ -239,7 +239,7 @@ export function AppSidebar({
       <Sheet open={mobileOpen} onOpenChange={onMobileOpenChange}>
         <SheetContent
           side="left"
-          className="flex w-[280px] max-w-[85vw] flex-col gap-0 border-border bg-navy-900 p-0"
+          className="flex w-[280px] max-w-[85vw] flex-col gap-0 border-border bg-sidebar p-0"
         >
           {sidebarHeader}
           <NavLinks

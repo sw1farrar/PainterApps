@@ -188,7 +188,7 @@ export function PortalQuoteView({
         ) : null}
         <div className="space-y-2">
           <p className="type-eyebrow">{companyName}</p>
-          <h1 className="font-display text-3xl text-white sm:text-4xl">
+          <h1 className="font-display text-3xl sm:text-4xl">
             Your Painting Quote
           </h1>
           <p className="text-muted-foreground">
@@ -336,7 +336,7 @@ export function PortalQuoteView({
                     {formatQuoteTierLabel(tier.tier)}
                   </CardTitle>
                   <CardDescription>
-                    <span className="type-stat-value text-2xl text-white">
+                    <span className="type-stat-value text-2xl text-foreground">
                       {formatCurrency(tier.price)}
                     </span>
                   </CardDescription>

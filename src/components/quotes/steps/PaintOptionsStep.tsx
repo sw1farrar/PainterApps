@@ -90,7 +90,7 @@ export function PaintOptionsStep({
   return (
     <div className="space-y-4">
       {!hasGoodTopcoat ? (
-        <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-800 dark:text-amber-200">
+        <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-700 dark:text-amber-300">
           Select primer and paint for accurate material costs and labor hours.
           Legacy quotes use flat $45/gal until configured.
         </div>

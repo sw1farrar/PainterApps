@@ -242,8 +242,8 @@ export function SellSheetPaintSystemEditor({
         <div
           className={`flex items-start gap-2 rounded-md border px-3 py-2.5 text-sm transition ${
             checked
-              ? "border-blue-500/30 bg-blue-50/40 text-navy-800"
-              : "border-silver-300/80 bg-white/90 text-navy-800"
+              ? "border-blue-500/30 bg-blue-50/40 text-foreground"
+              : "border-input bg-card/90 text-foreground"
           }`}
         >
           <label
@@ -253,7 +253,7 @@ export function SellSheetPaintSystemEditor({
             <input
               id={checkboxId}
               type="checkbox"
-              className="mt-0.5 h-4 w-4 shrink-0 rounded border-silver-400 text-blue-600 focus:ring-blue-500"
+              className="mt-0.5 h-4 w-4 shrink-0 rounded border-input text-blue-600 focus:ring-blue-500"
               checked={checked}
               disabled={libraryBusy || limitBlocked}
               onChange={(event) =>
@@ -267,7 +267,7 @@ export function SellSheetPaintSystemEditor({
               type="button"
               onClick={onRemove}
               disabled={libraryBusy}
-              className="shrink-0 rounded p-0.5 text-silver-500 transition hover:bg-silver-100 hover:text-red-600 disabled:opacity-50"
+              className="shrink-0 rounded p-0.5 text-muted-foreground transition hover:bg-accent hover:text-red-600 disabled:opacity-50"
               aria-label={removeLabel ?? `Remove ${item}`}
               title={removeLabel}
             >
@@ -288,7 +288,7 @@ export function SellSheetPaintSystemEditor({
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <p className="form-section-title">{label}</p>
-          <p className="mt-1 text-sm text-silver-600">
+          <p className="mt-1 text-sm text-muted-foreground">
             {selectedFeatures.length > 0
               ? paintSystemPageLimit
                   .replace("{selected}", String(selectedFeatures.length))
@@ -303,14 +303,14 @@ export function SellSheetPaintSystemEditor({
               {previewFeatures.map((feature) => (
                 <li
                   key={feature}
-                  className="truncate text-sm text-navy-800"
+                  className="truncate text-sm text-foreground"
                   title={feature}
                 >
                   {feature}
                 </li>
               ))}
               {remainingCount > 0 ? (
-                <li className="text-xs font-medium text-silver-500">
+                <li className="text-xs font-medium text-muted-foreground">
                   {moreItemsLabel.replace("{count}", String(remainingCount))}
                 </li>
               ) : null}
@@ -340,7 +340,7 @@ export function SellSheetPaintSystemEditor({
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
                 <p className="form-section-title">{optionsLegend}</p>
-                <p className="mt-1 text-sm text-silver-600">{optionsHintText}</p>
+                <p className="mt-1 text-sm text-muted-foreground">{optionsHintText}</p>
               </div>
               {pool.length > 0 ? (
                 <SellSheetBulkSelectionActions
@@ -373,12 +373,12 @@ export function SellSheetPaintSystemEditor({
                 )}
               </ul>
             ) : (
-              <p className="mt-3 text-sm text-silver-600">{emptyHint}</p>
+              <p className="mt-3 text-sm text-muted-foreground">{emptyHint}</p>
             )}
 
-            <div className="mt-5 border-t border-silver-300/60 pt-5">
+            <div className="mt-5 border-t border-border pt-5">
               <p className="form-section-title">{libraryLegend}</p>
-              <p className="mt-1 text-sm text-silver-600">{libraryHint}</p>
+              <p className="mt-1 text-sm text-muted-foreground">{libraryHint}</p>
               <div className="mt-4 flex flex-wrap gap-2">
                 <input
                   id={id}
@@ -399,7 +399,7 @@ export function SellSheetPaintSystemEditor({
                   type="button"
                   onClick={() => void addLibraryItem()}
                   disabled={libraryBusy}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-blue-500/25 bg-white px-3 py-2 text-sm font-semibold text-blue-700 transition hover:border-blue-500/40 hover:bg-blue-50 disabled:opacity-50"
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-blue-500/25 bg-card px-3 py-2 text-sm font-semibold text-blue-700 transition hover:border-blue-500/40 hover:bg-blue-50 disabled:opacity-50"
                 >
                   <Plus className="h-4 w-4" />
                   {addToLibrary}
@@ -412,7 +412,7 @@ export function SellSheetPaintSystemEditor({
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
                 <p className="form-section-title">{optionsLegend}</p>
-                <p className="mt-1 text-sm text-silver-600">
+                <p className="mt-1 text-sm text-muted-foreground">
                   {pool.length > 0 ? optionsHintText : signInForLibrary}
                 </p>
               </div>
@@ -438,10 +438,10 @@ export function SellSheetPaintSystemEditor({
                 )}
               </ul>
             ) : (
-              <p className="mt-3 text-sm text-silver-500">{emptyHint}</p>
+              <p className="mt-3 text-sm text-muted-foreground">{emptyHint}</p>
             )}
 
-            <div className="mt-5 flex flex-wrap gap-2 border-t border-silver-300/60 pt-5">
+            <div className="mt-5 flex flex-wrap gap-2 border-t border-border pt-5">
               <input
                 id={id}
                 type="text"
@@ -459,7 +459,7 @@ export function SellSheetPaintSystemEditor({
               <button
                 type="button"
                 onClick={addGuestOption}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-blue-500/25 bg-white px-3 py-2 text-sm font-semibold text-blue-700 transition hover:border-blue-500/40 hover:bg-blue-50"
+                className="inline-flex items-center gap-1.5 rounded-lg border border-blue-500/25 bg-card px-3 py-2 text-sm font-semibold text-blue-700 transition hover:border-blue-500/40 hover:bg-blue-50"
               >
                 <Plus className="h-4 w-4" />
                 {addLabel}

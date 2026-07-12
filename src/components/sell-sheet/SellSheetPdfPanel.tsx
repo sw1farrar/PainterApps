@@ -61,7 +61,7 @@ function PdfIframePreview({ url, title }: { url: string; title: string }) {
 function PdfLoadingShell({ label }: { label: string }) {
   return (
     <div
-      className="sell-sheet-pdf-shell sell-sheet-pdf-shell--fitted flex items-center justify-center text-silver-600"
+      className="sell-sheet-pdf-shell sell-sheet-pdf-shell--fitted flex items-center justify-center text-muted-foreground"
       style={sellSheetDisplayStyle()}
     >
       <Loader2 className="mr-2 h-5 w-5 animate-spin" />
@@ -211,7 +211,7 @@ export function SellSheetPdfPanel({
               {downloadLabel}
             </a>
           ) : (
-            <span className="inline-flex items-center gap-2 rounded-lg border border-silver-400/40 bg-white/95 px-4 py-2 text-sm text-silver-600 shadow-md backdrop-blur-sm">
+            <span className="inline-flex items-center gap-2 rounded-lg border border-border bg-card/95 px-4 py-2 text-sm text-muted-foreground shadow-md backdrop-blur-sm">
               <Loader2 className="h-4 w-4 animate-spin" />
               {loadingLabel}
             </span>

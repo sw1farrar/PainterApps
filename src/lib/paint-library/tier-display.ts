@@ -1,3 +1,4 @@
+import { formatPaintProductLabel } from "@/lib/paint-library/product-label";
 import {
   emptyTierPaintConfig,
   QUOTE_PAINT_TIERS,
@@ -10,7 +11,9 @@ import {
 type ProductLike = Pick<
   CompanyPaintProductRow,
   "id" | "name" | "role" | "is_self_priming"
->;
+> & {
+  unit_cost?: number;
+};
 
 export function buildProductsMapFromList(
   products: ProductLike[],
@@ -36,8 +39,12 @@ export function buildTierPaintSummaries(
       tier,
       primerName: resolved.topcoat?.is_self_priming
         ? null
-        : (resolved.primer?.name ?? null),
-      topcoatName: resolved.topcoat?.name ?? null,
+        : resolved.primer
+          ? formatPaintProductLabel(resolved.primer)
+          : null,
+      topcoatName: resolved.topcoat
+        ? formatPaintProductLabel(resolved.topcoat)
+        : null,
       primerCoats: config.primer_coats,
       topcoatCoats: config.topcoat_coats,
     };

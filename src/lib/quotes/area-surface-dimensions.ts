@@ -54,10 +54,13 @@ export function closetCeilingSqFt(dims: ClosetDimensions): number {
 }
 
 export function sqFtForAreaSurfaceKey(
-  key: AreaSurfaceKey,
+  key: AreaSurfaceKey | string,
   room: Pick<RoomInput, "length_ft" | "width_ft" | "height_ft">,
   closet?: ClosetDimensions | null,
 ): number {
+  if (typeof key === "string" && key.startsWith("custom-")) {
+    return 1;
+  }
   const length = room.length_ft ?? 0;
   const width = room.width_ft ?? 0;
   const height = room.height_ft ?? 0;
@@ -84,6 +87,12 @@ export function sqFtForAreaSurfaceKey(
       return closet ? closetInteriorWallSqFt(closet) : 0;
     case "closet-ceiling":
       return closet ? closetCeilingSqFt(closet) : 0;
+    case "cabinet":
+      return 1;
+    case "shelf":
+      return length > 0 && width > 0
+        ? Math.round(2 * (length + width))
+        : 0;
     default:
       return 0;
   }
@@ -105,7 +114,8 @@ export const AUTO_ENABLED_SURFACE_KEYS: AreaSurfaceKey[] = [
   "wall-3",
   "wall-4",
   "ceiling",
-  "floor",
+  "trim",
+  "window",
 ];
 
 export const ROOM_SYNC_SURFACE_KEYS: AreaSurfaceKey[] = [

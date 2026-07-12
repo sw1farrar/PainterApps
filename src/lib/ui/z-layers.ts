@@ -4,5 +4,7 @@ export const Z_LAYERS = {
   drawerContent: "z-[101]",
   dialogOverlay: "z-[110]",
   dialogContent: "z-[111]",
+  nestedDialogOverlay: "z-[112]",
+  nestedDialogContent: "z-[113]",
   popover: "z-[120]",
 } as const;

@@ -25,7 +25,7 @@ export default async function AdminOverviewPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="font-display text-3xl text-white">Site overview</h1>
+        <h1 className="font-display text-3xl text-foreground">Site overview</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Cross-tenant visibility for PainterApps operations.
         </p>
@@ -35,7 +35,7 @@ export default async function AdminOverviewPage() {
         <Card className="border-border bg-card/60">
           <CardHeader className="pb-2">
             <CardDescription>Companies</CardDescription>
-            <CardTitle className="text-3xl text-white">
+            <CardTitle className="text-3xl text-foreground">
               {overview.companyCount}
             </CardTitle>
           </CardHeader>
@@ -46,7 +46,7 @@ export default async function AdminOverviewPage() {
         <Card className="border-border bg-card/60">
           <CardHeader className="pb-2">
             <CardDescription>Users</CardDescription>
-            <CardTitle className="text-3xl text-white">
+            <CardTitle className="text-3xl text-foreground">
               {overview.userCount}
             </CardTitle>
           </CardHeader>
@@ -57,7 +57,7 @@ export default async function AdminOverviewPage() {
         <Card className="border-border bg-card/60">
           <CardHeader className="pb-2">
             <CardDescription>Unconfirmed emails</CardDescription>
-            <CardTitle className="text-3xl text-white">
+            <CardTitle className="text-3xl text-foreground">
               {overview.unconfirmedCount}
             </CardTitle>
           </CardHeader>
@@ -69,7 +69,7 @@ export default async function AdminOverviewPage() {
 
       <Card className="border-border bg-card/60">
         <CardHeader>
-          <CardTitle className="text-white">Recent companies</CardTitle>
+          <CardTitle className="text-foreground">Recent companies</CardTitle>
           <CardDescription>
             Newest signups and their enabled features
           </CardDescription>
@@ -85,7 +85,7 @@ export default async function AdminOverviewPage() {
                 className="flex flex-col gap-2 rounded-lg border border-border/80 bg-background/20 px-4 py-3 transition hover:border-primary/30 sm:flex-row sm:items-center sm:justify-between"
               >
                 <div>
-                  <p className="font-medium text-white">{company.name}</p>
+                  <p className="font-medium text-foreground">{company.name}</p>
                   <p className="text-xs text-muted-foreground">
                     Joined {formatDate(company.created_at)}
                   </p>

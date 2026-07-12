@@ -335,14 +335,14 @@ export function PlatformProductLookup({
 
         {mode === "platform" ? (
           <>
-            <div className="space-y-2 rounded-lg border border-border/80 bg-navy-900/30 p-2.5">
+            <div className="space-y-2 rounded-lg border border-border/80 bg-muted/20 p-2.5">
               <div className="relative">
                 <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   value={filters.query}
                   onChange={(event) => updateFilter("query", event.target.value)}
                   placeholder="Search product name…"
-                  className="h-8 border-input/80 bg-navy-950/50 pl-8 pr-8 text-sm"
+                  className="h-8 border-input bg-background pl-8 pr-8 text-sm"
                   aria-label="Search platform catalog"
                 />
                 {filters.query ? (
@@ -455,7 +455,7 @@ export function PlatformProductLookup({
                   >
                     <div className="flex flex-wrap items-start justify-between gap-3">
                       <div className="min-w-0 flex-1">
-                        <p className="font-medium text-white">{item.name}</p>
+                        <p className="font-medium text-foreground">{item.name}</p>
                         <p className="mt-1 text-sm text-muted-foreground">
                           {item.manufacturer_name} · {categoryLabel(item.category)} ·{" "}
                           {formatApplicationType(
@@ -658,7 +658,7 @@ function FilterChip({
   onRemove: () => void;
 }) {
   return (
-    <span className="inline-flex h-6 shrink-0 items-center gap-1 rounded-full border border-blue-400/25 bg-navy-700/50 px-2.5 text-xs">
+    <span className="inline-flex h-6 shrink-0 items-center gap-1 rounded-full border border-primary/25 bg-primary/10 px-2.5 text-xs">
       <span className="text-muted-foreground">{label}:</span>
       <span className="max-w-[8rem] truncate font-medium text-foreground">
         {value}

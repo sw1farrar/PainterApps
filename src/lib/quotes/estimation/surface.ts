@@ -9,12 +9,17 @@ import {
 } from "@/lib/quotes/resolve-surface-paint";
 import { resolveSurfaceLaborOverride } from "@/lib/quotes/surface-labor-defaults";
 import { DEFAULT_PRODUCT_COVERAGE_SQFT_PER_GALLON } from "@/lib/paint-library/coverage";
+import { substrateIdForSurfaceKey } from "@/lib/quotes/substrate-productivity";
 import {
-  estimateSurfaceLaborHours,
+  resolveLaborHoursForSurface,
+  resolvePrepHoursForSurface,
+} from "@/lib/quotes/surface-overrides";
+import {
   getLaborCostPerHour,
   resolveSurfaceLaborDefaultsFromCompany,
 } from "@/lib/quotes/surface-productivity";
 import type { RoomInput, SurfaceInput } from "@/app/app/(portal)/quotes/actions";
+import { resolveCustomSubstrateById } from "@/lib/quotes/area-custom-substrates";
 import { surfaceDisplayLabel } from "@/lib/quotes/area-surface-catalog";
 import type { Company, QuoteJobType } from "@/types/database";
 import type { QuoteEstimateContext, TaggedLineItem } from "./types";
@@ -29,15 +34,19 @@ const SQFT_PAINTABLE = new Set([
   "custom",
 ]);
 
-function surfaceLabel(surface: SurfaceInput): string {
+function surfaceLabel(surface: SurfaceInput, rooms?: RoomInput[]): string {
+  if (
+    surface.surface_key?.startsWith("custom-") &&
+    surface.room_index != null
+  ) {
+    const room = rooms?.[surface.room_index];
+    const entry = resolveCustomSubstrateById(
+      room?.prep_work,
+      surface.surface_key,
+    );
+    if (entry) return entry.label;
+  }
   return surfaceDisplayLabel(surface.surface_key, surface.surface_type);
-}
-
-function prepHoursForCondition(condition: string): number {
-  if (condition === "poor") return 4;
-  if (condition === "fair") return 2;
-  if (condition === "good") return 1;
-  return 0;
 }
 
 function paintResolveContext(
@@ -165,12 +174,18 @@ function surfacePaintableSqFt(
   return computePaintableSqFt(surface, profile);
 }
 
-function surfaceNeedsMaterials(surface: SurfaceInput): boolean {
+function surfaceNeedsMaterials(
+  surface: SurfaceInput,
+  company: Company,
+  jobType: QuoteJobType,
+): boolean {
   if (SQFT_PAINTABLE.has(surface.surface_type) && surface.sq_ft > 0) {
     return true;
   }
   if (surface.rate_type === "linear" && surface.sq_ft > 0) return true;
-  if (surface.rate_type === "each" && surface.sq_ft > 0) return true;
+  if (surface.rate_type === "each") {
+    return surfacePaintableSqFt(surface, company, jobType) > 0;
+  }
   return false;
 }
 
@@ -190,7 +205,7 @@ export function buildLineItemsFromSurfaces(
   const prepRate = laborRates.prep ?? 40;
   const paintingRate = getLaborCostPerHour(company);
   const items: TaggedLineItem[] = [];
-  const prepAddedForRoom = new Set<number>();
+  const laborDefaults = resolveSurfaceLaborDefaultsFromCompany(company);
 
   const paintCtx = estimateCtx?.productsById?.size
     ? paintResolveContext({
@@ -205,7 +220,7 @@ export function buildLineItemsFromSurfaces(
   for (const surface of surfaces) {
     if (surface.sq_ft <= 0 && surface.rate_type !== "each") continue;
 
-    const label = surfaceLabel(surface);
+    const label = surfaceLabel(surface, rooms);
     const room =
       surface.room_index !== undefined ? rooms[surface.room_index] : undefined;
     const roomRef =
@@ -217,11 +232,12 @@ export function buildLineItemsFromSurfaces(
     items.push({
       type: "labor",
       description: `${roomRef} — ${label} (${surface.coats} coats)`,
-      qty: estimateSurfaceLaborHours(
-        surface,
-        jobType,
-        resolveSurfaceLaborDefaultsFromCompany(company),
-      ),
+      qty: resolveLaborHoursForSurface(surface, jobType, laborDefaults, {
+        prepWork: room?.prep_work,
+        substrateId: surface.surface_key
+          ? substrateIdForSurfaceKey(surface.surface_key, room?.prep_work)
+          : null,
+      }),
       unit_cost: paintingRate,
       markup: 0,
       source: "surface",
@@ -233,7 +249,25 @@ export function buildLineItemsFromSurfaces(
       paint_role: null,
     });
 
-    if (surfaceNeedsMaterials(surface)) {
+    const prepHours = resolvePrepHoursForSurface(surface);
+    if (prepHours > 0) {
+      items.push({
+        type: "labor",
+        description: `${roomRef} — ${label} (prep)`,
+        qty: prepHours,
+        unit_cost: prepRate,
+        markup: 0,
+        source: "surface",
+        room_index: surface.room_index,
+        room_id: surface.room_id ?? null,
+        is_optional: surface.is_optional,
+        sort_order: (surface.sort_order ?? 0) + 1,
+        company_paint_product_id: null,
+        paint_role: null,
+      });
+    }
+
+    if (surfaceNeedsMaterials(surface, company, jobType)) {
       const paintableSqFt = surfacePaintableSqFt(surface, company, jobType);
       const tierPaint =
         paintCtx != null
@@ -258,31 +292,6 @@ export function buildLineItemsFromSurfaces(
       );
     }
 
-    if (
-      room &&
-      surface.room_index !== undefined &&
-      !prepAddedForRoom.has(surface.room_index)
-    ) {
-      const prepHours =
-        prepHoursForCondition(room.condition) || (room.prep_work?.trim() ? 2 : 0);
-      if (prepHours > 0) {
-        prepAddedForRoom.add(surface.room_index);
-        items.push({
-          type: "labor",
-          description: `${roomRef} — surface prep`,
-          qty: prepHours,
-          unit_cost: prepRate,
-          markup: 0,
-          source: "surface",
-          room_index: surface.room_index,
-          room_id: surface.room_id ?? room.id ?? null,
-          is_optional: surface.is_optional,
-          sort_order: (surface.sort_order ?? 0) + 2,
-          company_paint_product_id: null,
-          paint_role: null,
-        });
-      }
-    }
   }
 
   return items;

@@ -11,7 +11,9 @@ export type AreaSurfaceKey =
   | "closet"
   | "closet-ceiling"
   | "trim"
-  | "window";
+  | "window"
+  | "cabinet"
+  | "shelf";
 
 export type AreaSurfaceDefinition = {
   key: AreaSurfaceKey;
@@ -104,6 +106,20 @@ export const AREA_SURFACE_CATALOG: AreaSurfaceDefinition[] = [
     surface_type: "window",
     rate_type: "each",
     paint_default_type: "window",
+  },
+  {
+    key: "cabinet",
+    label: "Cabinets",
+    surface_type: "custom",
+    rate_type: "each",
+    paint_default_type: "custom",
+  },
+  {
+    key: "shelf",
+    label: "Shelves",
+    surface_type: "custom",
+    rate_type: "linear",
+    paint_default_type: "trim",
   },
 ];
 

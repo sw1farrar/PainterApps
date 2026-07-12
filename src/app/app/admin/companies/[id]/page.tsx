@@ -47,7 +47,7 @@ export default async function AdminCompanyDetailPage({
           All companies
         </Link>
         <div className="flex flex-wrap items-center gap-2">
-          <h1 className="font-display text-3xl text-white">{company.name}</h1>
+          <h1 className="font-display text-3xl text-foreground">{company.name}</h1>
           {isSiteAdminSandboxCompany(company) ? (
             <Badge variant="secondary">Site sandbox</Badge>
           ) : null}
@@ -70,7 +70,7 @@ export default async function AdminCompanyDetailPage({
 
       <Card className="border-border bg-card/60">
         <CardHeader>
-          <CardTitle className="text-white">Company users</CardTitle>
+          <CardTitle className="text-foreground">Company users</CardTitle>
           <CardDescription>
             {users.length} member{users.length === 1 ? "" : "s"} in this
             company
@@ -86,7 +86,7 @@ export default async function AdminCompanyDetailPage({
                 className="flex flex-col gap-2 rounded-lg border border-border/80 bg-background/20 px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
               >
                 <div>
-                  <p className="font-medium text-white">
+                  <p className="font-medium text-foreground">
                     {row.profile.full_name ?? "Unnamed user"}
                   </p>
                   <p className="text-xs text-muted-foreground">

@@ -27,7 +27,7 @@ export default async function AdminCompaniesPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="font-display text-3xl text-white">Companies</h1>
+        <h1 className="font-display text-3xl text-foreground">Companies</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Manage tenant access and feature flags.
         </p>
@@ -35,7 +35,7 @@ export default async function AdminCompaniesPage() {
 
       <Card className="border-border bg-card/60">
         <CardHeader>
-          <CardTitle className="text-white">All companies</CardTitle>
+          <CardTitle className="text-foreground">All companies</CardTitle>
           <CardDescription>
             {companies.length} compan{companies.length === 1 ? "y" : "ies"} on
             the platform
@@ -53,7 +53,7 @@ export default async function AdminCompaniesPage() {
               >
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
-                    <p className="truncate font-medium text-white">
+                    <p className="truncate font-medium text-foreground">
                       {company.name}
                     </p>
                     {isSiteAdminSandboxCompany(company) ? (

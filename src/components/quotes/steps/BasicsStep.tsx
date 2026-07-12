@@ -123,7 +123,12 @@ export function BasicsStep({
 
         <div className="space-y-3">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <Label>Job site address</Label>
+            <div>
+              <Label>Job site address</Label>
+              <p className="text-xs text-muted-foreground">
+                Optional now — required before sending
+              </p>
+            </div>
             {selectedCustomer ? (
               <Button
                 type="button"
@@ -162,7 +167,6 @@ export function BasicsStep({
               })
             }
             line1Label="Job street address"
-            required
           />
         </div>
 

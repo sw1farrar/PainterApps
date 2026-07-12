@@ -1,10 +1,14 @@
 import type { SurfaceInput } from "@/app/app/(portal)/quotes/actions";
 import type { CompanyPaintProductRow } from "@/lib/paint-library/types";
 import {
+  primaryBaselineScope,
+  type BaselinePaintSystemInput,
+} from "@/lib/quotes/baseline-paint";
+import {
   PAINT_DEFAULT_OPTIONS,
   type AreaSurfaceKey,
 } from "@/lib/quotes/area-surface-catalog";
-import type { QuoteSurfaceKind } from "@/types/database";
+import type { CompanyPaintProductRole, QuoteJobType, QuoteSurfaceKind } from "@/types/database";
 
 export type QuotePaintDefaultInput = {
   surface_type: QuoteSurfaceKind;
@@ -60,6 +64,7 @@ export function paintDefaultTypeForSurfaceKey(
   surfaceType: QuoteSurfaceKind | undefined,
 ): QuoteSurfaceKind {
   if (surfaceKey === "closet-ceiling") return "ceiling";
+  if (surfaceKey === "shelf") return "trim";
   if (surfaceKey?.startsWith("wall-")) return "wall";
   if (
     surfaceKey &&
@@ -144,31 +149,70 @@ export function inferInitialPaintDefaults(
   const topcoats = products.filter(
     (p) => p.is_active && p.role === "topcoat",
   );
-  const primers = products.filter((p) => p.is_active && p.role === "primer");
   const fallback = topcoats[0]?.id ?? null;
 
-  return PAINT_DEFAULT_SURFACE_KINDS.map((surface_type) => {
-    let productId = fallback;
-    if (surface_type === "window" && primers[0]) {
-      productId = primers[0].id;
+  return PAINT_DEFAULT_SURFACE_KINDS.map((surface_type) => ({
+    surface_type,
+    company_paint_product_id: fallback,
+    coats: 2,
+  }));
+}
+
+export function productsForPaintRole(
+  products: CompanyPaintProductRow[],
+  jobType: QuoteJobType,
+  role: CompanyPaintProductRole,
+  selectedProductId?: string | null,
+): CompanyPaintProductRow[] {
+  const scope = primaryBaselineScope(jobType);
+  const filtered = products.filter((product) => {
+    if (!product.is_active || product.role !== role) return false;
+    const app = product.application_type ?? "interior";
+    if (scope === "interior") {
+      return app === "interior" || app === "both";
     }
-    return {
-      surface_type,
-      company_paint_product_id: productId,
-      coats: 2,
-    };
+    return app === "exterior" || app === "both";
   });
+  if (!selectedProductId) return filtered;
+  if (filtered.some((product) => product.id === selectedProductId)) {
+    return filtered;
+  }
+  const selected = products.find(
+    (product) => product.id === selectedProductId && product.role === role,
+  );
+  return selected ? [selected, ...filtered] : filtered;
+}
+
+export function trimBaselinePaintSystem(
+  systems: BaselinePaintSystemInput[] | null | undefined,
+  jobType: QuoteJobType,
+): BaselinePaintSystemInput | null {
+  if (!systems?.length) return null;
+  const scope = primaryBaselineScope(jobType);
+  return (
+    systems.find(
+      (row) =>
+        row.application_scope === scope && row.surface_category === "trim",
+    ) ?? null
+  );
+}
+
+export function defaultPrimerProductIdForWindow(
+  systems: BaselinePaintSystemInput[] | null | undefined,
+  jobType: QuoteJobType,
+): string | null {
+  return trimBaselinePaintSystem(systems, jobType)?.primer_product_id ?? null;
 }
 
 export function productsForSurfaceKind(
   products: CompanyPaintProductRow[],
   surfaceType: QuoteSurfaceKind,
+  jobType: QuoteJobType = "interior",
 ): CompanyPaintProductRow[] {
-  const active = products.filter((p) => p.is_active);
   if (surfaceType === "window") {
-    const primers = active.filter((p) => p.role === "primer");
-    if (primers.length > 0) return primers;
+    return productsForPaintRole(products, jobType, "topcoat");
   }
+  const active = products.filter((p) => p.is_active);
   const primersAndTopcoats = active.filter(
     (p) => p.role === "primer" || p.role === "topcoat",
   );

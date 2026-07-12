@@ -19,7 +19,7 @@ export function getEstimatePricingDefaults(
   return {
     laborMarkupPct:
       company.labor_markup_pct ?? ONBOARDING_DEFAULTS.laborMarkupPct,
-    /** At-cost materials; profit is overhead + gross margin on the job. */
+    /** At-cost materials; margin is applied per work item. */
     materialMarkupPct: 0,
     sundriesPct: 0,
   };

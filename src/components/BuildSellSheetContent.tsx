@@ -541,7 +541,7 @@ export default function BuildSellSheetContent({
 
           <section>
             <h2 className="form-section-title">{sellSheet.tiersLegend}</h2>
-            <p className="mt-2 max-w-2xl text-sm text-silver-600">
+            <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
               {sellSheet.tiersHint}
             </p>
 
@@ -572,7 +572,7 @@ export default function BuildSellSheetContent({
                     key={key}
                     className={`tier-card space-y-4 ${isBest ? "tier-card-best" : ""}`}
                   >
-                    <p className="font-display text-xl text-navy-900">
+                    <p className="font-display text-xl text-foreground">
                       {tierLabel}
                     </p>
 
@@ -794,11 +794,11 @@ export default function BuildSellSheetContent({
             </div>
           </section>
 
-          <div className="flex flex-col items-end gap-3 border-t border-silver-300/60 pt-8 sm:flex-row sm:justify-between">
+          <div className="flex flex-col items-end gap-3 border-t border-border pt-8 sm:flex-row sm:justify-between">
             {formError ? (
               <p className="w-full text-sm text-red-600 sm:w-auto">{formError}</p>
             ) : (
-              <p className="w-full text-sm text-silver-600 sm:mr-auto">
+              <p className="w-full text-sm text-muted-foreground sm:mr-auto">
                 {sellSheet.previewHint}
               </p>
             )}

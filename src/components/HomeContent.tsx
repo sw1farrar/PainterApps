@@ -14,7 +14,7 @@ export default function HomeContent() {
   const platform = home.platform;
 
   return (
-    <div className="site-viewport-shell bg-navy-950">
+    <div className="site-viewport-shell bg-shell">
       <Header />
 
       <section className="home-landing relative min-h-0 flex-1 overflow-hidden">
@@ -50,7 +50,7 @@ export default function HomeContent() {
               </p>
 
               <div className="home-language-banner mt-5 sm:mt-6">
-                <p className="text-sm leading-snug text-silver-300 sm:text-base">
+                <p className="text-sm leading-snug text-muted-foreground sm:text-base">
                   {home.languageNote}
                 </p>
                 <div className="mt-3">

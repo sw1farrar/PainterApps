@@ -24,6 +24,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { ThemeToggleMenuItem } from "@/components/theme/ThemeToggleMenuItem";
 import { getUserInitials } from "@/lib/auth/display";
 import type { MarketingUser } from "@/lib/auth/marketing-actions";
 import { createClient } from "@/lib/supabase/client";
@@ -95,7 +96,7 @@ export function MarketingUserMenu({ user }: MarketingUserMenuProps) {
       <DropdownMenuTrigger asChild>
         <Button
           variant="ghost"
-          className="relative h-10 w-10 rounded-full border border-silver-400/20 p-0 hover:bg-navy-900/60"
+          className="relative h-10 w-10 rounded-full border border-border p-0 hover:bg-accent"
           aria-label="Account menu"
         >
           <Avatar className="h-9 w-9">
@@ -103,7 +104,7 @@ export function MarketingUserMenu({ user }: MarketingUserMenuProps) {
               src={user.avatarUrl ?? undefined}
               alt={user.fullName ?? "User"}
             />
-            <AvatarFallback className="bg-navy-700 text-blue-200">
+            <AvatarFallback className="bg-primary/15 text-primary">
               {getUserInitials(user.fullName)}
             </AvatarFallback>
           </Avatar>
@@ -152,6 +153,8 @@ export function MarketingUserMenu({ user }: MarketingUserMenuProps) {
             </DropdownMenuItem>
           </>
         ) : null}
+        <DropdownMenuSeparator />
+        <ThemeToggleMenuItem />
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleLogout} className="text-destructive">
           <LogOut className="mr-2 h-4 w-4" />

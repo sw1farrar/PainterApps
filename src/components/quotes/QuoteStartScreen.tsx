@@ -29,7 +29,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { hasMinimumJobAddress } from "@/lib/address";
+import { hasMinimumEstimateStart } from "@/lib/address";
 import {
   QUOTE_TEMPLATE_PRESETS,
   type QuoteTemplatePreset,
@@ -142,19 +142,17 @@ export function QuoteStartScreen({
   };
 
   const startBuilding = (template: QuoteTemplatePreset) => {
-    if (!customerId) {
-      toast.error("Select a customer to continue.");
-      return;
-    }
-    if (!hasMinimumJobAddress(jobAddress)) {
-      toast.error("Enter the full job address (street, city, state, ZIP).");
+    const jobName =
+      quoteName.trim() || `${selectedCustomer?.name ?? ""} estimate`.trim();
+    if (!hasMinimumEstimateStart({ customerId, jobName })) {
+      toast.error("Select a customer and enter a job name.");
       return;
     }
 
     startTransition(async () => {
       const result = await createQuote({
         customer_id: customerId,
-        name: quoteName.trim() || `${selectedCustomer?.name ?? "New"} estimate`,
+        name: jobName,
         job_type: jobType,
         ...jobAddress,
         job_address: jobAddress.job_address.trim(),
@@ -193,12 +191,10 @@ export function QuoteStartScreen({
   };
 
   const startBuildingFromSaved = (template: QuoteTemplate) => {
-    if (!customerId) {
-      toast.error("Select a customer to continue.");
-      return;
-    }
-    if (!hasMinimumJobAddress(jobAddress)) {
-      toast.error("Enter the full job address (street, city, state, ZIP).");
+    const jobName =
+      quoteName.trim() || `${selectedCustomer?.name ?? ""} estimate`.trim();
+    if (!hasMinimumEstimateStart({ customerId, jobName })) {
+      toast.error("Select a customer and enter a job name.");
       return;
     }
 
@@ -206,7 +202,7 @@ export function QuoteStartScreen({
       const payload = template.payload as QuoteTemplatePayload;
       const result = await createQuote({
         customer_id: customerId,
-        name: quoteName.trim() || `${selectedCustomer?.name ?? "New"} estimate`,
+        name: jobName,
         job_type: template.job_type,
         estimation_mode: payload.estimation_mode ?? "hybrid",
         ...jobAddress,
@@ -264,7 +260,7 @@ export function QuoteStartScreen({
       {!embedded ? (
         <div className="space-y-2 text-center sm:text-left">
           <p className="type-eyebrow">New estimate</p>
-          <h1 className="font-display text-3xl text-white sm:text-4xl">
+          <h1 className="font-display text-3xl sm:text-4xl">
             Start your quote
           </h1>
           <p className="type-lead text-sm sm:text-base">
@@ -316,7 +312,7 @@ export function QuoteStartScreen({
             onCustomerCreated={handleCustomerCreated}
           />
           <div className="space-y-2">
-            <Label htmlFor="start-quote-name">Job name (optional)</Label>
+            <Label htmlFor="start-quote-name">Job name *</Label>
             <Input
               id="start-quote-name"
               value={quoteName}
@@ -347,7 +343,6 @@ export function QuoteStartScreen({
               })
             }
             line1Label="Job street address"
-            required
           />
         </CardContent>
       </Card>

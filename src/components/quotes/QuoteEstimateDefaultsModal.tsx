@@ -326,12 +326,12 @@ export function QuoteEstimateDefaultsModal({
           <DialogDescription className="space-y-1">
             <span className="block">
               Labor cost, default margin, production rates, and package systems.
-              Quotes use at-cost materials and labor, then overhead and your
-              target gross margin for the selling price.
+              Quotes use at-cost materials and labor with a default markup
+              margin on each work item.
             </span>
             <span
               className={cn(
-                "block min-h-[1.25rem] text-sm font-medium text-amber-600 dark:text-amber-400",
+                "block min-h-[1.25rem] text-sm font-medium text-amber-700 dark:text-amber-300",
                 !isDirty && "invisible",
               )}
               aria-hidden={!isDirty}

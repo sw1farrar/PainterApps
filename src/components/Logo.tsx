@@ -63,9 +63,9 @@ export default function Logo({
   if (variant === "wordmark") {
     return (
       <span
-        className={`font-display inline-flex tracking-tight text-white ${wordmarkClass} ${className}`}
+        className={`font-display inline-flex tracking-tight text-foreground ${wordmarkClass} ${className}`}
       >
-        PAINTER<span className="text-silver-200">APPS</span>
+        PAINTER<span className="text-muted-foreground">APPS</span>
       </span>
     );
   }
@@ -74,9 +74,9 @@ export default function Logo({
     <span className={`inline-flex items-center gap-3 ${className}`}>
       <LogoIcon size={iconSize} />
       <span
-        className={`font-display tracking-tight text-white ${wordmarkClass}`}
+        className={`font-display tracking-tight text-foreground ${wordmarkClass}`}
       >
-        PAINTER<span className="text-silver-200">APPS</span>
+        PAINTER<span className="text-muted-foreground">APPS</span>
       </span>
     </span>
   );

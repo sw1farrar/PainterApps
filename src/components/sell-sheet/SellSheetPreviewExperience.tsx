@@ -16,7 +16,7 @@ const SellSheetPdfPanel = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="flex min-h-[480px] items-center justify-center text-silver-600">
+      <div className="flex min-h-[480px] items-center justify-center text-muted-foreground">
         <Loader2 className="mr-2 h-5 w-5 animate-spin" />
         Loading PDF…
       </div>
@@ -92,14 +92,14 @@ export function SellSheetPreviewExperience({
         <button
           type="button"
           onClick={onBack}
-          className="inline-flex items-center gap-2 text-sm font-semibold text-silver-200 transition hover:text-white"
+          className="type-link inline-flex items-center gap-2 text-sm font-semibold"
         >
           <ArrowLeft className="h-4 w-4" />
           {backLabel}
         </button>
 
         <div
-          className="inline-flex rounded-lg border border-silver-400/30 bg-navy-900/50 p-1"
+          className="inline-flex rounded-lg border border-border bg-muted p-1"
           role="tablist"
           aria-label="Preview mode"
         >
@@ -110,8 +110,8 @@ export function SellSheetPreviewExperience({
             onClick={() => setTab("web")}
             className={`inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-semibold transition ${
               tab === "web"
-                ? "bg-white text-navy-900 shadow-sm"
-                : "text-silver-200 hover:text-white"
+                ? "bg-card text-foreground shadow-theme-sm"
+                : "text-muted-foreground hover:text-foreground"
             }`}
           >
             <LayoutTemplate className="h-4 w-4" />
@@ -124,8 +124,8 @@ export function SellSheetPreviewExperience({
             onClick={() => setTab("pdf")}
             className={`inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-semibold transition ${
               tab === "pdf"
-                ? "bg-white text-navy-900 shadow-sm"
-                : "text-silver-200 hover:text-white"
+                ? "bg-card text-foreground shadow-theme-sm"
+                : "text-muted-foreground hover:text-foreground"
             }`}
           >
             <FileText className="h-4 w-4" />

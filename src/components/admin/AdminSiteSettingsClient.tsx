@@ -74,7 +74,7 @@ export function AdminSiteSettingsClient({
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="font-display text-3xl text-white">Site settings</h1>
+        <h1 className="font-display text-3xl text-foreground">Site settings</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Global configuration for PainterApps site administration.
         </p>
@@ -82,20 +82,20 @@ export function AdminSiteSettingsClient({
 
       <Card className="border-border bg-card/60">
         <CardHeader>
-          <CardTitle className="text-white">AI model</CardTitle>
+          <CardTitle className="text-foreground">AI model</CardTitle>
           <CardDescription>
             Applies to AI workflows on sell sheets and free tools.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           {initialSettings.schemaWarning ? (
-            <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
+            <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-800 dark:text-amber-100">
               {initialSettings.schemaWarning}
             </div>
           ) : null}
 
           <div className="rounded-lg border border-border/80 bg-background/20 px-4 py-3 text-sm">
-            <p className="text-white">
+            <p className="text-foreground">
               Active tier:{" "}
               <span className="font-medium">{activeMeta.label}</span>
             </p>
@@ -125,7 +125,7 @@ export function AdminSiteSettingsClient({
                     onChange={() => setSelectedTier(tier)}
                   />
                   <span className="min-w-0 flex-1">
-                    <Label className="text-sm font-medium text-white">
+                    <Label className="text-sm font-medium text-foreground">
                       {meta.label}
                     </Label>
                     <p className="mt-0.5 text-xs text-muted-foreground">

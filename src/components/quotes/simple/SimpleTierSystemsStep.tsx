@@ -10,6 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { formatPaintProductLabel } from "@/lib/paint-library/product-label";
 import {
   QUOTE_PAINT_TIERS,
   type CompanyPaintProductRow,
@@ -140,7 +141,7 @@ export function SimpleTierSystemsStep({
                         <SelectItem value="__none__">Not set</SelectItem>
                         {primers.map((product) => (
                           <SelectItem key={product.id} value={product.id}>
-                            {product.name}
+                            {formatPaintProductLabel(product)}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -167,7 +168,7 @@ export function SimpleTierSystemsStep({
                         <SelectItem value="__none__">Not set</SelectItem>
                         {topcoats.map((product) => (
                           <SelectItem key={product.id} value={product.id}>
-                            {product.name}
+                            {formatPaintProductLabel(product)}
                           </SelectItem>
                         ))}
                       </SelectContent>

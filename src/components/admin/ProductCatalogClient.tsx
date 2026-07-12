@@ -226,7 +226,7 @@ export function ProductCatalogClient({
       <Card className="border-border bg-card/60">
         <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="space-y-1.5">
-            <CardTitle className="text-white">Product catalog</CardTitle>
+            <CardTitle className="text-foreground">Product catalog</CardTitle>
             <CardDescription>
               Browse, edit, and manage saved paint products.
             </CardDescription>
@@ -256,7 +256,7 @@ export function ProductCatalogClient({
                       <button
                         type="button"
                         onClick={() => setCatalogManufacturerFilter("")}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-muted-foreground hover:bg-navy-900/40 hover:text-white"
+                        className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-muted-foreground hover:bg-accent hover:text-foreground"
                         aria-label="Clear manufacturer filter"
                       >
                         <X className="h-4 w-4" />
@@ -315,7 +315,7 @@ export function ProductCatalogClient({
               ) : (
                 <div className="overflow-x-auto rounded-lg border border-border/80">
                   <table className="min-w-full text-left text-sm">
-                    <thead className="bg-navy-900/50 text-muted-foreground">
+                    <thead className="bg-muted/50 text-muted-foreground">
                       <tr>
                         <th className="px-3 py-2">Can</th>
                         <th className="px-3 py-2">Manufacturer</th>
@@ -336,9 +336,9 @@ export function ProductCatalogClient({
                           id={`catalog-product-${product.id}`}
                           onClick={() => openMarketingSheet(product)}
                           className={cn(
-                            "border-t border-border/60 cursor-pointer hover:bg-navy-900/35",
+                            "border-t border-border/60 cursor-pointer hover:bg-accent",
                             product.is_discontinued &&
-                              "bg-navy-900/20 opacity-80",
+                              "bg-muted/30 opacity-80",
                           )}
                         >
                           <td className="px-3 py-2">
@@ -366,7 +366,7 @@ export function ProductCatalogClient({
                           <td className="px-3 py-2">
                             {product.manufacturer_name}
                           </td>
-                          <td className="px-3 py-2 text-white">
+                          <td className="px-3 py-2 text-foreground">
                             <div className="flex flex-wrap items-center gap-2">
                               <span>{product.name}</span>
                               {product.catalog_review_status ===

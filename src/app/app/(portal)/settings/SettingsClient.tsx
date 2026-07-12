@@ -212,7 +212,7 @@ export function SettingsClient({ company, upgradeRules }: SettingsClientProps) {
     <div className="space-y-6">
       <div>
         <p className="type-eyebrow">Settings</p>
-        <h1 className="font-display mt-1 text-2xl text-white md:text-3xl">
+        <h1 className="font-display mt-1 text-2xl text-foreground md:text-3xl">
           Company settings
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
@@ -417,7 +417,7 @@ export function SettingsClient({ company, upgradeRules }: SettingsClientProps) {
                 </div>
               </div>
               <div className="rounded-lg border border-border/80 bg-muted/20 p-4">
-                <p className="text-sm font-medium text-white">
+                <p className="text-sm font-medium text-foreground">
                   Production rate defaults
                 </p>
                 <p className="mt-1 text-xs text-muted-foreground">

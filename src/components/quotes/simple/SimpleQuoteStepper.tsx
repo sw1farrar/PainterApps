@@ -46,8 +46,8 @@ export function SimpleQuoteStepper({
               isActive && "bg-primary text-primary-foreground shadow-sm",
               isComplete && !isActive && "bg-card/80 text-foreground",
               !isActive && !isComplete && "text-muted-foreground",
-              isReachable && onStepClick && !isActive && "hover:bg-muted/40",
-              !isReachable && "cursor-default opacity-45",
+              isReachable && onStepClick && "cursor-pointer hover:bg-muted/40",
+              !isReachable && "cursor-not-allowed opacity-45",
             )}
           >
             <span

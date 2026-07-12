@@ -73,7 +73,7 @@ export function CompanyFeatureToggles({
   return (
     <Card className="border-border bg-card/60">
       <CardHeader>
-        <CardTitle className="text-white">Enabled features</CardTitle>
+        <CardTitle className="text-foreground">Enabled features</CardTitle>
         <CardDescription>
           Control which portal areas this company can access. Sell sheets is
           always required.
@@ -99,7 +99,7 @@ export function CompanyFeatureToggles({
                   onChange={() => toggleFeature(feature)}
                 />
                 <span className="min-w-0 flex-1">
-                  <Label className="text-sm font-medium text-white">
+                  <Label className="text-sm font-medium text-foreground">
                     {meta.label}
                     {locked ? (
                       <span className="ml-2 text-xs font-normal text-muted-foreground">

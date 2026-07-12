@@ -75,7 +75,7 @@ export function DeleteQuoteDialog({
               </dl>
 
               {hasLinkedJob ? (
-                <p className="rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-amber-900 dark:text-amber-100">
+                <p className="rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-amber-700 dark:text-amber-300">
                   This estimate is linked to a job. Remove or reassign the job
                   before deleting this estimate.
                 </p>

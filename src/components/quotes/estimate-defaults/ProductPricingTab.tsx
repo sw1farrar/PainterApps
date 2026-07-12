@@ -29,39 +29,27 @@ export function ProductPricingTab({ state, onChange }: ProductPricingTabProps) {
         <div className="space-y-1">
           <h3 className="text-sm font-semibold">Default margin</h3>
           <p className="text-xs text-muted-foreground">
-            <span className="font-medium text-foreground">Step 1:</span> Direct
-            cost = materials you pay + labor you pay.{" "}
-            <span className="font-medium text-foreground">Step 2:</span> Loaded
-            cost = direct cost + overhead %.{" "}
-            <span className="font-medium text-foreground">Step 3:</span> Selling
-            price = loaded cost ÷ (1 − gross profit margin %).
+            Each work item shows your at-cost materials and labor. Margin is
+            gross profit as a percent of the selling price:{" "}
+            <span className="font-medium text-foreground">
+              selling price = cost ÷ (1 − margin %)
+            </span>
+            . New work items use this default; you can adjust margin per work
+            item in each area.
           </p>
         </div>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2">
-            <Label>Overhead (% of direct cost)</Label>
+            <Label>Default margin (%)</Label>
             <EstimateDefaultsNumberInput
               min={0}
-              value={state.overheadPct}
-              onChange={(overheadPct) => onChange({ overheadPct: overheadPct ?? 0 })}
-            />
-            <p className="text-xs text-muted-foreground">
-              Shop burden, sundries, waste, and related costs (default 15%).
-            </p>
-          </div>
-          <div className="space-y-2">
-            <Label>Default gross profit margin (%)</Label>
-            <EstimateDefaultsNumberInput
-              min={0}
-              max={99}
               value={state.defaultGrossMarginPct}
               onChange={(defaultGrossMarginPct) =>
                 onChange({ defaultGrossMarginPct: defaultGrossMarginPct ?? 0 })
               }
             />
             <p className="text-xs text-muted-foreground">
-              Target margin on loaded cost for new quotes and area bids (default
-              25%). Adjustable per project on the quote.
+              Applied to new work items when you build an estimate (default 25%).
             </p>
           </div>
           <div className="space-y-2">

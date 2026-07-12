@@ -241,7 +241,7 @@ export function SellSheetFeatureEditor({
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <p className="form-section-title">{label}</p>
-          <p className="mt-1 text-sm text-silver-600">
+          <p className="mt-1 text-sm text-muted-foreground">
             {tierOwnedFeatures.length > 0
               ? labels.benefitsPageLimit
                   .replace("{selected}", String(tierOwnedFeatures.length))
@@ -259,14 +259,14 @@ export function SellSheetFeatureEditor({
               {previewFeatures.map((feature) => (
                 <li
                   key={feature}
-                  className="truncate text-sm text-navy-800"
+                  className="truncate text-sm text-foreground"
                   title={feature}
                 >
                   {feature}
                 </li>
               ))}
               {remainingCount > 0 ? (
-                <li className="text-xs font-medium text-silver-500">
+                <li className="text-xs font-medium text-muted-foreground">
                   {labels.moreItemsLabel.replace(
                     "{count}",
                     String(remainingCount),
@@ -302,7 +302,7 @@ export function SellSheetFeatureEditor({
         doneLabel={labels.doneLabel}
       >
         <div className="mx-auto w-full max-w-md">
-          <p className="text-center text-xs font-bold uppercase tracking-wide text-silver-500">
+          <p className="text-center text-xs font-bold uppercase tracking-wide text-muted-foreground">
             {labels.catalogLegend}
           </p>
           <div
@@ -329,11 +329,11 @@ export function SellSheetFeatureEditor({
                   className={`inline-flex items-center justify-center gap-2 rounded-lg border px-3 py-2.5 text-sm font-semibold transition ${
                     selected
                       ? "border-blue-500/40 bg-gradient-to-br from-blue-50 to-white text-blue-800 shadow-sm ring-1 ring-blue-500/20"
-                      : "border-silver-300/80 bg-white text-navy-800 hover:border-blue-500/25 hover:bg-blue-50/40"
+                      : "border-input bg-card text-foreground hover:border-blue-500/25 hover:bg-blue-50/40"
                   }`}
                 >
                   <Icon
-                    className={`h-4 w-4 ${selected ? "text-blue-600" : "text-silver-500"}`}
+                    className={`h-4 w-4 ${selected ? "text-blue-600" : "text-muted-foreground"}`}
                     strokeWidth={2.25}
                   />
                   {option.label}
@@ -358,7 +358,7 @@ export function SellSheetFeatureEditor({
 
         <div className="mt-6 space-y-6">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <p className="text-xs font-bold uppercase tracking-wide text-silver-500">
+            <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
               {scopeLabel}
             </p>
             <SellSheetBulkSelectionActions
@@ -374,7 +374,7 @@ export function SellSheetFeatureEditor({
               {labels.selectApplicationFirst}
             </p>
           ) : !hasVisibleBenefitsInScope ? (
-            <p className="rounded-md border border-dashed border-silver-300/80 bg-silver-50/50 px-4 py-6 text-center text-sm text-silver-600">
+            <p className="rounded-md border border-dashed border-input bg-muted/50 px-4 py-6 text-center text-sm text-muted-foreground">
               {labels.manageCategoryHint}
             </p>
           ) : null}
@@ -392,7 +392,7 @@ export function SellSheetFeatureEditor({
                   <button
                     type="button"
                     onClick={() => setManageCategory(category.id)}
-                    className="inline-flex items-center gap-1 rounded-md border border-silver-300/80 bg-white px-2.5 py-1 text-xs font-semibold text-navy-800 transition hover:border-blue-500/30 hover:bg-blue-50"
+                    className="inline-flex items-center gap-1 rounded-md border border-input bg-card px-2.5 py-1 text-xs font-semibold text-foreground transition hover:border-blue-500/30 hover:bg-blue-50"
                   >
                     <Settings2 className="h-3.5 w-3.5" />
                     {labels.manageCategory}
@@ -414,16 +414,16 @@ export function SellSheetFeatureEditor({
                             htmlFor={checkboxId}
                             className={`flex h-full items-start gap-2.5 rounded-md border px-3 py-2.5 text-sm transition ${
                               inherited || limitBlocked
-                                ? "cursor-default border-blue-200/80 bg-blue-50/60 text-navy-800"
+                                ? "cursor-default border-blue-200/80 bg-blue-50/60 text-foreground"
                                 : checked
-                                  ? "cursor-pointer border-blue-500/30 bg-blue-50/40 text-navy-800"
-                                  : "cursor-pointer border-silver-300/80 bg-white/90 text-navy-800 hover:border-blue-500/20 hover:bg-silver-50"
+                                  ? "cursor-pointer border-blue-500/30 bg-blue-50/40 text-foreground"
+                                  : "cursor-pointer border-input bg-card/90 text-foreground hover:border-blue-500/20 hover:bg-accent"
                             }`}
                           >
                             <input
                               id={checkboxId}
                               type="checkbox"
-                              className="mt-0.5 h-4 w-4 shrink-0 rounded border-silver-400 text-blue-600 focus:ring-blue-500"
+                              className="mt-0.5 h-4 w-4 shrink-0 rounded border-input text-blue-600 focus:ring-blue-500"
                               checked={checked}
                               disabled={inherited || limitBlocked}
                               onChange={(event) => {
@@ -457,16 +457,16 @@ export function SellSheetFeatureEditor({
                             htmlFor={checkboxId}
                             className={`flex h-full items-start gap-2.5 rounded-md border px-3 py-2.5 text-sm transition ${
                               limitBlocked
-                                ? "cursor-default border-silver-300/80 bg-white/90 text-navy-800"
+                                ? "cursor-default border-input bg-card/90 text-foreground"
                                 : checked
-                                  ? "cursor-pointer border-blue-500/30 bg-blue-50/40 text-navy-800"
-                                  : "cursor-pointer border-silver-300/80 bg-white/90 text-navy-800 hover:border-blue-500/20 hover:bg-silver-50"
+                                  ? "cursor-pointer border-blue-500/30 bg-blue-50/40 text-foreground"
+                                  : "cursor-pointer border-input bg-card/90 text-foreground hover:border-blue-500/20 hover:bg-accent"
                             }`}
                           >
                             <input
                               id={checkboxId}
                               type="checkbox"
-                              className="mt-0.5 h-4 w-4 shrink-0 rounded border-silver-400 text-blue-600 focus:ring-blue-500"
+                              className="mt-0.5 h-4 w-4 shrink-0 rounded border-input text-blue-600 focus:ring-blue-500"
                               checked={checked}
                               disabled={limitBlocked}
                               onChange={(event) => {
@@ -485,7 +485,7 @@ export function SellSheetFeatureEditor({
                     })}
                   </ul>
                 ) : (
-                  <p className="mt-2 text-xs text-silver-500">
+                  <p className="mt-2 text-xs text-muted-foreground">
                     {labels.manageCategoryHint}
                   </p>
                 )}
@@ -495,20 +495,20 @@ export function SellSheetFeatureEditor({
 
           {tierOnlyCustom.length > 0 ? (
             <section>
-              <h3 className="text-xs font-bold uppercase tracking-wide text-silver-500">
+              <h3 className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
                 {labels.packageOnlyFeaturesLegend}
               </h3>
               <ul className="mt-3 space-y-2">
                 {tierOnlyCustom.map((feature) => (
                   <li
                     key={feature}
-                    className="flex items-start gap-2 rounded-lg border border-silver-300/80 bg-white px-3 py-2 text-sm text-navy-800"
+                    className="flex items-start gap-2 rounded-lg border border-input bg-card px-3 py-2 text-sm text-foreground"
                   >
                     <span className="min-w-0 flex-1">{feature}</span>
                     <button
                       type="button"
                       onClick={() => removeTierOnlyCustom(feature)}
-                      className="shrink-0 rounded p-1 text-silver-500 transition hover:bg-silver-100 hover:text-navy-800"
+                      className="shrink-0 rounded p-1 text-muted-foreground transition hover:bg-accent hover:text-foreground"
                       aria-label={`Remove ${feature}`}
                     >
                       ×

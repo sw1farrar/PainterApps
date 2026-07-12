@@ -2,10 +2,14 @@
 
 import { Toaster } from "sonner";
 
+import { useTheme } from "@/providers/ThemeProvider";
+
 export function AppToaster() {
+  const { theme } = useTheme();
+
   return (
     <Toaster
-      theme="dark"
+      theme={theme}
       position="top-right"
       expand={false}
       richColors
