@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,6 +12,7 @@ import { safeNextPath } from "@/lib/auth/paths";
 
 export function SignUpForm({ nextPath }: { nextPath: string }) {
   const t = useTranslations("auth");
+  const locale = useLocale();
   const router = useRouter();
   const next = safeNextPath(nextPath);
   const [email, setEmail] = useState("");
@@ -40,6 +41,7 @@ export function SignUpForm({ nextPath }: { nextPath: string }) {
       password,
       options: {
         emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`,
+        data: { locale },
       },
     });
     setPending(false);

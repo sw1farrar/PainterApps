@@ -63,12 +63,12 @@ If Supabase keys are missing, `/login` and `/sign-up` render a finished shell an
 
 ## Authentication
 
-Same pattern as FarrarApps and LICA: **Supabase Auth** (email + password).
+Same pattern as FarrarApps and LICA: **Supabase Auth** (email + password). Auth mail goes out through **Brevo**.
 
-1. Create a new Supabase project.
-2. In **Authentication → URL configuration**, set Site URL to `http://localhost:3000` (and later `https://painterapps.com`). Add redirect URLs: `http://localhost:3000/auth/callback` and `https://painterapps.com/auth/callback`.
-3. Copy Project URL, anon key, and service role key into `.env.local`.
-4. Apply the SQL migrations. A trigger on `auth.users` upserts `profiles`. Row Level Security uses `auth.uid()`.
+1. Site URL: `https://painterapps.com`. Redirect URLs: `https://painterapps.com/auth/callback` and `https://painterapps.com/**`.
+2. Auth hook **Send Email** → `https://painterapps.com/api/auth/send-email`. Put the hook secret in `SEND_EMAIL_HOOK_SECRET`.
+3. `BREVO_API_KEY`, `BREVO_SENDER_EMAIL` (`hello@painterapps.com`), `BREVO_SENDER_NAME` (`PainterApps`).
+4. A trigger on `auth.users` upserts `profiles`. Row Level Security uses `auth.uid()`.
 
 ## Database
 
