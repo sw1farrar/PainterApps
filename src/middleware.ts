@@ -1,90 +1,66 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { LOCALE_COOKIE } from "@/i18n/config";
 
-import type { Database } from "@/types/database";
-
-const PROTECTED_PREFIXES = ["/app"];
-
-const EMAIL_CONFIRM_EXEMPT = [
-  "/verify-email",
-  "/login",
-  "/signup",
-  "/auth/callback",
-  "/reset-password",
-];
-
-function isProtectedPath(pathname: string) {
-  return PROTECTED_PREFIXES.some(
-    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
-  );
+function isProtected(pathname: string) {
+  return pathname === "/app" || pathname.startsWith("/app/");
 }
 
-function isEmailConfirmExempt(pathname: string) {
-  return EMAIL_CONFIRM_EXEMPT.some(
-    (path) => pathname === path || pathname.startsWith(`${path}/`),
-  );
-}
-
-/** Paths that need a Supabase session check in middleware. */
-function needsAuthMiddleware(pathname: string) {
-  if (isProtectedPath(pathname)) return true;
-  if (pathname === "/signup") return true;
-  if (pathname.startsWith("/auth/")) return true;
-  return false;
+function withLocaleCookie(request: NextRequest, response: NextResponse) {
+  if (!request.cookies.get(LOCALE_COOKIE)) {
+    const accept = request.headers.get("accept-language") ?? "";
+    const locale = accept.toLowerCase().startsWith("es") ? "es" : "en";
+    response.cookies.set(LOCALE_COOKIE, locale, {
+      path: "/",
+      maxAge: 60 * 60 * 24 * 365,
+      sameSite: "lax",
+    });
+  }
+  return response;
 }
 
 function copyCookies(from: NextResponse, to: NextResponse) {
   from.cookies.getAll().forEach((cookie) => {
-    to.cookies.set(cookie.name, cookie.value);
+    to.cookies.set(cookie);
   });
+  return to;
 }
 
 export async function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
-
-  if (
-    pathname.startsWith("/_next") ||
-    pathname.startsWith("/api") ||
-    pathname.includes(".")
-  ) {
-    return NextResponse.next();
-  }
-
-  const requestHeaders = new Headers(request.headers);
-  requestHeaders.set("x-pathname", pathname);
-
-  let supabaseResponse = NextResponse.next({
-    request: { headers: requestHeaders },
-  });
-
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
   if (!url || !key) {
-    if (isProtectedPath(pathname)) {
-      return NextResponse.redirect(new URL("/login", request.url));
+    if (isProtected(request.nextUrl.pathname)) {
+      const dest = request.nextUrl.clone();
+      dest.pathname = "/login";
+      dest.search = "";
+      dest.searchParams.set("next", request.nextUrl.pathname);
+      return withLocaleCookie(request, NextResponse.redirect(dest));
     }
-    return supabaseResponse;
+    return withLocaleCookie(request, NextResponse.next());
   }
 
-  if (!needsAuthMiddleware(pathname)) {
-    return supabaseResponse;
-  }
+  let response = NextResponse.next({ request });
 
-  const supabase = createServerClient<Database>(url, key, {
+  const supabase = createServerClient(url, key, {
     cookies: {
       getAll() {
         return request.cookies.getAll();
       },
-      setAll(cookiesToSet) {
+      setAll(
+        cookiesToSet: {
+          name: string;
+          value: string;
+          options?: Parameters<NextResponse["cookies"]["set"]>[2];
+        }[],
+      ) {
         cookiesToSet.forEach(({ name, value }) =>
           request.cookies.set(name, value),
         );
-        supabaseResponse = NextResponse.next({
-          request: { headers: requestHeaders },
-        });
+        response = NextResponse.next({ request });
         cookiesToSet.forEach(({ name, value, options }) =>
-          supabaseResponse.cookies.set(name, value, options),
+          response.cookies.set(name, value, options),
         );
       },
     },
@@ -94,44 +70,22 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (isProtectedPath(pathname) && !user) {
-    const redirectResponse = NextResponse.redirect(
-      new URL("/login", request.url),
-    );
-    copyCookies(supabaseResponse, redirectResponse);
-    return redirectResponse;
+  if (!user && isProtected(request.nextUrl.pathname)) {
+    const dest = request.nextUrl.clone();
+    const nextPath = `${request.nextUrl.pathname}${request.nextUrl.search}`;
+    dest.pathname = "/login";
+    dest.search = "";
+    dest.searchParams.set("next", nextPath);
+    const redirect = NextResponse.redirect(dest);
+    return withLocaleCookie(request, copyCookies(response, redirect));
   }
 
-  if (
-    user &&
-    isProtectedPath(pathname) &&
-    !user.email_confirmed_at &&
-    !isEmailConfirmExempt(pathname)
-  ) {
-    const redirectResponse = NextResponse.redirect(
-      new URL("/verify-email", request.url),
-    );
-    copyCookies(supabaseResponse, redirectResponse);
-    return redirectResponse;
-  }
-
-  if (pathname === "/signup" && user) {
-    const redirectResponse = NextResponse.redirect(
-      new URL("/app/onboarding", request.url),
-    );
-    copyCookies(supabaseResponse, redirectResponse);
-    return redirectResponse;
-  }
-
-  return supabaseResponse;
+  return withLocaleCookie(request, response);
 }
 
 export const config = {
   matcher: [
-    "/app/:path*",
-    "/signup",
-    "/auth/:path*",
-    "/login",
-    "/verify-email",
+    "/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)",
+    "/(api|trpc)(.*)",
   ],
 };

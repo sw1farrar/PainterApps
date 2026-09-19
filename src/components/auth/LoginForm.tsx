@@ -1,199 +1,119 @@
 "use client";
 
-import * as React from "react";
+import { useState } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
-import { toast } from "sonner";
-
+import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  PASSWORD_MANAGER_LOGIN_FORM_PROPS,
-  PASSWORD_MANAGER_LOGIN_PASSWORD_PROPS,
-  PASSWORD_MANAGER_LOGIN_USERNAME_PROPS,
-} from "@/lib/forms/password-manager";
-import {
-  buildVerifyEmailHref,
-  isFreeToolsPath,
-  sanitizeLoginRedirect,
-} from "@/lib/auth/login-redirect";
-import { resolveClientPostLoginPath } from "@/lib/auth/post-login";
 import { createClient } from "@/lib/supabase/client";
-import { getSupabaseEnvError } from "@/lib/supabase/env";
-import { useLanguage } from "@/providers/LanguageProvider";
+import { safeNextPath } from "@/lib/auth/paths";
 
-const LOGIN_INPUT_CLASS =
-  "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50";
+export function LoginForm({ nextPath }: { nextPath: string }) {
+  const t = useTranslations("auth");
+  const router = useRouter();
+  const next = safeNextPath(nextPath);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [pending, setPending] = useState(false);
+  const [forgot, setForgot] = useState(false);
+  const [resetSent, setResetSent] = useState(false);
 
-export function LoginForm() {
-  const searchParams = useSearchParams();
-  const { t } = useLanguage();
-  const auth = t("auth");
-  const nav = t("nav");
-  const envError = getSupabaseEnvError();
-  const [loading, setLoading] = React.useState(false);
-  const [checkingSession, setCheckingSession] = React.useState(!envError);
-
-  const next = searchParams.get("next");
-  const returnTo = sanitizeLoginRedirect(next);
-  const backHref = returnTo ?? "/";
-  const backLabel = returnTo && isFreeToolsPath(returnTo)
-    ? nav.backToFreeTools
-    : auth.backToHome;
-
-  React.useEffect(() => {
-    if (envError) return;
-
+  async function onSubmit(e: React.FormEvent) {
+    e.preventDefault();
     const supabase = createClient();
-    supabase.auth.getUser().then(async ({ data: { user } }) => {
-      if (user) {
-        window.location.replace(
-          await resolveClientPostLoginPath(user.id, next),
-        );
+    if (!supabase) return;
+    setPending(true);
+    setError(null);
+
+    if (forgot) {
+      const { error: resetError } = await supabase.auth.resetPasswordForEmail(
+        email,
+        {
+          redirectTo: `${window.location.origin}/auth/callback?next=/login/reset`,
+        },
+      );
+      setPending(false);
+      if (resetError) {
+        setError(t("errorGeneric"));
         return;
       }
-      setCheckingSession(false);
-    });
-  }, [envError, next]);
-
-  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-
-    if (envError) {
-      toast.error(envError);
+      setResetSent(true);
       return;
     }
 
-    const formData = new FormData(event.currentTarget);
-    const email = String(formData.get("username") ?? "").trim();
-    const password = String(formData.get("password") ?? "");
-
-    if (!email || !password) {
-      toast.error(auth.missingCredentials);
-      return;
-    }
-
-    setLoading(true);
-    const supabase = createClient();
-    const { data, error } = await supabase.auth.signInWithPassword({
+    const { error: signInError } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
-    setLoading(false);
-
-    if (error) {
-      toast.error(error.message);
+    setPending(false);
+    if (signInError) {
+      setError(t("errorInvalid"));
       return;
     }
+    router.push(next);
+    router.refresh();
+  }
 
-    if (data.user && !data.user.email_confirmed_at) {
-      window.location.href = buildVerifyEmailHref(
-        data.user.email ?? email,
-        returnTo,
-      );
-      return;
-    }
-
-    window.location.href = await resolveClientPostLoginPath(data.user.id, next);
+  if (resetSent) {
+    return (
+      <p className="rounded-xl border border-border bg-muted/30 p-4 text-sm text-muted-foreground">
+        {t("resetSent")}
+      </p>
+    );
   }
 
   return (
-    <Card className="border-border bg-card/80 backdrop-blur-sm">
-      <CardHeader>
-        <CardTitle className="font-display text-2xl text-card-foreground">
-          {auth.signInTitle}
-        </CardTitle>
-        <CardDescription>{auth.signInDescription}</CardDescription>
-      </CardHeader>
-      <CardContent>
-        {envError ? (
-          <p className="mb-4 rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
-            {envError}
-          </p>
-        ) : null}
-
-        {checkingSession ? (
-          <p className="text-sm text-muted-foreground">{auth.signingIn}</p>
-        ) : null}
-
-        <form
-          id="painterapps-sign-in"
-          action="/login"
-          method="post"
-          onSubmit={handleSubmit}
-          className={checkingSession ? "hidden space-y-4" : "space-y-4"}
-          {...PASSWORD_MANAGER_LOGIN_FORM_PROPS}
+    <form onSubmit={onSubmit} className="space-y-4">
+      <div>
+        <Label htmlFor="email">{t("email")}</Label>
+        <Input
+          id="email"
+          className="mt-2"
+          type="email"
+          autoComplete="email"
+          required
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+        />
+      </div>
+      {forgot ? null : (
+        <div>
+          <Label htmlFor="password">{t("password")}</Label>
+          <Input
+            id="password"
+            className="mt-2"
+            type="password"
+            autoComplete="current-password"
+            required
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
+        </div>
+      )}
+      {error ? <p className="text-sm text-destructive">{error}</p> : null}
+      <Button type="submit" className="w-full" disabled={pending}>
+        {forgot ? t("sendReset") : t("signIn")}
+      </Button>
+      <div className="flex flex-col gap-2 text-center text-sm text-muted-foreground">
+        <button
+          type="button"
+          className="underline underline-offset-4"
+          onClick={() => {
+            setForgot((v) => !v);
+            setError(null);
+          }}
         >
-          <div className="space-y-2">
-            <Label htmlFor="username">{auth.email}</Label>
-            <input
-              id="username"
-              name="username"
-              type="email"
-              inputMode="email"
-              autoCapitalize="none"
-              autoCorrect="off"
-              spellCheck={false}
-              placeholder="you@company.com"
-              required
-              disabled={loading}
-              className={LOGIN_INPUT_CLASS}
-              {...PASSWORD_MANAGER_LOGIN_USERNAME_PROPS}
-            />
-          </div>
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <Label htmlFor="password">{auth.password}</Label>
-              <Link
-                href="/forgot-password"
-                className="text-xs text-primary hover:underline"
-              >
-                {auth.forgotPassword}
-              </Link>
-            </div>
-            <input
-              id="password"
-              name="password"
-              type="password"
-              placeholder="••••••••"
-              required
-              disabled={loading}
-              className={LOGIN_INPUT_CLASS}
-              {...PASSWORD_MANAGER_LOGIN_PASSWORD_PROPS}
-            />
-          </div>
-          <Button type="submit" className="w-full" disabled={loading || Boolean(envError)}>
-            {loading ? auth.signingIn : auth.signIn}
-          </Button>
-        </form>
-
-        <p className="mt-6 text-center text-sm text-muted-foreground">
-          {auth.noAccount}{" "}
-          <Link
-            href={
-              returnTo
-                ? `/signup?next=${encodeURIComponent(returnTo)}`
-                : "/signup"
-            }
-            className="text-primary hover:underline"
-          >
-            {auth.createAccount}
+          {forgot ? t("backToLogin") : t("forgot")}
+        </button>
+        {forgot ? null : (
+          <Link href="/sign-up" className="underline underline-offset-4">
+            {t("noAccount")}
           </Link>
-        </p>
-
-        <p className="mt-3 text-center text-sm text-muted-foreground">
-          <Link href={backHref} className="text-primary hover:underline">
-            {backLabel}
-          </Link>
-        </p>
-      </CardContent>
-    </Card>
+        )}
+      </div>
+    </form>
   );
 }

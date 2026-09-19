@@ -1,41 +1,79 @@
 import type { Metadata } from "next";
-import { Source_Sans_3 } from "next/font/google";
-import { AppToaster } from "@/components/AppToaster";
-import { ThemeScript } from "@/components/theme/ThemeScript";
-import AppProviders from "@/providers/AppProviders";
+import { Geist, Geist_Mono } from "next/font/google";
+import { Analytics } from "@vercel/analytics/react";
+import { getLocale, getMessages } from "next-intl/server";
+import { Footer } from "@/components/layout/Footer";
+import { Header } from "@/components/layout/Header";
+import { Providers } from "@/components/providers";
+import { currentUserId } from "@/lib/auth/current-user";
+import { supabaseEnabled } from "@/lib/env";
+import type { Locale } from "@/i18n/config";
 import "./globals.css";
 
-const sourceSans = Source_Sans_3({
-  weight: ["400", "500", "600", "700", "800", "900"],
-  style: ["normal"],
+const geistSans = Geist({
+  variable: "--font-geist-sans",
   subsets: ["latin"],
-  variable: "--font-source",
-  display: "swap",
+});
+
+const geistMono = Geist_Mono({
+  variable: "--font-geist-mono",
+  subsets: ["latin"],
 });
 
 export const metadata: Metadata = {
-  title: "PainterApps — Tools Built for Professional Painters",
+  metadataBase: new URL("https://painterapps.com"),
+  title: {
+    default: "PainterApps — Weather. Specs. Jobs.",
+    template: "%s · PainterApps",
+  },
   description:
-    "Create polished quotes, good-better-best comparison proposals, and win more jobs. Software designed for house and commercial painting contractors.",
+    "Independent tools for professional painters and serious DIYers. Know when to paint, which system holds up, and what it will take.",
+  applicationName: "PainterApps",
+  openGraph: {
+    type: "website",
+    siteName: "PainterApps",
+    title: "PainterApps — Weather. Specs. Jobs.",
+    description:
+      "Independent tools for professional painters. PaintDay weather scores, multi-brand System Match, and CoverCalc.",
+    url: "https://painterapps.com",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "PainterApps — Weather. Specs. Jobs.",
+    description:
+      "Independent tools for professional painters and serious DIYers.",
+  },
+  robots: { index: true, follow: true },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const locale = (await getLocale()) as Locale;
+  const messages = await getMessages();
+  const [authEnabled, userId] = [supabaseEnabled(), await currentUserId()];
+
   return (
-    <html lang="en" suppressHydrationWarning data-scroll-behavior="smooth">
-      <head>
-        <ThemeScript />
-      </head>
-      <body
-        className={`${sourceSans.variable} bg-background font-sans text-foreground antialiased`}
-      >
-        <AppProviders>
-          {children}
-          <AppToaster />
-        </AppProviders>
+    <html
+      lang={locale}
+      suppressHydrationWarning
+      className={`${geistSans.variable} ${geistMono.variable}`}
+    >
+      <body className="min-h-dvh bg-background font-sans text-foreground antialiased">
+        <Providers locale={locale} messages={messages}>
+          <div className="flex min-h-dvh flex-col">
+            <Header
+              locale={locale}
+              authEnabled={authEnabled}
+              signedIn={Boolean(userId)}
+            />
+            <main className="flex-1">{children}</main>
+            <Footer />
+          </div>
+        </Providers>
+        <Analytics />
       </body>
     </html>
   );

@@ -1,100 +1,20 @@
-"use client";
+import * as React from "react"
+import { cn } from "cn"
 
-import * as React from "react";
+function Input({ className, type, ...props }: React.ComponentProps<"input">) {
+  return (
+    <input
+      type={type}
+      data-slot="input"
+      className={cn(
+        "h-9 w-full min-w-0 rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none selection:bg-primary selection:text-primary-foreground file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm dark:bg-input/30",
+        "focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50",
+        "aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40",
+        className
+      )}
+      {...props}
+    />
+  )
+}
 
-import {
-  getPasswordManagerIgnoreProps,
-  isCredentialFieldType,
-  sanitizeCredentialFieldId,
-  sanitizeCredentialFieldName,
-} from "@/lib/forms/password-manager";
-import { useSuppressPasswordManager } from "@/providers/PasswordManagerProvider";
-import { cn } from "@/lib/utils";
-
-export type InputProps = React.ComponentProps<"input"> & {
-  allowPasswordManager?: boolean;
-};
-
-const Input = React.forwardRef<HTMLInputElement, InputProps>(
-  (
-    {
-      className,
-      type,
-      allowPasswordManager = false,
-      autoComplete: autoCompleteProp,
-      readOnly,
-      onFocus,
-      onMouseDown,
-      onTouchStart,
-      name,
-      id,
-      inputMode,
-      ...props
-    },
-    ref,
-  ) => {
-    const suppressPasswordManager = useSuppressPasswordManager();
-    const shouldSuppress = suppressPasswordManager && !allowPasswordManager;
-    const [fieldReady, setFieldReady] = React.useState(!shouldSuppress);
-
-    const unlockField = () => {
-      if (shouldSuppress) setFieldReady(true);
-    };
-
-    const effectiveType =
-      shouldSuppress && isCredentialFieldType(type) ? "text" : type;
-    const effectiveInputMode =
-      shouldSuppress && type === "email"
-        ? "email"
-        : shouldSuppress && type === "password"
-          ? "text"
-          : inputMode;
-    const effectiveName = shouldSuppress
-      ? sanitizeCredentialFieldName(name)
-      : name;
-    const effectiveId = shouldSuppress ? sanitizeCredentialFieldId(id) : id;
-
-    const handleFocus = (event: React.FocusEvent<HTMLInputElement>) => {
-      unlockField();
-      onFocus?.(event);
-    };
-
-    const handleMouseDown = (event: React.MouseEvent<HTMLInputElement>) => {
-      unlockField();
-      onMouseDown?.(event);
-    };
-
-    const handleTouchStart = (event: React.TouchEvent<HTMLInputElement>) => {
-      unlockField();
-      onTouchStart?.(event);
-    };
-
-    return (
-      <input
-        type={effectiveType}
-        id={effectiveId}
-        name={effectiveName}
-        inputMode={effectiveInputMode}
-        className={cn(
-          "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50",
-          shouldSuppress && "pm-suppressed-field",
-          className,
-        )}
-        ref={ref}
-        readOnly={shouldSuppress && !fieldReady ? true : readOnly}
-        onFocus={handleFocus}
-        onMouseDown={handleMouseDown}
-        onTouchStart={handleTouchStart}
-        {...props}
-        {...(shouldSuppress
-          ? getPasswordManagerIgnoreProps()
-          : autoCompleteProp !== undefined
-            ? { autoComplete: autoCompleteProp }
-            : {})}
-      />
-    );
-  },
-);
-Input.displayName = "Input";
-
-export { Input };
+export { Input }

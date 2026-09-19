@@ -1,72 +1,17 @@
-"use client";
+import * as React from "react"
+import { cn } from "cn"
 
-import * as React from "react";
+function Textarea({ className, ...props }: React.ComponentProps<"textarea">) {
+  return (
+    <textarea
+      data-slot="textarea"
+      className={cn(
+        "flex field-sizing-content min-h-16 w-full rounded-md border border-input bg-transparent px-3 py-2 text-base shadow-xs transition-[color,box-shadow] outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 md:text-sm dark:bg-input/30 dark:aria-invalid:ring-destructive/40",
+        className
+      )}
+      {...props}
+    />
+  )
+}
 
-import { getPasswordManagerIgnoreProps } from "@/lib/forms/password-manager";
-import { useSuppressPasswordManager } from "@/providers/PasswordManagerProvider";
-import { cn } from "@/lib/utils";
-
-export type TextareaProps = React.ComponentProps<"textarea"> & {
-  allowPasswordManager?: boolean;
-};
-
-const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
-  (
-    {
-      className,
-      allowPasswordManager = false,
-      autoComplete: autoCompleteProp,
-      readOnly,
-      onFocus,
-      onMouseDown,
-      onTouchStart,
-      ...props
-    },
-    ref,
-  ) => {
-    const suppressPasswordManager = useSuppressPasswordManager();
-    const shouldSuppress = suppressPasswordManager && !allowPasswordManager;
-    const [fieldReady, setFieldReady] = React.useState(!shouldSuppress);
-
-    const unlockField = () => {
-      if (shouldSuppress) setFieldReady(true);
-    };
-
-    const handleFocus = (event: React.FocusEvent<HTMLTextAreaElement>) => {
-      unlockField();
-      onFocus?.(event);
-    };
-
-    const handleMouseDown = (event: React.MouseEvent<HTMLTextAreaElement>) => {
-      unlockField();
-      onMouseDown?.(event);
-    };
-
-    const handleTouchStart = (event: React.TouchEvent<HTMLTextAreaElement>) => {
-      unlockField();
-      onTouchStart?.(event);
-    };
-
-    return (
-      <textarea
-        className={cn(
-          "flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50",
-          shouldSuppress && "pm-suppressed-field",
-          className,
-        )}
-        ref={ref}
-        readOnly={shouldSuppress && !fieldReady ? true : readOnly}
-        onFocus={handleFocus}
-        onMouseDown={handleMouseDown}
-        onTouchStart={handleTouchStart}
-        {...props}
-        {...(shouldSuppress
-          ? getPasswordManagerIgnoreProps()
-          : { autoComplete: autoCompleteProp })}
-      />
-    );
-  },
-);
-Textarea.displayName = "Textarea";
-
-export { Textarea };
+export { Textarea }
