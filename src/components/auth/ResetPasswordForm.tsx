@@ -41,7 +41,11 @@ export function ResetPasswordForm() {
   }
 
   return (
-    <form onSubmit={onSubmit} className="space-y-4">
+    <form
+      onSubmit={onSubmit}
+      className="space-y-4"
+      data-allow-password-manager="true"
+    >
       <div>
         <Label htmlFor="password">{t("password")}</Label>
         <Input

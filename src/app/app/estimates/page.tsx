@@ -1,39 +1,66 @@
+import Link from "next/link";
 import { getTranslations } from "next-intl/server";
-import { EmptyBoxIllustration } from "@/components/illustrations";
+import { Button } from "@/components/ui/button";
+import { currentUserId } from "@/lib/auth/current-user";
+import { createClient } from "@/lib/supabase/server";
+import { ensureCompany } from "./actions";
 
 export const metadata = { title: "Estimates" };
 
 export default async function EstimatesPage() {
+  await ensureCompany();
   const t = await getTranslations("app");
-  const items = [
-    t("estimatesList1"),
-    t("estimatesList2"),
-    t("estimatesList3"),
-    t("estimatesList4"),
-  ];
+  const userId = await currentUserId();
+  const supabase = await createClient();
+  const { data: estimates } =
+    userId && supabase
+      ? await supabase
+          .from("estimates")
+          .select("id,number,status,zip,totals,created_at,customers(name)")
+          .eq("user_id", userId)
+          .order("created_at", { ascending: false })
+      : { data: [] };
+
   return (
-    <div className="max-w-xl">
-      <p className="text-xs font-medium uppercase tracking-[0.2em] text-primary">
-        {t("estimatesKicker")}
-      </p>
-      <h1 className="mt-2 text-3xl font-semibold tracking-tight">
-        {t("estimatesTitle")}
-      </h1>
-      <div className="mt-8 rounded-2xl border border-dashed border-border p-8">
-        <EmptyBoxIllustration />
-        <p className="mt-6 text-sm leading-relaxed text-muted-foreground">
-          {t("estimatesBody")}
-        </p>
-        <ul className="mt-6 space-y-2 text-sm">
-          {items.map((item) => (
-            <li key={item} className="flex gap-2">
-              <span className="mt-1 size-1.5 shrink-0 rounded-full bg-primary" />
-              {item}
-            </li>
-          ))}
-        </ul>
-        <p className="mt-6 text-xs text-muted-foreground">{t("waitlist")}</p>
+    <div>
+      <div className="flex items-center justify-between gap-3">
+        <h1 className="text-2xl font-semibold tracking-tight">
+          {t("estimatesTitle")}
+        </h1>
+        <Button asChild>
+          <Link href="/app/estimates/new">{t("newEstimate")}</Link>
+        </Button>
       </div>
+      <p className="mt-2 text-sm text-muted-foreground">{t("estimatesHelp")}</p>
+      {!estimates?.length ? (
+        <p className="mt-8 text-sm text-muted-foreground">{t("noEstimates")}</p>
+      ) : (
+        <ul className="mt-6 divide-y divide-border rounded-xl border border-border">
+          {estimates.map((row) => {
+            const totals = (row.totals ?? {}) as { total?: number; hours?: number };
+            const customer = Array.isArray(row.customers)
+              ? row.customers[0]
+              : row.customers;
+            return (
+              <li key={row.id} className="px-4 py-3">
+                <Link href={`/app/estimates/${row.id}`} className="flex justify-between gap-3">
+                  <span>
+                    #{row.number} {customer?.name ?? t("walkIn")}
+                    <span className="ml-2 text-xs text-muted-foreground">
+                      {row.status} {row.zip}
+                    </span>
+                  </span>
+                  <span className="font-medium">
+                    {totals.total != null
+                      ? `$${Number(totals.total).toFixed(0)}`
+                      : "—"}
+                  </span>
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      )}
     </div>
   );
 }

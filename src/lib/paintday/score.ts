@@ -15,6 +15,10 @@
  * Weather fetching lives in `lib/weather`.
  */
 
+import { isWetCode, precipKind } from "./codes";
+import type { ProductWindow } from "./product-window";
+import { LATEX_WINDOW } from "./product-window";
+
 export const SCORE_WEIGHTS = {
   precip: 0.25,
   humidity: 0.2,
@@ -34,10 +38,14 @@ export type ScoreBand =
 export type ScoreFactorId = keyof typeof SCORE_WEIGHTS;
 
 export type WeatherSnapshot = {
-  /** 0–100 chance of precipitation in the next 24h */
+  /** 0–100 chance of precipitation in this hour / window */
   precipProbability: number;
-  /** Optional 24–48h precip chance, used as a light penalty */
+  /** Optional later precip chance, used as a light penalty */
   precipProbability48h?: number;
+  /** Liquid equivalent in this hour, mm */
+  precipMm?: number;
+  /** WMO weather code */
+  weatherCode?: number;
   /** Relative humidity 0–100 at typical application hour */
   humidity: number;
   /** Air temperature °F at typical application hour */
@@ -46,6 +54,8 @@ export type WeatherSnapshot = {
   dewPointF: number;
   /** Sustained wind mph */
   windMph: number;
+  /** Wind gusts mph */
+  gustMph?: number;
   /** Minimum air temperature in the next 48h °F */
   minTempNext48hF: number;
 };
@@ -75,8 +85,17 @@ function lerp(x: number, x0: number, x1: number, y0: number, y1: number) {
   return y0 + t * (y1 - y0);
 }
 
-/** Precipitation: 0% → 100, 60%+ → ~5 */
-export function scorePrecip(p24: number, p48 = p24): number {
+/** Precipitation: chance, amount, and type. */
+export function scorePrecip(
+  p24: number,
+  p48 = p24,
+  precipMm = 0,
+  weatherCode?: number,
+): number {
+  const kind = precipKind(weatherCode);
+  if (kind === "storm" || precipMm >= 1) return 0;
+  if (kind === "rain" || precipMm >= 0.2) return 8;
+  if (kind === "drizzle" || precipMm >= 0.05) return 25;
   const near = clamp(p24);
   const later = clamp(p48);
   const primary =
@@ -93,9 +112,11 @@ export function scorePrecip(p24: number, p48 = p24): number {
   return clamp(primary - laterPenalty);
 }
 
-/** Humidity: sweet spot 40–70% RH */
-export function scoreHumidity(rh: number): number {
+/** Humidity: sweet spot 40–70% RH, capped by product max. */
+export function scoreHumidity(rh: number, window: ProductWindow = LATEX_WINDOW): number {
   const h = clamp(rh);
+  const maxH = window.maxHumidityPct;
+  if (h > maxH) return clamp(lerp(h, maxH, Math.min(100, maxH + 15), 25, 5));
   if (h >= 40 && h <= 70) return 100;
   if (h < 40) {
     if (h >= 30) return lerp(h, 30, 40, 80, 100);
@@ -108,18 +129,23 @@ export function scoreHumidity(rh: number): number {
   return lerp(h, 90, 100, 25, 5);
 }
 
-/** Temperature vs typical architectural latex window (50–90°F, sweet 60–80) */
-export function scoreTemperature(tempF: number): number {
+/** Temperature vs product window (default architectural latex 50–90°F). */
+export function scoreTemperature(
+  tempF: number,
+  window: ProductWindow = LATEX_WINDOW,
+): number {
   const t = tempF;
-  if (t >= 60 && t <= 80) return 100;
-  if (t >= 50 && t < 60) return lerp(t, 50, 60, 70, 100);
-  if (t > 80 && t <= 90) return lerp(t, 80, 90, 100, 70);
-  if (t >= 45 && t < 50) return lerp(t, 45, 50, 35, 70);
-  if (t > 90 && t <= 95) return lerp(t, 90, 95, 70, 35);
-  if (t >= 40 && t < 45) return lerp(t, 40, 45, 15, 35);
-  if (t > 95 && t <= 100) return lerp(t, 95, 100, 35, 15);
-  if (t < 40) return clamp(lerp(t, 20, 40, 0, 15));
-  return clamp(lerp(t, 100, 115, 15, 0));
+  const lo = window.minTempF;
+  const hi = window.maxTempF;
+  const sweetLo = lo + 10;
+  const sweetHi = Math.max(sweetLo + 5, hi - 10);
+  if (t >= sweetLo && t <= sweetHi) return 100;
+  if (t >= lo && t < sweetLo) return lerp(t, lo, sweetLo, 70, 100);
+  if (t > sweetHi && t <= hi) return lerp(t, sweetHi, hi, 100, 70);
+  if (t >= lo - 5 && t < lo) return lerp(t, lo - 5, lo, 35, 70);
+  if (t > hi && t <= hi + 5) return lerp(t, hi, hi + 5, 70, 35);
+  if (t < lo - 5) return clamp(lerp(t, lo - 20, lo - 5, 0, 35));
+  return clamp(lerp(t, hi + 5, hi + 20, 35, 0));
 }
 
 /** Dew-point spread: air temp − dew point. Need ≥5°F, ideally ≥10°F. */
@@ -132,9 +158,9 @@ export function scoreDewPoint(tempF: number, dewPointF: number): number {
   return 0;
 }
 
-/** Wind: 0–8 mph ideal; 15+ overspray; 25+ do not spray */
-export function scoreWind(windMph: number): number {
-  const w = Math.max(0, windMph);
+/** Wind: 0–8 mph ideal; 15+ overspray; 25+ do not spray. Gusts count. */
+export function scoreWind(windMph: number, gustMph?: number): number {
+  const w = Math.max(0, windMph, (gustMph ?? 0) * 0.7);
   if (w <= 8) return 100;
   if (w <= 12) return lerp(w, 8, 12, 100, 85);
   if (w <= 15) return lerp(w, 12, 15, 85, 60);
@@ -194,13 +220,21 @@ export function summaryKeyFor(
   }
 }
 
-export function scorePaintDay(input: WeatherSnapshot): PaintDayScore {
+export function scorePaintDay(
+  input: WeatherSnapshot,
+  window: ProductWindow = LATEX_WINDOW,
+): PaintDayScore {
   const raw: Record<ScoreFactorId, number> = {
-    precip: scorePrecip(input.precipProbability, input.precipProbability48h),
-    humidity: scoreHumidity(input.humidity),
-    temperature: scoreTemperature(input.tempF),
+    precip: scorePrecip(
+      input.precipProbability,
+      input.precipProbability48h,
+      input.precipMm,
+      input.weatherCode,
+    ),
+    humidity: scoreHumidity(input.humidity, window),
+    temperature: scoreTemperature(input.tempF, window),
     dewPoint: scoreDewPoint(input.tempF, input.dewPointF),
-    wind: scoreWind(input.windMph),
+    wind: scoreWind(input.windMph, input.gustMph),
     freeze: scoreFreeze(input.minTempNext48hF),
   };
 
@@ -215,10 +249,13 @@ export function scorePaintDay(input: WeatherSnapshot): PaintDayScore {
 
   let total = clamp(factors.reduce((sum, f) => sum + f.contribution, 0));
 
-  // Hard weather vetoes: rain and freeze dominate a crew day.
-  if (input.precipProbability >= 60) total = Math.min(total, 28);
+  // Hard weather vetoes: rain, storms, and freeze dominate a crew day.
+  if (isWetCode(input.weatherCode) || (input.precipMm ?? 0) >= 0.2) {
+    total = Math.min(total, 22);
+  } else if (input.precipProbability >= 60) total = Math.min(total, 28);
   else if (input.precipProbability >= 40) total = Math.min(total, 48);
   if (input.minTempNext48hF < 32) total = Math.min(total, 28);
+  if (input.tempF < window.minTempF - 2) total = Math.min(total, 35);
 
   total = Math.round(total);
 

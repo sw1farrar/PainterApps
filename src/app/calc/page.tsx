@@ -1,5 +1,9 @@
 import { getTranslations } from "next-intl/server";
 import { CoverCalcForm } from "@/components/calc/CoverCalcForm";
+import { currentUnits } from "@/lib/auth/current-units";
+import { currentUserId } from "@/lib/auth/current-user";
+import { listMyJobs } from "@/lib/jobs/list";
+import { areaUnitFor } from "@/lib/units";
 
 export const metadata = {
   title: "CoverCalc",
@@ -9,6 +13,11 @@ export const metadata = {
 
 export default async function CalcPage() {
   const t = await getTranslations("calc");
+  const [signedIn, units, jobs] = await Promise.all([
+    currentUserId().then(Boolean),
+    currentUnits(),
+    listMyJobs(),
+  ]);
   return (
     <div className="mx-auto max-w-5xl px-4 py-10">
       <h1 className="text-3xl font-semibold tracking-tight md:text-4xl">
@@ -16,7 +25,11 @@ export default async function CalcPage() {
       </h1>
       <p className="mt-2 max-w-2xl text-muted-foreground">{t("subtitle")}</p>
       <div className="mt-10">
-        <CoverCalcForm />
+        <CoverCalcForm
+          signedIn={signedIn}
+          initialUnit={areaUnitFor(units)}
+          jobs={jobs}
+        />
       </div>
     </div>
   );

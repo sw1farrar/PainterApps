@@ -1,9 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { Button } from "@/components/ui/button";
+import { SnapshotJobButton } from "@/components/jobs/SnapshotJobButton";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -14,10 +13,18 @@ import {
   type Porosity,
 } from "@/lib/calc/coverage";
 
-export function CoverCalcForm() {
+export function CoverCalcForm({
+  signedIn,
+  initialUnit = "sqft",
+  jobs = [],
+}: {
+  signedIn: boolean;
+  initialUnit?: AreaUnit;
+  jobs?: { id: string; title: string; zip: string | null }[];
+}) {
   const t = useTranslations("calc");
-  const [area, setArea] = useState(1200);
-  const [unit, setUnit] = useState<AreaUnit>("sqft");
+  const [unit, setUnit] = useState<AreaUnit>(initialUnit);
+  const [area, setArea] = useState(initialUnit === "sqm" ? 110 : 1200);
   const [porosity, setPorosity] = useState<Porosity>("normal");
   const [coats, setCoats] = useState(2);
   const [waste, setWaste] = useState(10);
@@ -113,9 +120,25 @@ export function CoverCalcForm() {
             waste,
           })}
         </p>
-        <Button asChild variant="outline" className="mt-6">
-          <Link href="/login">{t("loginToAttach")}</Link>
-        </Button>
+        <div className="mt-6">
+          <SnapshotJobButton
+            signedIn={signedIn}
+            loginNext="/calc"
+            kind="coverage"
+            title={`CoverCalc ${result.gallonsRounded.toFixed(1)} gal`}
+            payload={{
+              area,
+              unit,
+              porosity,
+              coats,
+              waste,
+              gallons: result.gallonsRounded,
+              litres: result.litresRounded,
+            }}
+            label={signedIn ? t("attach") : t("loginToAttach")}
+            jobs={jobs}
+          />
+        </div>
       </div>
     </div>
   );

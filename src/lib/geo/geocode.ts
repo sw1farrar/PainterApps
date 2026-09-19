@@ -1,6 +1,7 @@
 import { METROS, type Metro } from "@/data/geo/metros";
 import { isUsZip } from "@/lib/utils";
 import type { GeoPlace } from "@/lib/weather/types";
+import { matchMetros, mergePlaces } from "./match-metros";
 
 function toPlace(m: Pick<Metro, "zip" | "city" | "state" | "lat" | "lng">): GeoPlace {
   return {
@@ -62,17 +63,12 @@ export async function searchPlaces(query: string): Promise<GeoPlace[]> {
     return place ? [place] : [];
   }
 
-  const local = METROS.filter((m) => {
-    const hay = `${m.city} ${m.state} ${m.zip}`.toLowerCase();
-    return hay.includes(q.toLowerCase());
-  }).slice(0, 8);
-
-  if (local.length) return local.map(toPlace);
+  const local = matchMetros(q, 8);
 
   try {
     const params = new URLSearchParams({
       name: q,
-      count: "6",
+      count: "8",
       country: "US",
       format: "json",
     });
@@ -80,7 +76,7 @@ export async function searchPlaces(query: string): Promise<GeoPlace[]> {
       `https://geocoding-api.open-meteo.com/v1/search?${params.toString()}`,
       { next: { revalidate: 3600 } },
     );
-    if (!res.ok) return [];
+    if (!res.ok) return local;
     const json = (await res.json()) as {
       results?: Array<{
         name: string;
@@ -90,7 +86,7 @@ export async function searchPlaces(query: string): Promise<GeoPlace[]> {
         postcodes?: string[];
       }>;
     };
-    return (json.results ?? []).map((r) => {
+    const remote: GeoPlace[] = (json.results ?? []).map((r) => {
       const zip = r.postcodes?.[0] ?? "";
       const state = r.admin1 ?? "";
       return {
@@ -102,7 +98,8 @@ export async function searchPlaces(query: string): Promise<GeoPlace[]> {
         label: zip ? `${r.name}, ${state} ${zip}` : `${r.name}, ${state}`,
       };
     });
+    return mergePlaces(local, remote.filter((p) => isUsZip(p.zip)), 8);
   } catch {
-    return [];
+    return local;
   }
 }

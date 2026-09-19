@@ -9,10 +9,10 @@ export default async function AppLayout({
   const t = await getTranslations("nav");
   const links = [
     { href: "/app", label: t("dashboard") },
-    { href: "/app/locations", label: t("locations") },
-    { href: "/app/jobs", label: t("jobs") },
-    { href: "/app/news", label: t("news") },
     { href: "/app/estimates", label: t("estimates") },
+    { href: "/app/jobs", label: t("jobs") },
+    { href: "/app/customers", label: t("customers") },
+    { href: "/app/locations", label: t("locations") },
     { href: "/app/settings", label: t("settings") },
   ];
   return (

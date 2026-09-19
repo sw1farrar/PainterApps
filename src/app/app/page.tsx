@@ -78,7 +78,12 @@ export default async function DashboardPage() {
         <ul className="mt-3 divide-y divide-border rounded-xl border border-border">
           {jobs.map((job) => (
             <li key={job.id} className="px-4 py-3 text-sm">
-              {job.title}{" "}
+              <Link
+                href={`/app/jobs/${job.id}`}
+                className="underline-offset-4 hover:underline"
+              >
+                {job.title}
+              </Link>{" "}
               <span className="text-muted-foreground">{job.zip}</span>
             </li>
           ))}

@@ -21,6 +21,8 @@ export function SignUpForm({ nextPath }: { nextPath: string }) {
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
   const [checkEmail, setCheckEmail] = useState(false);
+  const [code, setCode] = useState("");
+  const [codeSent, setCodeSent] = useState(false);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -57,16 +59,91 @@ export function SignUpForm({ nextPath }: { nextPath: string }) {
     router.refresh();
   }
 
+  async function onConfirm(e: React.FormEvent) {
+    e.preventDefault();
+    const supabase = createClient();
+    if (!supabase) return;
+    setPending(true);
+    setError(null);
+    setCodeSent(false);
+    const { error: verifyError } = await supabase.auth.verifyOtp({
+      email,
+      token: code.trim(),
+      type: "signup",
+    });
+    setPending(false);
+    if (verifyError) {
+      setError(t("errorGeneric"));
+      return;
+    }
+    router.push(next);
+    router.refresh();
+  }
+
+  async function onResend() {
+    const supabase = createClient();
+    if (!supabase) return;
+    setPending(true);
+    setError(null);
+    const { error: resendError } = await supabase.auth.resend({
+      type: "signup",
+      email,
+    });
+    setPending(false);
+    if (resendError) {
+      setError(t("errorGeneric"));
+      return;
+    }
+    setCodeSent(true);
+  }
+
   if (checkEmail) {
     return (
-      <p className="rounded-xl border border-border bg-muted/30 p-4 text-sm text-muted-foreground">
-        {t("checkEmail")}
-      </p>
+      <form
+        onSubmit={onConfirm}
+        className="space-y-4"
+        data-allow-password-manager="true"
+      >
+        <p className="rounded-xl border border-border bg-muted/30 p-4 text-sm text-muted-foreground">
+          {t("checkEmail")}
+        </p>
+        <div>
+          <Label htmlFor="code">{t("code")}</Label>
+          <Input
+            id="code"
+            className="mt-2"
+            inputMode="numeric"
+            autoComplete="one-time-code"
+            required
+            value={code}
+            onChange={(e) => setCode(e.target.value)}
+          />
+        </div>
+        {error ? <p className="text-sm text-destructive">{error}</p> : null}
+        {codeSent ? (
+          <p className="text-sm text-muted-foreground">{t("codeSent")}</p>
+        ) : null}
+        <Button type="submit" className="w-full" disabled={pending}>
+          {t("confirmEmail")}
+        </Button>
+        <button
+          type="button"
+          className="w-full text-center text-sm text-muted-foreground underline underline-offset-4"
+          disabled={pending}
+          onClick={onResend}
+        >
+          {t("resendCode")}
+        </button>
+      </form>
     );
   }
 
   return (
-    <form onSubmit={onSubmit} className="space-y-4">
+    <form
+      onSubmit={onSubmit}
+      className="space-y-4"
+      data-allow-password-manager="true"
+    >
       <div>
         <Label htmlFor="email">{t("email")}</Label>
         <Input

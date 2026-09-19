@@ -1,5 +1,5 @@
 import { METROS } from "@/data/geo/metros";
-import { DemoWeatherProvider } from "@/lib/weather/demo";
+import { fetchForecast } from "@/lib/weather";
 
 export type MapScorePoint = {
   zip: string;
@@ -9,14 +9,13 @@ export type MapScorePoint = {
   lng: number;
   score: number;
   band: string;
+  live: boolean;
 };
-
-const demo = new DemoWeatherProvider();
 
 export async function getMapScores(): Promise<MapScorePoint[]> {
   const points = await Promise.all(
     METROS.map(async (m) => {
-      const forecast = await demo.getForecast(m.lat, m.lng);
+      const forecast = await fetchForecast(m.lat, m.lng);
       return {
         zip: m.zip,
         city: m.city,
@@ -25,6 +24,7 @@ export async function getMapScores(): Promise<MapScorePoint[]> {
         lng: m.lng,
         score: forecast.currentScore.total,
         band: forecast.currentScore.band,
+        live: forecast.source === "open-meteo",
       };
     }),
   );

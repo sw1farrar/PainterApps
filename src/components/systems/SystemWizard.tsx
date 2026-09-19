@@ -4,7 +4,9 @@ import { useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { SnapshotJobButton } from "@/components/jobs/SnapshotJobButton";
 import { allManufacturers, matchSystems } from "@/lib/systems/match";
+import { formatTempRange, type UnitSystem } from "@/lib/units";
 import type {
   FailureMode,
   MatchQuery,
@@ -57,7 +59,15 @@ function Choice({
   );
 }
 
-export function SystemWizard() {
+export function SystemWizard({
+  signedIn,
+  units = "imperial",
+  jobs = [],
+}: {
+  signedIn: boolean;
+  units?: UnitSystem;
+  jobs?: { id: string; title: string; zip: string | null }[];
+}) {
   const t = useTranslations("systems");
   const cta = useTranslations("cta");
   const [step, setStep] = useState(0);
@@ -276,9 +286,40 @@ export function SystemWizard() {
                     {r.reasons[0]}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    {t("window")}: {r.topcoat.minTempF}–{r.topcoat.maxTempF}°F,
-                    RH ≤ {r.topcoat.maxHumidityPct}%
+                    {t("window")}:{" "}
+                    {formatTempRange(
+                      r.topcoat.minTempF,
+                      r.topcoat.maxTempF,
+                      units,
+                    )}
+                    , RH ≤ {r.topcoat.maxHumidityPct}%
                   </p>
+                  <SnapshotJobButton
+                    signedIn={signedIn}
+                    loginNext="/systems"
+                    kind="system"
+                    title={`${r.manufacturer.name} · ${r.system.name}`}
+                    payload={{
+                      manufacturer: r.manufacturer.name,
+                      system: r.system.name,
+                      prep: r.system.prepNotes,
+                      primer: {
+                        name: r.primer.name,
+                        tdsUrl: r.primer.tdsUrl,
+                        tdsRevision: r.primer.tdsRevision,
+                        tdsDate: r.primer.tdsDate,
+                      },
+                      topcoat: {
+                        name: r.topcoat.name,
+                        tdsUrl: r.topcoat.tdsUrl,
+                        tdsRevision: r.topcoat.tdsRevision,
+                        tdsDate: r.topcoat.tdsDate,
+                      },
+                      why: r.reasons[0] ?? "",
+                    }}
+                    label={t("snapshot")}
+                    jobs={jobs}
+                  />
                 </CardContent>
               </Card>
             ))

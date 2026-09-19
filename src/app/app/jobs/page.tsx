@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { EmptyBoxIllustration } from "@/components/illustrations";
 import { Button } from "@/components/ui/button";
@@ -17,7 +18,9 @@ export default async function JobsPage() {
     userId && supabase
       ? await supabase
           .from("jobs")
-          .select("id,title,zip,notes,weather_snapshot,system_snapshot")
+          .select(
+            "id,title,zip,notes,weather_snapshot,system_snapshot,coverage_snapshot",
+          )
           .eq("user_id", userId)
           .order("created_at", { ascending: false })
       : { data: [] };
@@ -42,11 +45,26 @@ export default async function JobsPage() {
             <li key={job.id} className="rounded-xl border border-border p-4">
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <p className="font-medium">{job.title}</p>
+                  <p className="font-medium">
+                    <Link
+                      href={`/app/jobs/${job.id}`}
+                      className="underline-offset-4 hover:underline"
+                    >
+                      {job.title}
+                    </Link>
+                  </p>
                   <p className="text-sm text-muted-foreground">{job.zip}</p>
                   {job.notes ? (
                     <p className="mt-2 text-sm">{job.notes}</p>
                   ) : null}
+                  <JobSnaps
+                    weather={job.weather_snapshot}
+                    system={job.system_snapshot}
+                    coverage={job.coverage_snapshot}
+                    weatherLabel={t("weatherSnap")}
+                    systemLabel={t("systemSnap")}
+                    coverageLabel={t("coverageSnap")}
+                  />
                 </div>
                 <form
                   action={async () => {
@@ -64,5 +82,56 @@ export default async function JobsPage() {
         </ul>
       )}
     </div>
+  );
+}
+
+function asRecord(value: unknown) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  return value as Record<string, unknown>;
+}
+
+function str(value: unknown) {
+  return typeof value === "string" || typeof value === "number"
+    ? String(value)
+    : "";
+}
+
+function JobSnaps({
+  weather,
+  system,
+  coverage,
+  weatherLabel,
+  systemLabel,
+  coverageLabel,
+}: {
+  weather: unknown;
+  system: unknown;
+  coverage: unknown;
+  weatherLabel: string;
+  systemLabel: string;
+  coverageLabel: string;
+}) {
+  const w = asRecord(weather);
+  const s = asRecord(system);
+  const c = asRecord(coverage);
+  if (!w && !s && !c) return null;
+  return (
+    <ul className="mt-3 space-y-1 text-xs text-muted-foreground">
+      {w ? (
+        <li>
+          {weatherLabel}: {str(w.place) || str(w.zip)} · {str(w.score)}
+        </li>
+      ) : null}
+      {s ? (
+        <li>
+          {systemLabel}: {str(s.manufacturer)} · {str(s.system)}
+        </li>
+      ) : null}
+      {c ? (
+        <li>
+          {coverageLabel}: {str(c.gallons)} gal / {str(c.litres)} L
+        </li>
+      ) : null}
+    </ul>
   );
 }

@@ -26,7 +26,7 @@ function demoSnapshot(seed: number, dayOffset = 0): WeatherSnapshot {
 }
 
 export class DemoWeatherProvider implements WeatherProvider {
-  async getForecast(lat: number, lng: number): Promise<Forecast> {
+  async getForecast(lat: number, lng: number, _window?: unknown): Promise<Forecast> {
     const seed = Math.abs(Math.round(lat * 100 + lng * 10));
     const current = demoSnapshot(seed, 0);
     const start = new Date();
@@ -46,6 +46,15 @@ export class DemoWeatherProvider implements WeatherProvider {
       timezone: "America/New_York",
       current,
       currentScore: scorePaintDay(current),
+      hours: [],
+      todayHours: [],
+      crewPlan: {
+        startHour: null,
+        wrapHour: null,
+        hoursOpen: 0,
+        secondCoat: false,
+        rainHour: null,
+      },
       days,
     };
   }

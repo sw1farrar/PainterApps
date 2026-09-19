@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Analytics } from "@vercel/analytics/react";
 import { getLocale, getMessages } from "next-intl/server";
+import { PasswordManagerGuard } from "@/components/auth/PasswordManagerGuard";
 import { Footer } from "@/components/layout/Footer";
 import { Header } from "@/components/layout/Header";
 import { Providers } from "@/components/providers";
@@ -63,6 +64,7 @@ export default async function RootLayout({
     >
       <body className="min-h-dvh bg-background font-sans text-foreground antialiased">
         <Providers locale={locale} messages={messages}>
+          <PasswordManagerGuard enabled={Boolean(userId)} />
           <div className="flex min-h-dvh flex-col">
             <Header
               locale={locale}

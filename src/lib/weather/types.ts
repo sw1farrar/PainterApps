@@ -1,3 +1,4 @@
+import type { CrewPlan, HourSlot } from "@/lib/paintday/crew-plan";
 import type { PaintDayScore, WeatherSnapshot } from "@/lib/paintday/score";
 
 export type DailyWindow = {
@@ -12,6 +13,9 @@ export type Forecast = {
   timezone: string;
   current: WeatherSnapshot;
   currentScore: PaintDayScore;
+  hours: HourSlot[];
+  todayHours: HourSlot[];
+  crewPlan: CrewPlan;
   days: DailyWindow[];
 };
 
@@ -25,5 +29,9 @@ export type GeoPlace = {
 };
 
 export interface WeatherProvider {
-  getForecast(lat: number, lng: number): Promise<Forecast>;
+  getForecast(
+    lat: number,
+    lng: number,
+    window?: import("@/lib/paintday/product-window").ProductWindow,
+  ): Promise<Forecast>;
 }

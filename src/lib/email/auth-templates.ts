@@ -13,10 +13,10 @@ const COPY: Record<
 > = {
   en: {
     signup: {
-      subject: "Confirm your PainterApps account",
-      heading: "Confirm this email",
-      body: "Follow the link to finish creating your PainterApps account. The link expires shortly.",
-      cta: "Confirm email",
+      subject: "Your PainterApps confirmation code",
+      heading: "Your confirmation code",
+      body: "Enter this code in PainterApps to finish creating your account. It expires shortly.",
+      cta: "Or confirm with this link",
     },
     invite: {
       subject: "You were invited to PainterApps",
@@ -51,10 +51,10 @@ const COPY: Record<
   },
   es: {
     signup: {
-      subject: "Confirme su cuenta de PainterApps",
-      heading: "Confirme este correo",
-      body: "Siga el enlace para terminar de crear su cuenta. El enlace caduca pronto.",
-      cta: "Confirmar correo",
+      subject: "Su código de PainterApps",
+      heading: "Su código de confirmación",
+      body: "Escriba este código en PainterApps para terminar de crear su cuenta. Caduca pronto.",
+      cta: "O confirme con este enlace",
     },
     invite: {
       subject: "Lo invitaron a PainterApps",
@@ -103,10 +103,13 @@ export function confirmationUrl(input: {
   type: string;
   redirectTo: string;
 }) {
-  const url = new URL(`${input.supabaseUrl.replace(/\/$/, "")}/auth/v1/verify`);
-  url.searchParams.set("token", input.tokenHash);
+  const site =
+    process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ||
+    "https://painterapps.com";
+  const url = new URL(`${site}/auth/callback`);
+  url.searchParams.set("token_hash", input.tokenHash);
   url.searchParams.set("type", input.type);
-  if (input.redirectTo) url.searchParams.set("redirect_to", input.redirectTo);
+  if (input.redirectTo) url.searchParams.set("next", input.redirectTo);
   return url.toString();
 }
 
@@ -117,17 +120,26 @@ export function authEmailContent(input: {
   token?: string;
 }) {
   const copy = COPY[input.locale][input.action];
-  const actionLine = input.confirmationUrl
+  const codeLine = input.token
+    ? `<p style="font-size:28px;font-weight:700;letter-spacing:0.18em">${input.token}</p>`
+    : "";
+  const linkLine = input.confirmationUrl
     ? `<p><a href="${input.confirmationUrl}">${copy.cta}</a></p>`
-    : `<p><strong>${input.token ?? ""}</strong></p>`;
+    : "";
   const html = `<div style="font-family:system-ui,sans-serif;line-height:1.5;color:#111">
   <p style="font-weight:600">${copy.heading}</p>
   <p>${copy.body}</p>
-  ${actionLine}
+  ${codeLine}
+  ${linkLine}
   <p style="font-size:12px;color:#666">PainterApps</p>
 </div>`;
-  const text = input.confirmationUrl
-    ? `${copy.heading}\n\n${copy.body}\n\n${input.confirmationUrl}\n`
-    : `${copy.heading}\n\n${copy.body}\n\n${input.token ?? ""}\n`;
+  const text = [
+    copy.heading,
+    "",
+    copy.body,
+    input.token ? `\n${input.token}` : "",
+    input.confirmationUrl ? `\n${input.confirmationUrl}` : "",
+    "",
+  ].join("\n");
   return { subject: copy.subject, html, text };
 }
