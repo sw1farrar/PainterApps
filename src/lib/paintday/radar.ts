@@ -1,10 +1,20 @@
-export function weatherBugRadarUrl(city: string, state: string, zip: string) {
-  const slug = city
-    .toLowerCase()
-    .normalize("NFKD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-  const st = state.toLowerCase().replace(/[^a-z]/g, "");
-  return `https://www.weatherbug.com/maps/${slug}-${st}-${zip}?layerId=radar`;
+/** WeatherBug resolves a US ZIP to its canonical city page. */
+function weatherBugZip(zip: string) {
+  return zip.replace(/\D/g, "").slice(0, 5);
+}
+
+export function weatherBugRadarUrl(zip: string) {
+  return `https://www.weatherbug.com/maps/${weatherBugZip(zip)}?layerId=radar`;
+}
+
+export function weatherBugDetailsUrl(zip: string) {
+  return `https://www.weatherbug.com/weather-forecast/now/${weatherBugZip(zip)}`;
+}
+
+export function weatherBugHourlyUrl(zip: string) {
+  return `https://www.weatherbug.com/weather-forecast/hourly/${weatherBugZip(zip)}`;
+}
+
+export function weatherBugTenDayUrl(zip: string) {
+  return `https://www.weatherbug.com/weather-forecast/10-day-weather/${weatherBugZip(zip)}`;
 }

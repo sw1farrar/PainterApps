@@ -26,7 +26,12 @@ import {
   windowLine,
 } from "@/lib/paintday/format";
 import { getZipPaintDay } from "@/lib/paintday/get-zip";
-import { weatherBugRadarUrl } from "@/lib/paintday/radar";
+import {
+  weatherBugDetailsUrl,
+  weatherBugHourlyUrl,
+  weatherBugRadarUrl,
+  weatherBugTenDayUrl,
+} from "@/lib/paintday/radar";
 import {
   LATEX_WINDOW,
   windowFromCoat,
@@ -216,14 +221,40 @@ export default async function ZipPage({
             jobs={jobs}
           />
           <ShareButton zip={zip} />
-          <a
-            href={weatherBugRadarUrl(place.city, place.state, zip)}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex h-9 items-center rounded-md border border-border px-3 text-sm hover:bg-muted"
-          >
-            {t("radar")}
-          </a>
+          <span className="inline-flex flex-wrap gap-2">
+            <a
+              href={weatherBugRadarUrl(zip)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex h-9 items-center rounded-md border border-border px-3 text-sm hover:bg-muted"
+            >
+              {t("radar")}
+            </a>
+            <a
+              href={weatherBugDetailsUrl(zip)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex h-9 items-center rounded-md border border-border px-3 text-sm hover:bg-muted"
+            >
+              {t("weatherDetails")}
+            </a>
+            <a
+              href={weatherBugHourlyUrl(zip)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex h-9 items-center rounded-md border border-border px-3 text-sm hover:bg-muted"
+            >
+              {t("hourlyDetails")}
+            </a>
+            <a
+              href={weatherBugTenDayUrl(zip)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex h-9 items-center rounded-md border border-border px-3 text-sm hover:bg-muted"
+            >
+              {t("tenDay")}
+            </a>
+          </span>
         </div>
       </div>
 

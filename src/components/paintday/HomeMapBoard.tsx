@@ -27,7 +27,7 @@ export function HomeMapBoard({ board }: { board: MapBoard }) {
 
   return (
     <>
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-3 sm:grid sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] sm:items-center sm:gap-4">
         <div className="flex flex-wrap items-center gap-0.5">
           <button
             type="button"
@@ -59,7 +59,23 @@ export function HomeMapBoard({ board }: { board: MapBoard }) {
             <ChevronRight className="size-5" />
           </button>
         </div>
-        <div className="min-w-0 sm:max-w-md sm:flex-1">
+        <h1
+          aria-label={t("mapHeading")}
+          className="justify-self-center text-center sm:px-2"
+        >
+          <span className="block whitespace-nowrap text-[1.35rem] font-semibold leading-none tracking-[-0.05em] text-foreground sm:text-[1.85rem] lg:text-[2.15rem]">
+            Paint{" "}
+            <span className="bg-gradient-to-r from-[oklch(0.62_0.16_175)] to-[oklch(0.58_0.16_155)] bg-clip-text text-transparent dark:from-[oklch(0.78_0.13_170)] dark:to-[oklch(0.7_0.14_155)]">
+              Weather
+            </span>{" "}
+            Day
+          </span>
+          <span
+            aria-hidden
+            className="paint-gradient mx-auto mt-2 block h-[3px] w-14 rounded-full opacity-90"
+          />
+        </h1>
+        <div className="min-w-0 sm:max-w-md sm:justify-self-end">
           <ZipSearch size="hero" />
         </div>
       </div>

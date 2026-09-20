@@ -1,5 +1,6 @@
 import { currentUserId } from "@/lib/auth/current-user";
-import { windowFromTopcoatName, type ProductWindow } from "@/lib/paintday/product-window";
+import { windowFromTopcoatNameLive } from "@/lib/paintday/product-window-live";
+import type { ProductWindow } from "@/lib/paintday/product-window";
 import { createClient } from "@/lib/supabase/server";
 
 export async function productWindowForZip(zip: string): Promise<ProductWindow | undefined> {
@@ -16,7 +17,7 @@ export async function productWindowForZip(zip: string): Promise<ProductWindow | 
     .limit(3);
   for (const row of data ?? []) {
     const snap = row.system_snapshot as { topcoat?: { name?: string } } | null;
-    const window = windowFromTopcoatName(snap?.topcoat?.name);
+    const window = await windowFromTopcoatNameLive(snap?.topcoat?.name);
     if (window) return window;
   }
   return undefined;

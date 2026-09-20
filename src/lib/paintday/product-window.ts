@@ -61,6 +61,18 @@ export function windowFromTopcoatName(name: string | undefined): ProductWindow |
     (p) => p.name === name || name.includes(p.name) || p.name.includes(name),
   );
   if (!product) return undefined;
+  return windowFromProduct(product);
+}
+
+function windowFromProduct(product: {
+  name: string;
+  minTempF: number;
+  maxTempF: number;
+  maxHumidityPct: number;
+  minDewSpreadF?: number;
+  rainReadyMinutes?: number;
+  recoatHours?: number;
+}): ProductWindow {
   return {
     minTempF: product.minTempF,
     maxTempF: product.maxTempF,
@@ -71,3 +83,5 @@ export function windowFromTopcoatName(name: string | undefined): ProductWindow |
     name: product.name,
   };
 }
+
+export { windowFromProduct };

@@ -28,10 +28,13 @@ export default async function AppLayout({
     { href: "/app/settings", label: t("settings") },
     ...(access?.isOwner ? [{ href: "/app/team", label: t("team") }] : []),
     ...(access?.isPlatformAdmin ? [{ href: "/app/admin", label: t("admin") }] : []),
+    ...(access?.isPlatformAdmin || editor
+      ? [{ href: "/app/catalog", label: t("catalog") }]
+      : []),
     ...(editor ? [{ href: "/app/news", label: t("write") }] : []),
   ];
   return (
-    <div className="mx-auto flex max-w-6xl flex-col gap-8 px-4 py-8 md:flex-row">
+    <div className="mx-auto flex max-w-7xl flex-col gap-8 px-4 py-8 md:flex-row">
       <aside className="md:w-48">
         <AppNav links={links} />
       </aside>

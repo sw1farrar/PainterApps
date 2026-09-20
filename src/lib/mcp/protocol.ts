@@ -66,7 +66,7 @@ export async function handleMcpMessage(
           capabilities: { tools: { listChanged: true } },
           serverInfo: { name: MCP_SERVER_NAME, version: MCP_SERVER_VERSION },
           instructions:
-            "You are connected to the signed-in user's PainterApps company. Use get_paintday for weather; list_jobs / list_estimates / list_customers for their files; list_news, get_news, create_news, update_news, and delete_news for the coatings desk (editors only on write).",
+            "You are connected to the signed-in user's PainterApps company. Use get_paintday for weather. Use list_manufacturers, list_products, get_product, and update_product for the live TDS catalog (editors / platform_admin on write). Typed film, coverage, chemistry, spray, and cert fields live on tds_products; odd keys go in attrs. Do not invent product numbers. Systems page filters are interior/exterior, application_types, substrates, sheen, VOC, manufacturer. Call list_application_types then update_system with only { id, application_types } to tag uses (trim = doors/trim, wood-deck, parking-deck, siding, walls, etc.). A chip is clickable only when some system carries that tag. Use list_tds_documents / create_tds_document for PDF sheets (raw_text for extracted TDS). Use suggest_systems with a ZIP so recommendations follow today's conditions.",
         },
       };
     }
