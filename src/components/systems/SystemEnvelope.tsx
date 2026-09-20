@@ -3,6 +3,7 @@
 import { useTranslations } from "next-intl";
 import { SnapshotJobButton } from "@/components/jobs/SnapshotJobButton";
 import { Button } from "@/components/ui/button";
+import { CanImage } from "@/components/systems/CanImage";
 import { ProductStory } from "@/components/systems/ProductStory";
 import { formatTempRange, type UnitSystem } from "@/lib/units";
 import type { JobOption } from "@/lib/jobs/list";
@@ -39,20 +40,22 @@ export function SystemEnvelope({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 p-3 sm:p-8"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-3 sm:p-6"
       role="dialog"
       aria-modal="true"
       aria-labelledby="envelope-title"
-      onClick={onClose}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
     >
       <div
-        className="envelope-panel my-4 w-full max-w-4xl"
+        className="envelope-panel flex max-h-[calc(100dvh-1.5rem)] w-full max-w-4xl flex-col"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="envelope-flap mx-auto w-[min(100%,42rem)]" />
-        <div className="rounded-b-2xl rounded-t-md border border-border bg-background shadow-2xl">
-          <div className="flex items-start justify-between gap-3 border-b border-border px-5 py-4 sm:px-8">
-            <div>
+        <div className="envelope-flap mx-auto w-[min(100%,42rem)] shrink-0" />
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-b-2xl rounded-t-md border border-border bg-background shadow-2xl">
+          <div className="sticky top-0 z-10 flex shrink-0 items-start justify-between gap-3 border-b border-border bg-background px-5 py-4 sm:px-8">
+            <div className="min-w-0">
               <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
                 {manufacturer.name}
               </p>
@@ -66,13 +69,13 @@ export function SystemEnvelope({
             <button
               type="button"
               onClick={onClose}
-              className="rounded-md px-2 py-1 text-sm text-muted-foreground hover:bg-muted hover:text-foreground"
+              className="shrink-0 rounded-md px-2 py-1 text-sm text-muted-foreground hover:bg-muted hover:text-foreground"
             >
               {t("close")}
             </button>
           </div>
 
-          <div className="space-y-8 px-5 py-5 sm:px-8">
+          <div className="min-h-0 flex-1 space-y-8 overflow-y-auto px-5 py-5 sm:px-8">
             <p className="text-sm">{system.prepNotes}</p>
             <ProductStory
               product={primer}
@@ -135,13 +138,12 @@ export function SystemEnvelope({
                 jobs={jobs}
               />
             </div>
+            <SystemLetterSheet
+              match={match}
+              units={units}
+              paperPdf={paperPdf}
+            />
           </div>
-
-          <SystemLetterSheet
-            match={match}
-            units={units}
-            paperPdf={paperPdf}
-          />
         </div>
       </div>
     </div>
@@ -162,37 +164,58 @@ export function ProductEnvelope({
   onClose: () => void;
 }) {
   const t = useTranslations("systems");
+  const kicker = [
+    manufacturer.name,
+    product.kind,
+    product.sku || null,
+  ]
+    .filter(Boolean)
+    .join(" · ");
   return (
     <div
-      className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 p-3 sm:p-8"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-3 sm:p-6"
       role="dialog"
       aria-modal="true"
       aria-labelledby="envelope-title"
-      onClick={onClose}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
     >
       <div
-        className="envelope-panel my-4 w-full max-w-4xl"
+        className="envelope-panel flex max-h-[calc(100dvh-1.5rem)] w-full max-w-4xl flex-col"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="envelope-flap mx-auto w-[min(100%,42rem)]" />
-        <div className="rounded-b-2xl rounded-t-md border border-border bg-background shadow-2xl">
-          <div className="flex items-start justify-between gap-3 border-b border-border px-5 py-4 sm:px-8">
-            <h2 id="envelope-title" className="sr-only">
-              {product.name}
-            </h2>
+        <div className="envelope-flap mx-auto w-[min(100%,42rem)] shrink-0" />
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-b-2xl rounded-t-md border border-border bg-background shadow-2xl">
+          <div className="sticky top-0 z-10 flex shrink-0 items-center justify-between gap-4 border-b border-border bg-background px-5 py-4 sm:px-8">
+            <div className="flex min-w-0 items-center gap-4">
+              <CanImage src={product.canImageUrl} alt={product.name} size="lg" />
+              <div className="min-w-0">
+                <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
+                  {kicker}
+                </p>
+                <h2
+                  id="envelope-title"
+                  className="mt-1 text-2xl font-semibold tracking-tight"
+                >
+                  {product.name}
+                </h2>
+              </div>
+            </div>
             <button
               type="button"
               onClick={onClose}
-              className="ml-auto rounded-md px-2 py-1 text-sm text-muted-foreground hover:bg-muted hover:text-foreground"
+              className="shrink-0 rounded-md px-2 py-1 text-sm text-muted-foreground hover:bg-muted hover:text-foreground"
             >
               {t("close")}
             </button>
           </div>
-          <div className="px-5 py-5 sm:px-8">
+          <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5 sm:px-8">
             <ProductStory
               product={product}
               manufacturer={manufacturer.name}
               units={units}
+              hideTitle
             />
             {usedIn.length ? (
               <div className="mt-6">

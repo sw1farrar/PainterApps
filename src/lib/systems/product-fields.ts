@@ -1,3 +1,5 @@
+import { canImagePublicUrl } from "@/lib/systems/document-url";
+
 export type ProductFieldKind = "number" | "integer" | "text" | "text[]";
 
 export type ProductFieldDef = {
@@ -88,6 +90,7 @@ export const PRODUCT_FIELD_GROUPS: Array<{
     label: "Docs & certs",
     fields: [
       { key: "official_tds_pdf_url", kind: "text", label: "Official TDS PDF URL" },
+      { key: "can_image_url", kind: "text", label: "Can image URL" },
       { key: "certifications", kind: "text[]", label: "Certifications" },
       { key: "astm_refs", kind: "text[]", label: "ASTM refs" },
     ],
@@ -113,6 +116,8 @@ const CORE_KEYS = [
   "tds_revision",
   "tds_date",
   "notes",
+  "can_image_url",
+  "can_image_path",
   "attrs",
   "updated_at",
 ] as const;
@@ -252,6 +257,11 @@ export function productRowToMcp(row: Record<string, unknown>) {
     tds_revision: row.tds_revision ?? "",
     tds_date: row.tds_date ?? null,
     notes: row.notes ?? "",
+    can_image_url: canImagePublicUrl(
+      row.can_image_path ? String(row.can_image_path) : null,
+      String(row.can_image_url ?? ""),
+    ),
+    can_image_path: row.can_image_path ?? null,
     attrs,
     updated_at: row.updated_at ?? null,
   };

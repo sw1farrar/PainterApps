@@ -342,6 +342,8 @@ const MCP_TOOLS: McpToolDefinition[] = [
         description: { type: "string" },
         features: { type: "array", items: { type: "string" } },
         benefits: { type: "array", items: { type: "string" } },
+        can_image_url: { type: "string" },
+        can_image_base64: { type: "string" },
         attrs: { type: "object" },
       },
       required: ["name", "manufacturer_id"],
@@ -424,6 +426,15 @@ const MCP_TOOLS: McpToolDefinition[] = [
         mix_ratio: { type: "string" },
         shelf_life_months: { type: "number" },
         official_tds_pdf_url: { type: "string" },
+        can_image_url: {
+          type: "string",
+          description: "HTTPS URL of a paint-can photo (PNG/JPEG/WebP).",
+        },
+        can_image_base64: {
+          type: "string",
+          description:
+            "PNG, JPEG, or WebP as base64 (optionally a data: URL). Stored in tds-cans and shown on Systems lists and product envelopes.",
+        },
         certifications: { type: "array", items: { type: "string" } },
         astm_refs: { type: "array", items: { type: "string" } },
         attrs: { type: "object" },

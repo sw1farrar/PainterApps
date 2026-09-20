@@ -87,10 +87,12 @@ export function ProductStory({
   product,
   manufacturer,
   units,
+  hideTitle = false,
 }: {
   product: TdsProduct;
   manufacturer: string;
   units: UnitSystem;
+  hideTitle?: boolean;
 }) {
   const t = useTranslations("systems");
   const [preview, setPreview] = useState(false);
@@ -109,18 +111,30 @@ export function ProductStory({
 
   return (
     <div className="space-y-6">
-      <div>
-        <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
-          {manufacturer} · {product.kind}
-          {product.sku ? ` · ${product.sku}` : ""}
-        </p>
-        <h3 className="mt-1 text-xl font-semibold tracking-tight">{product.name}</h3>
-        {story ? (
-          <p className="mt-3 text-sm leading-relaxed">{story}</p>
+      {hideTitle ? (
+        story ? (
+          <p className="text-sm leading-relaxed">{story}</p>
         ) : (
-          <p className="mt-3 text-sm text-muted-foreground">{t("noDescription")}</p>
-        )}
-      </div>
+          <p className="text-sm text-muted-foreground">{t("noDescription")}</p>
+        )
+      ) : (
+        <div>
+          <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
+            {manufacturer} · {product.kind}
+            {product.sku ? ` · ${product.sku}` : ""}
+          </p>
+          <h3 className="mt-1 text-xl font-semibold tracking-tight">
+            {product.name}
+          </h3>
+          {story ? (
+            <p className="mt-3 text-sm leading-relaxed">{story}</p>
+          ) : (
+            <p className="mt-3 text-sm text-muted-foreground">
+              {t("noDescription")}
+            </p>
+          )}
+        </div>
+      )}
 
       {product.features && product.features.length > 0 ? (
         <div>

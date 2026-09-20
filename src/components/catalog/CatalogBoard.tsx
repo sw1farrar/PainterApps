@@ -318,23 +318,29 @@ function CatalogEnvelope({
   creating: boolean;
   onClose: () => void;
 }) {
+  const brand =
+    manufacturers.find((m) => m.id === String(product.manufacturer_id ?? ""))
+      ?.name ?? String(product.manufacturer_id ?? "");
+  const kicker = creating
+    ? "New product"
+    : [brand, product.kind, product.sku].filter(Boolean).join(" · ");
   return (
     <div
-      className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 p-3 sm:p-8"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-3 sm:p-6"
       role="dialog"
       aria-modal="true"
       onClick={onClose}
     >
       <div
-        className="envelope-panel my-4 w-full max-w-3xl"
+        className="envelope-panel flex max-h-[calc(100dvh-1.5rem)] w-full max-w-3xl flex-col"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="envelope-flap mx-auto w-[min(100%,42rem)]" />
-        <div className="rounded-b-2xl rounded-t-md border border-border bg-background shadow-2xl">
-          <div className="flex items-start justify-between gap-3 border-b border-border px-5 py-4 sm:px-8">
-            <div>
+        <div className="envelope-flap mx-auto w-[min(100%,42rem)] shrink-0" />
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-b-2xl rounded-t-md border border-border bg-background shadow-2xl">
+          <div className="sticky top-0 z-10 flex shrink-0 items-start justify-between gap-3 border-b border-border bg-background px-5 py-4 sm:px-8">
+            <div className="min-w-0">
               <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
-                {creating ? "New product" : "Product"}
+                {kicker}
               </p>
               <h2 className="mt-1 text-2xl font-semibold tracking-tight">
                 {creating ? "Add product" : String(product.name ?? "")}
@@ -343,12 +349,12 @@ function CatalogEnvelope({
             <button
               type="button"
               onClick={onClose}
-              className="rounded-md px-2 py-1 text-sm text-muted-foreground hover:bg-muted hover:text-foreground"
+              className="shrink-0 rounded-md px-2 py-1 text-sm text-muted-foreground hover:bg-muted hover:text-foreground"
             >
               Close
             </button>
           </div>
-          <div className="px-5 py-5 sm:px-8">
+          <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5 sm:px-8">
             <ProductEditor
               key={creating ? "new" : String(product.id)}
               product={product}

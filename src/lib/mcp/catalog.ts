@@ -73,9 +73,56 @@ function bool(args: Record<string, unknown>, key: string) {
 function extraAttrs(args: Record<string, unknown>) {
   const extra: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(args)) {
+    if (key === "can_image_base64") continue;
     if (!PRODUCT_PATCH_KEYS.has(key) && value !== undefined) extra[key] = value;
   }
   return extra;
+}
+
+function imageExt(bytes: Uint8Array) {
+  if (bytes[0] === 0x89 && bytes[1] === 0x50) return { ext: "png", mime: "image/png" };
+  if (bytes[0] === 0xff && bytes[1] === 0xd8) return { ext: "jpg", mime: "image/jpeg" };
+  if (bytes[0] === 0x52 && bytes[1] === 0x49) return { ext: "webp", mime: "image/webp" };
+  throw new McpToolError("Can image must be PNG, JPEG, or WebP.");
+}
+
+async function storeCanImage(productId: string, b64: string) {
+  const raw = b64.replace(/^data:image\/[a-zA-Z0-9+.-]+;base64,/, "");
+  const bytes = Uint8Array.from(Buffer.from(raw, "base64"));
+  if (bytes.byteLength < 32 || bytes.byteLength > 5_000_000) {
+    throw new McpToolError("Can image must be between 32 bytes and 5 MB.");
+  }
+  const { ext, mime } = imageExt(bytes);
+  const path = `${productId}/${crypto.randomUUID()}.${ext}`;
+  const { error } = await admin()
+    .storage.from("tds-cans")
+    .upload(path, bytes, { contentType: mime, upsert: false });
+  if (error) throw new McpToolError(error.message);
+  return path;
+}
+
+async function applyCanImage(
+  productId: string,
+  args: Record<string, unknown>,
+  patch: Record<string, unknown>,
+  previousPath?: string | null,
+) {
+  const b64 = typeof args.can_image_base64 === "string" ? args.can_image_base64 : "";
+  if (b64) {
+    const path = await storeCanImage(productId, b64);
+    if (previousPath && previousPath !== path) {
+      await admin().storage.from("tds-cans").remove([previousPath]);
+    }
+    patch.can_image_path = path;
+    patch.can_image_url = null;
+    return;
+  }
+  if (args.can_image_url !== undefined) {
+    patch.can_image_url =
+      args.can_image_url == null || args.can_image_url === ""
+        ? null
+        : String(args.can_image_url);
+  }
 }
 
 function strArr(args: Record<string, unknown>, key: string) {
@@ -155,6 +202,7 @@ export async function listProducts(args: Record<string, unknown>) {
     sku: p.sku,
     manufacturer_id: p.manufacturerId,
     kind: p.kind,
+    can_image_url: p.canImageUrl ?? null,
   }));
 }
 
@@ -207,6 +255,14 @@ export async function upsertProduct(
     if (patch.interior == null) patch.interior = false;
     if (patch.exterior == null) patch.exterior = false;
   }
+  await applyCanImage(
+    id,
+    args,
+    patch,
+    existing.data?.can_image_path
+      ? String(existing.data.can_image_path)
+      : null,
+  );
   const { data, error } = await admin()
     .from("tds_products")
     .upsert(patch)
@@ -247,6 +303,14 @@ export async function patchProduct(
         : {}),
     };
   }
+  await applyCanImage(
+    id,
+    args,
+    patch,
+    existing.data.can_image_path
+      ? String(existing.data.can_image_path)
+      : null,
+  );
   if (!Object.keys(patch).length) {
     return productRowToMcp(existing.data as Record<string, unknown>);
   }

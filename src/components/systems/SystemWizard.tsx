@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
+import { CanImage } from "@/components/systems/CanImage";
 import {
   ProductEnvelope,
   SystemEnvelope,
@@ -55,7 +56,11 @@ export function SystemWizard({
   const [mfrs, setMfrs] = useState<string[]>([]);
   const [catalog, setCatalog] = useState<Catalog | undefined>(undefined);
   const [openId, setOpenId] = useState<string | null>(null);
-  const [openProductId, setOpenProductId] = useState<string | null>(null);
+  const [openCoat, setOpenCoat] = useState<{
+    product: TdsProduct;
+    manufacturer: Manufacturer;
+    usedIn: MatchedSystem[];
+  } | null>(null);
 
   useEffect(() => {
     void fetch("/api/tds")
@@ -178,7 +183,20 @@ export function SystemWizard({
   }, [role, results]);
 
   const selected = results.find((r) => r.system.id === openId) ?? null;
-  const selectedCoat = coats.find((c) => c.product.id === openProductId) ?? null;
+
+  function showProduct(product: TdsProduct, manufacturer: Manufacturer) {
+    setOpenId(null);
+    setOpenCoat({
+      product,
+      manufacturer,
+      usedIn: results.filter(
+        (r) =>
+          r.primer.id === product.id ||
+          r.topcoat.id === product.id ||
+          r.midcoat?.id === product.id,
+      ),
+    });
+  }
   const narrowed =
     apps.length + subs.length + sheens.length + mfrs.length > 0 || voc;
   const listCount = role === "all" ? results.length : coats.length;
@@ -190,13 +208,13 @@ export function SystemWizard({
         : t("systemCount", { n: listCount });
 
   useEffect(() => {
-    if (!openId && !openProductId) return;
+    if (!openId && !openCoat) return;
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     function onKey(e: KeyboardEvent) {
       if (e.key === "Escape") {
         setOpenId(null);
-        setOpenProductId(null);
+        setOpenCoat(null);
       }
     }
     window.addEventListener("keydown", onKey);
@@ -204,7 +222,7 @@ export function SystemWizard({
       document.body.style.overflow = prev;
       window.removeEventListener("keydown", onKey);
     };
-  }, [openId, openProductId]);
+  }, [openId, openCoat]);
 
   function reset() {
     setApps([]);
@@ -226,7 +244,7 @@ export function SystemWizard({
             selected={role === "all"}
             onClick={() => {
               setRole("all");
-              setOpenProductId(null);
+              setOpenCoat(null);
             }}
           >
             {t("roleAll")}
@@ -236,6 +254,7 @@ export function SystemWizard({
             onClick={() => {
               setRole("primer");
               setOpenId(null);
+              setOpenCoat(null);
             }}
           >
             {t("primer")}
@@ -245,6 +264,7 @@ export function SystemWizard({
             onClick={() => {
               setRole("topcoat");
               setOpenId(null);
+              setOpenCoat(null);
             }}
           >
             {t("topcoat")}
@@ -368,7 +388,11 @@ export function SystemWizard({
               <SystemRow
                 match={r}
                 units={units}
-                onOpen={() => setOpenId(r.system.id)}
+                onOpen={() => {
+                  setOpenCoat(null);
+                  setOpenId(r.system.id);
+                }}
+                onOpenProduct={showProduct}
               />
             </li>
           ))}
@@ -381,7 +405,7 @@ export function SystemWizard({
                 product={c.product}
                 manufacturer={c.manufacturer}
                 units={units}
-                onOpen={() => setOpenProductId(c.product.id)}
+                onOpen={() => showProduct(c.product, c.manufacturer)}
               />
             </li>
           ))}
@@ -397,13 +421,13 @@ export function SystemWizard({
           onClose={() => setOpenId(null)}
         />
       ) : null}
-      {selectedCoat ? (
+      {openCoat ? (
         <ProductEnvelope
-          product={selectedCoat.product}
-          manufacturer={selectedCoat.manufacturer}
-          usedIn={selectedCoat.usedIn}
+          product={openCoat.product}
+          manufacturer={openCoat.manufacturer}
+          usedIn={openCoat.usedIn}
           units={units}
-          onClose={() => setOpenProductId(null)}
+          onClose={() => setOpenCoat(null)}
         />
       ) : null}
     </div>
@@ -426,9 +450,10 @@ function ProductRow({
     <button
       type="button"
       onClick={onOpen}
-      className="flex w-full flex-col gap-1 px-4 py-4 text-left transition hover:bg-muted/50 sm:flex-row sm:items-center sm:justify-between sm:gap-6"
+      className="flex w-full items-center gap-4 px-4 py-3.5 text-left transition hover:bg-muted/50"
     >
-      <span>
+      <CanImage src={product.canImageUrl} alt={product.name} size="md" />
+      <span className="min-w-0 flex-1">
         <span className="block text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
           {manufacturer.name}
         </span>
@@ -450,19 +475,39 @@ function SystemRow({
   match,
   units,
   onOpen,
+  onOpenProduct,
 }: {
   match: MatchedSystem;
   units: UnitSystem;
   onOpen: () => void;
+  onOpenProduct: (product: TdsProduct, manufacturer: Manufacturer) => void;
 }) {
   const t = useTranslations("systems");
   return (
-    <button
-      type="button"
-      onClick={onOpen}
-      className="flex w-full flex-col gap-1 px-4 py-4 text-left transition hover:bg-muted/50 sm:flex-row sm:items-center sm:justify-between sm:gap-6"
-    >
-      <span>
+    <div className="flex items-center gap-4 px-4 py-3.5 transition hover:bg-muted/50">
+      <span className="flex shrink-0 items-end -space-x-2">
+        <button
+          type="button"
+          className="rounded-sm"
+          onClick={() => onOpenProduct(match.primer, match.manufacturer)}
+          aria-label={match.primer.name}
+        >
+          <CanImage src={match.primer.canImageUrl} alt={match.primer.name} size="sm" />
+        </button>
+        <button
+          type="button"
+          className="rounded-sm"
+          onClick={() => onOpenProduct(match.topcoat, match.manufacturer)}
+          aria-label={match.topcoat.name}
+        >
+          <CanImage src={match.topcoat.canImageUrl} alt={match.topcoat.name} size="md" />
+        </button>
+      </span>
+      <button
+        type="button"
+        onClick={onOpen}
+        className="min-w-0 flex-1 text-left"
+      >
         <span className="block text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
           {match.manufacturer.name}
         </span>
@@ -470,18 +515,40 @@ function SystemRow({
           {match.system.name}
         </span>
         <span className="mt-1 block text-sm text-muted-foreground">
-          {match.primer.name} · {match.topcoat.name}
+          <span
+            className="underline-offset-4 hover:underline"
+            onClick={(e) => {
+              e.stopPropagation();
+              onOpenProduct(match.primer, match.manufacturer);
+            }}
+          >
+            {match.primer.name}
+          </span>
+          {" · "}
+          <span
+            className="underline-offset-4 hover:underline"
+            onClick={(e) => {
+              e.stopPropagation();
+              onOpenProduct(match.topcoat, match.manufacturer);
+            }}
+          >
+            {match.topcoat.name}
+          </span>
         </span>
-      </span>
-      <span className="shrink-0 text-xs text-muted-foreground">
+      </button>
+      <button
+        type="button"
+        onClick={onOpen}
+        className="shrink-0 text-xs text-muted-foreground"
+      >
         {formatTempRange(
           match.topcoat.minTempF,
           match.topcoat.maxTempF,
           units,
         )}
         <span className="ml-3 underline underline-offset-4">{t("open")}</span>
-      </span>
-    </button>
+      </button>
+    </div>
   );
 }
 

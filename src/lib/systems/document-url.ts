@@ -7,3 +7,16 @@ export function documentPublicUrl(
   if (!base) return fallbackUrl || null;
   return `${base}/storage/v1/object/public/tds-pdfs/${storagePath}`;
 }
+
+export function canImagePublicUrl(
+  storagePath: string | null,
+  fallbackUrl: string,
+) {
+  if (storagePath) {
+    const base = process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, "");
+    if (base) {
+      return `${base}/storage/v1/object/public/tds-cans/${storagePath}`;
+    }
+  }
+  return fallbackUrl || null;
+}

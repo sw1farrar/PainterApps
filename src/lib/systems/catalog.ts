@@ -1,5 +1,8 @@
 import type { Manufacturer, TdsProduct, TdsSystem } from "@/lib/systems/types";
-import { documentPublicUrl } from "@/lib/systems/document-url";
+import {
+  canImagePublicUrl,
+  documentPublicUrl,
+} from "@/lib/systems/document-url";
 import { TYPED_TDS_KEYS } from "@/lib/systems/product-fields";
 import { supabaseAdmin } from "@/lib/supabase/server";
 import { CORPUS_CATALOG, type Catalog } from "@/lib/systems/corpus-catalog";
@@ -45,6 +48,10 @@ export function productFromRow(row: Record<string, unknown>): TdsProduct {
     description: row.description ? String(row.description) : undefined,
     features: asStringArray(row.features),
     benefits: asStringArray(row.benefits),
+    canImageUrl: canImagePublicUrl(
+      row.can_image_path ? String(row.can_image_path) : null,
+      String(row.can_image_url ?? ""),
+    ),
     attrs,
     specs: Object.fromEntries(
       TYPED_TDS_KEYS.filter((key) => row[key] != null && row[key] !== "").map(
@@ -115,6 +122,7 @@ export function productToRow(p: Partial<TdsProduct> & { id: string; manufacturer
     description: p.description ?? null,
     features: p.features ?? [],
     benefits: p.benefits ?? [],
+    can_image_url: p.canImageUrl ?? null,
     attrs: p.attrs ?? {},
     updated_at: new Date().toISOString(),
     ...(p.specs ?? {}),

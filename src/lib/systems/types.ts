@@ -111,6 +111,7 @@ export type TdsProduct = {
   description?: string;
   features?: string[];
   benefits?: string[];
+  canImageUrl?: string | null;
   attrs?: Record<string, unknown>;
   specs?: Record<string, unknown>;
   documents?: Array<{
