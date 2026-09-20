@@ -18,17 +18,14 @@ export async function Footer() {
           <Link href="/" className="hover:underline">
             {t("nav.home")}
           </Link>
-          <Link href="/paintday" className="hover:underline">
-            {t("nav.paintday")}
+          <Link href="/news" className="hover:underline">
+            {t("nav.news")}
           </Link>
           <Link href="/systems" className="hover:underline">
             {t("nav.systems")}
           </Link>
           <Link href="/calc" className="hover:underline">
             {t("nav.calc")}
-          </Link>
-          <Link href="/news" className="hover:underline">
-            {t("nav.news")}
           </Link>
           <Link href="/about" className="hover:underline">
             {t("nav.about")}

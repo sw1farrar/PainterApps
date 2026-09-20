@@ -48,8 +48,8 @@ export default async function DashboardPage() {
           <p className="mt-4 text-sm text-muted-foreground">
             {t("dashboardEmpty")}
           </p>
-          <Link href="/paintday" className="mt-3 inline-block text-sm underline">
-            PaintDay
+          <Link href="/" className="mt-3 inline-block text-sm underline">
+            {t("dashboardTitle")}
           </Link>
         </div>
       ) : (

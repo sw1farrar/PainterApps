@@ -111,3 +111,16 @@
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.06em;
 }
+
+.paintday-popup .maplibregl-popup-content {
+  background: var(--popover);
+  color: var(--popover-foreground);
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  box-shadow: none;
+  padding: 8px 10px;
+}
+.paintday-popup .maplibregl-popup-tip {
+  border-top-color: var(--popover);
+  border-bottom-color: var(--popover);
+}

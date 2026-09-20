@@ -26,6 +26,8 @@ function scoreCollection(points: MapScorePoint[]) {
         state: p.state,
         score: p.score,
         color: colorFor(p.score),
+        highF: p.highF,
+        precipChance: p.precipChance,
       },
       geometry: {
         type: "Point" as const,
@@ -37,9 +39,19 @@ function scoreCollection(points: MapScorePoint[]) {
 
 export function PaintDayMap({ points }: { points: MapScorePoint[] }) {
   const el = useRef<HTMLDivElement>(null);
+  const mapRef = useRef<import("maplibre-gl").Map | undefined>(undefined);
+  const pointsRef = useRef(points);
+  pointsRef.current = points;
   const router = useRouter();
   const { resolvedTheme } = useTheme();
   const dark = resolvedTheme !== "light";
+
+  useEffect(() => {
+    const src = mapRef.current?.getSource("scores") as
+      | { setData: (data: GeoJSON.GeoJSON) => void }
+      | undefined;
+    src?.setData(scoreCollection(points));
+  }, [points]);
 
   useEffect(() => {
     const node = el.current;
@@ -68,7 +80,7 @@ export function PaintDayMap({ points }: { points: MapScorePoint[] }) {
             },
             scores: {
               type: "geojson",
-              data: scoreCollection(points),
+              data: scoreCollection(pointsRef.current),
             },
           },
           layers: [
@@ -135,9 +147,11 @@ export function PaintDayMap({ points }: { points: MapScorePoint[] }) {
         closeButton: false,
         closeOnClick: false,
         offset: 14,
+        className: "paintday-popup",
       });
 
       map.on("load", () => {
+        mapRef.current = map;
         map?.resize();
         map?.fitBounds(
           [
@@ -157,13 +171,18 @@ export function PaintDayMap({ points }: { points: MapScorePoint[] }) {
           zip: string;
           score: number;
           color: string;
+          highF: number;
+          precipChance: number;
         };
         popup
           .setLngLat(e.lngLat)
           .setHTML(
-            `<div style="font:600 12px Geist,system-ui,sans-serif;padding:2px 2px 0">
+            `<div style="font:600 12px Geist,system-ui,sans-serif;padding:2px 2px 0;color:var(--foreground)">
               ${props.city}, ${props.state} ${props.zip}<br/>
               <span style="color:${props.color};font-size:20px;letter-spacing:-0.04em">${props.score}</span>
+              <div style="margin-top:4px;font:500 11px Geist,system-ui,sans-serif;color:var(--muted-foreground)">
+                High ${Math.round(Number(props.highF))}°F · Rain ${Math.round(Number(props.precipChance))}%
+              </div>
             </div>`,
           )
           .addTo(map);
@@ -184,11 +203,12 @@ export function PaintDayMap({ points }: { points: MapScorePoint[] }) {
 
     return () => {
       cancelled = true;
+      mapRef.current = undefined;
       ro?.disconnect();
       popup?.remove();
       map?.remove();
     };
-  }, [dark, points, router]);
+  }, [dark, router]);
 
   return (
     <div className="relative overflow-hidden rounded-2xl border border-border">

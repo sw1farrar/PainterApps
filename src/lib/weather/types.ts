@@ -5,6 +5,8 @@ export type DailyWindow = {
   date: string;
   snapshot: WeatherSnapshot;
   score: PaintDayScore;
+  highF?: number;
+  precipChance?: number;
 };
 
 export type Forecast = {

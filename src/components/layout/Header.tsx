@@ -21,10 +21,9 @@ import { AuthButtons } from "./AuthButtons";
 
 const LINKS = [
   { href: "/", key: "home" as const },
-  { href: "/paintday", key: "paintday" as const },
+  { href: "/news", key: "news" as const },
   { href: "/systems", key: "systems" as const },
   { href: "/calc", key: "calc" as const },
-  { href: "/news", key: "news" as const },
   { href: "/about", key: "about" as const },
 ];
 
@@ -32,10 +31,12 @@ export function Header({
   locale,
   authEnabled,
   signedIn,
+  isEditor = false,
 }: {
   locale: Locale;
   authEnabled: boolean;
   signedIn: boolean;
+  isEditor?: boolean;
 }) {
   const t = useTranslations("nav");
   const pathname = usePathname();
@@ -62,6 +63,14 @@ export function Header({
           </Link>
         );
       })}
+      {isEditor ? (
+        <Link
+          href="/app/news"
+          className="text-sm text-muted-foreground hover:text-foreground"
+        >
+          {t("write")}
+        </Link>
+      ) : null}
     </>
   );
 

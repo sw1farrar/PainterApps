@@ -5,7 +5,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
   const base = "https://painterapps.com";
   const paths = [
     "",
-    "/paintday",
     "/systems",
     "/calc",
     "/news",

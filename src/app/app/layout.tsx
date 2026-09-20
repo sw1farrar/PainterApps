@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
+import { currentUserId } from "@/lib/auth/current-user";
+import { isNewsEditor } from "@/lib/news/editors";
 
 export default async function AppLayout({
   children,
@@ -7,6 +9,7 @@ export default async function AppLayout({
   children: React.ReactNode;
 }) {
   const t = await getTranslations("nav");
+  const editor = await isNewsEditor(await currentUserId());
   const links = [
     { href: "/app", label: t("dashboard") },
     { href: "/app/estimates", label: t("estimates") },
@@ -14,6 +17,7 @@ export default async function AppLayout({
     { href: "/app/customers", label: t("customers") },
     { href: "/app/locations", label: t("locations") },
     { href: "/app/settings", label: t("settings") },
+    ...(editor ? [{ href: "/app/news", label: t("write") }] : []),
   ];
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-8 px-4 py-8 md:flex-row">

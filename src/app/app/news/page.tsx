@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { currentUserId } from "@/lib/auth/current-user";
 import { editorIdsFromEnv, isNewsEditor } from "@/lib/news/editors";
 import { getNewsById, listNews } from "@/lib/news/load";
-import { supabaseEnabled } from "@/lib/env";
+import { createClient, supabaseAdmin } from "@/lib/supabase/server";
 import { deleteNewsPost } from "./actions";
 
 export const metadata = { title: "News editor" };
@@ -19,7 +19,7 @@ export default async function NewsEditorPage({
   const t = await getTranslations("news");
   const userId = await currentUserId();
   const editor = await isNewsEditor(userId);
-  const dbReady = supabaseEnabled() && Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY);
+  const dbReady = Boolean(supabaseAdmin() ?? (await createClient()));
   const posts = await listNews({ includeDrafts: true });
   const editing = edit ? ((await getNewsById(edit)) ?? undefined) : undefined;
 

@@ -7,6 +7,7 @@ import { Footer } from "@/components/layout/Footer";
 import { Header } from "@/components/layout/Header";
 import { Providers } from "@/components/providers";
 import { currentUserId } from "@/lib/auth/current-user";
+import { isNewsEditor } from "@/lib/news/editors";
 import { supabaseEnabled } from "@/lib/env";
 import type { Locale } from "@/i18n/config";
 import "./globals.css";
@@ -55,6 +56,7 @@ export default async function RootLayout({
   const locale = (await getLocale()) as Locale;
   const messages = await getMessages();
   const [authEnabled, userId] = [supabaseEnabled(), await currentUserId()];
+  const isEditor = await isNewsEditor(userId);
 
   return (
     <html
@@ -70,6 +72,7 @@ export default async function RootLayout({
               locale={locale}
               authEnabled={authEnabled}
               signedIn={Boolean(userId)}
+              isEditor={isEditor}
             />
             <main className="flex-1">{children}</main>
             <Footer />

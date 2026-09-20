@@ -4,7 +4,11 @@ import { revalidatePath } from "next/cache";
 import { NEWS_CATEGORIES, type NewsCategory } from "@/lib/news/types";
 import { requireNewsEditor } from "@/lib/news/editors";
 import { slugify } from "@/lib/news/slug";
-import { supabaseAdmin } from "@/lib/supabase/server";
+import { createClient, supabaseAdmin } from "@/lib/supabase/server";
+
+async function newsDb() {
+  return supabaseAdmin() ?? (await createClient());
+}
 
 function str(form: FormData, key: string) {
   return String(form.get(key) ?? "").trim();
@@ -25,7 +29,7 @@ function revalidateNews(slug?: string) {
 
 export async function saveNewsPost(formData: FormData) {
   const editorId = await requireNewsEditor();
-  const db = supabaseAdmin();
+  const db = await newsDb();
   if (!editorId || !db) return { error: "forbidden" };
 
   const id = str(formData, "id");
@@ -71,7 +75,7 @@ export async function saveNewsPost(formData: FormData) {
 
 export async function deleteNewsPost(id: string, slug: string) {
   const editorId = await requireNewsEditor();
-  const db = supabaseAdmin();
+  const db = await newsDb();
   if (!editorId || !db) return;
   await db.from("news_posts").delete().eq("id", id);
   revalidateNews(slug);

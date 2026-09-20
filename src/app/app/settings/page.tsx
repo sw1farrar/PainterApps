@@ -7,6 +7,7 @@ import { currentUnits } from "@/lib/auth/current-units";
 import { currentUserId } from "@/lib/auth/current-user";
 import { createClient } from "@/lib/supabase/server";
 import type { Locale } from "@/i18n/config";
+import { GrokBotTokens } from "@/components/settings/GrokBotTokens";
 import { ensureCompany, saveCompanySettings } from "../estimates/actions";
 
 export const metadata = { title: "Settings" };
@@ -69,6 +70,12 @@ export default async function SettingsPage() {
           </label>
           <Button type="submit">{t("saveCompany")}</Button>
         </form>
+      </section>
+      <section>
+        <h2 className="text-sm font-medium">{t("grokBot")}</h2>
+        <div className="mt-3">
+          <GrokBotTokens />
+        </div>
       </section>
       <section>
         <h2 className="text-sm font-medium">{t("notifications")}</h2>

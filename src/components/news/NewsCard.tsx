@@ -1,10 +1,18 @@
 import Link from "next/link";
 import { getLocale, getTranslations } from "next-intl/server";
+import { deleteNewsPost } from "@/app/app/news/actions";
+import { Button } from "@/components/ui/button";
 import type { Locale } from "@/i18n/config";
 import { formatNewsDate, localizePost } from "@/lib/news/localize";
 import type { NewsPost } from "@/lib/news/types";
 
-export async function NewsCard({ post }: { post: NewsPost }) {
+export async function NewsCard({
+  post,
+  editor = false,
+}: {
+  post: NewsPost;
+  editor?: boolean;
+}) {
   const locale = (await getLocale()) as Locale;
   const t = await getTranslations("news");
   const item = localizePost(post, locale);
@@ -25,12 +33,33 @@ export async function NewsCard({ post }: { post: NewsPost }) {
       <p className="mt-3 flex-1 text-sm leading-relaxed text-muted-foreground">
         {item.excerpt}
       </p>
-      <Link
-        href={`/news/${post.slug}`}
-        className="mt-4 text-sm font-medium text-foreground underline-offset-4 hover:underline"
-      >
-        {t("read")}
-      </Link>
+      <div className="mt-4 flex flex-wrap items-center gap-3">
+        <Link
+          href={`/news/${post.slug}`}
+          className="text-sm font-medium text-foreground underline-offset-4 hover:underline"
+        >
+          {t("read")}
+        </Link>
+        {editor ? (
+          <>
+            <Button asChild size="sm" variant="outline">
+              <Link href={`/app/news?edit=${post.id}`}>{t("edit")}</Link>
+            </Button>
+            {post.origin === "db" ? (
+              <form
+                action={async () => {
+                  "use server";
+                  await deleteNewsPost(post.id, post.slug);
+                }}
+              >
+                <Button type="submit" size="sm" variant="ghost">
+                  {t("delete")}
+                </Button>
+              </form>
+            ) : null}
+          </>
+        ) : null}
+      </div>
     </article>
   );
 }

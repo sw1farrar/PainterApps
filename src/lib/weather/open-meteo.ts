@@ -141,12 +141,18 @@ export class OpenMeteoProvider implements WeatherProvider {
     );
     const crewPlan = buildCrewPlan(todayHours, now.hour);
 
-    const days: DailyWindow[] = json.daily.time.map((date) => {
+    const days: DailyWindow[] = json.daily.time.map((date, i) => {
       const dayHours = hours.filter(
         (h) => h.date === date && h.hour >= DAY_START && h.hour <= DAY_END,
       );
       const day = scoreDayFromHours(dayHours, window);
-      return { date, snapshot: day.snapshot, score: day.score };
+      return {
+        date,
+        snapshot: day.snapshot,
+        score: day.score,
+        highF: json.daily!.temperature_2m_max[i],
+        precipChance: json.daily!.precipitation_probability_max[i],
+      };
     });
 
     return {

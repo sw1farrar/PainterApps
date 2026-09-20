@@ -1,5 +1,5 @@
 import { SEED_NEWS } from "@/data/news/posts";
-import { supabaseAdmin } from "@/lib/supabase/server";
+import { createClient, supabaseAdmin } from "@/lib/supabase/server";
 import type { NewsCategory, NewsPost } from "./types";
 import { NEWS_CATEGORIES } from "./types";
 
@@ -34,8 +34,12 @@ function fromRow(row: Record<string, unknown>): NewsPost | null {
   };
 }
 
+async function newsDb() {
+  return supabaseAdmin() ?? (await createClient());
+}
+
 async function dbPosts(): Promise<NewsPost[]> {
-  const db = supabaseAdmin();
+  const db = await newsDb();
   if (!db) return [];
   try {
     const query = db
@@ -49,7 +53,7 @@ async function dbPosts(): Promise<NewsPost[]> {
       new Promise<{ data: null; error: Error }>((resolve) =>
         setTimeout(
           () => resolve({ data: null, error: new Error("timeout") }),
-          800,
+          4000,
         ),
       ),
     ]);

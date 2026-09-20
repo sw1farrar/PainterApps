@@ -38,6 +38,8 @@ export class DemoWeatherProvider implements WeatherProvider {
         date: date.toISOString().slice(0, 10),
         snapshot,
         score: scorePaintDay(snapshot),
+        highF: snapshot.tempF,
+        precipChance: snapshot.precipProbability,
       };
     });
     return {

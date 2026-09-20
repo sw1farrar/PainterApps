@@ -1,5 +1,5 @@
 import { currentUserId } from "@/lib/auth/current-user";
-import { supabaseAdmin } from "@/lib/supabase/server";
+import { createClient, supabaseAdmin } from "@/lib/supabase/server";
 
 export function editorIdsFromEnv() {
   return (process.env.NEWS_EDITOR_USER_IDS ?? "")
@@ -12,9 +12,18 @@ export async function isNewsEditor(userId: string | null) {
   if (!userId) return false;
   const ids = editorIdsFromEnv();
   if (ids.includes(userId)) return true;
-  const db = supabaseAdmin();
-  if (!db) return false;
-  const { data } = await db
+  const admin = supabaseAdmin();
+  if (admin) {
+    const { data } = await admin
+      .from("profiles")
+      .select("is_editor")
+      .eq("user_id", userId)
+      .maybeSingle();
+    if (data?.is_editor) return true;
+  }
+  const supabase = await createClient();
+  if (!supabase) return false;
+  const { data } = await supabase
     .from("profiles")
     .select("is_editor")
     .eq("user_id", userId)
