@@ -3,7 +3,6 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { Analytics } from "@vercel/analytics/react";
 import { getLocale, getMessages } from "next-intl/server";
 import { PasswordManagerGuard } from "@/components/auth/PasswordManagerGuard";
-import { Footer } from "@/components/layout/Footer";
 import { Header } from "@/components/layout/Header";
 import { Providers } from "@/components/providers";
 import { currentUserId } from "@/lib/auth/current-user";
@@ -75,7 +74,6 @@ export default async function RootLayout({
               isEditor={isEditor}
             />
             <main className="flex-1">{children}</main>
-            <Footer />
           </div>
         </Providers>
         <Analytics />

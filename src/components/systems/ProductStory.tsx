@@ -88,11 +88,13 @@ export function ProductStory({
   manufacturer,
   units,
   hideTitle = false,
+  hidePdf = false,
 }: {
   product: TdsProduct;
   manufacturer: string;
   units: UnitSystem;
   hideTitle?: boolean;
+  hidePdf?: boolean;
 }) {
   const t = useTranslations("systems");
   const [preview, setPreview] = useState(false);
@@ -215,12 +217,12 @@ export function ProductStory({
         />
       </dl>
 
-      {pdf ? (
+      {hidePdf ? null : pdf ? (
         <Button
           className="paint-gradient border-0 text-white"
           onClick={() => setPreview(true)}
         >
-          {t("pdfPreview")}
+          {t("productDataSheet")}
         </Button>
       ) : (
         <p className="text-sm text-muted-foreground">{t("noTds")}</p>

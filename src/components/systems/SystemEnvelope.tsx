@@ -1,10 +1,15 @@
 "use client";
 
+import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { SnapshotJobButton } from "@/components/jobs/SnapshotJobButton";
 import { Button } from "@/components/ui/button";
 import { CanImage } from "@/components/systems/CanImage";
-import { ProductStory } from "@/components/systems/ProductStory";
+import {
+  PdfPreviewModal,
+  ProductStory,
+  previewPdfUrl,
+} from "@/components/systems/ProductStory";
 import { formatTempRange, type UnitSystem } from "@/lib/units";
 import type { JobOption } from "@/lib/jobs/list";
 import type { Manufacturer, MatchedSystem, TdsProduct } from "@/lib/systems/types";
@@ -164,6 +169,8 @@ export function ProductEnvelope({
   onClose: () => void;
 }) {
   const t = useTranslations("systems");
+  const [preview, setPreview] = useState(false);
+  const pdf = previewPdfUrl(product);
   const kicker = [
     manufacturer.name,
     product.kind,
@@ -202,13 +209,23 @@ export function ProductEnvelope({
                 </h2>
               </div>
             </div>
-            <button
-              type="button"
-              onClick={onClose}
-              className="shrink-0 rounded-md px-2 py-1 text-sm text-muted-foreground hover:bg-muted hover:text-foreground"
-            >
-              {t("close")}
-            </button>
+            <div className="flex shrink-0 items-center gap-2">
+              {pdf ? (
+                <Button
+                  className="paint-gradient border-0 text-white"
+                  onClick={() => setPreview(true)}
+                >
+                  {t("productDataSheet")}
+                </Button>
+              ) : null}
+              <button
+                type="button"
+                onClick={onClose}
+                className="rounded-md px-2 py-1 text-sm text-muted-foreground hover:bg-muted hover:text-foreground"
+              >
+                {t("close")}
+              </button>
+            </div>
           </div>
           <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5 sm:px-8">
             <ProductStory
@@ -216,6 +233,7 @@ export function ProductEnvelope({
               manufacturer={manufacturer.name}
               units={units}
               hideTitle
+              hidePdf
             />
             {usedIn.length ? (
               <div className="mt-6">
@@ -230,6 +248,13 @@ export function ProductEnvelope({
           </div>
         </div>
       </div>
+      {preview && pdf ? (
+        <PdfPreviewModal
+          url={pdf}
+          title={`${manufacturer.name} ${product.name}`}
+          onClose={() => setPreview(false)}
+        />
+      ) : null}
     </div>
   );
 }
