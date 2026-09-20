@@ -1,16 +1,11 @@
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
-import { ArrowRight } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { NewsCard } from "@/components/news/NewsCard";
 import { HomeMapBoard } from "@/components/paintday/HomeMapBoard";
 import { getMapBoard } from "@/lib/paintday/map-scores";
-import { listNews } from "@/lib/news/load";
 
 export default async function HomePage() {
   const t = await getTranslations();
-  const [board, posts] = await Promise.all([getMapBoard(), listNews()]);
-  const headlines = posts.slice(0, 3);
+  const board = await getMapBoard();
 
   return (
     <div>
@@ -22,33 +17,6 @@ export default async function HomePage() {
           <div className="mt-6">
             <HomeMapBoard board={board} />
           </div>
-        </div>
-      </section>
-
-      <section className="mx-auto max-w-6xl px-4 py-12">
-        <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-          <div>
-            <p className="text-xs font-medium uppercase tracking-[0.22em] text-primary">
-              {t("news.kicker")}
-            </p>
-            <h2 className="mt-2 text-2xl font-semibold tracking-tight md:text-3xl">
-              {t("landing.newsTitle")}
-            </h2>
-            <p className="mt-2 max-w-xl text-muted-foreground">
-              {t("landing.newsBody")}
-            </p>
-          </div>
-          <Button asChild variant="outline">
-            <Link href="/news">
-              {t("news.all")}
-              <ArrowRight className="size-4" />
-            </Link>
-          </Button>
-        </div>
-        <div className="mt-8 grid gap-4 md:grid-cols-3">
-          {headlines.map((post) => (
-            <NewsCard key={post.slug} post={post} />
-          ))}
         </div>
       </section>
 

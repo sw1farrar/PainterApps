@@ -145,7 +145,7 @@ export function ZipSearch({
         />
         <Button
           type="submit"
-          disabled={pending}
+          aria-busy={pending}
           className={
             size === "hero"
               ? "h-12 paint-gradient border-0 px-5 text-white"

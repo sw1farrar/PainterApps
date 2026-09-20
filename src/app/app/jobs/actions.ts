@@ -2,19 +2,21 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { currentUserId } from "@/lib/auth/current-user";
+import { requireAccess } from "@/lib/auth/access";
 import { ensureProfile } from "@/lib/auth/ensure-profile";
 import { createClient } from "@/lib/supabase/server";
 
 export async function saveJob(formData: FormData) {
-  const userId = await currentUserId();
+  const access = await requireAccess("/app/jobs");
   const supabase = await createClient();
-  if (!userId || !supabase) return;
-  await ensureProfile(userId);
+  if (!supabase) return;
+  await ensureProfile(access.userId);
+  const userId = access.userId;
   const { data, error } = await supabase
     .from("jobs")
     .insert({
       user_id: userId,
+      company_id: access.companyId ?? null,
       title: String(formData.get("title") ?? "Untitled job"),
       zip: String(formData.get("zip") ?? "") || null,
       notes: String(formData.get("notes") ?? "") || null,
@@ -41,10 +43,11 @@ function parsePayload(raw: string) {
 }
 
 export async function snapshotJob(formData: FormData) {
-  const userId = await currentUserId();
+  const access = await requireAccess("/app/jobs");
   const supabase = await createClient();
-  if (!userId || !supabase) redirect("/login?next=/app/jobs");
-  await ensureProfile(userId);
+  if (!supabase) redirect("/login?next=/app/jobs");
+  await ensureProfile(access.userId);
+  const userId = access.userId;
 
   const kind = String(formData.get("kind") ?? "") as SnapshotKind;
   const payload = parsePayload(String(formData.get("payload") ?? ""));
@@ -73,14 +76,14 @@ export async function snapshotJob(formData: FormData) {
     const { error } = await supabase
       .from("jobs")
       .update(patch)
-      .eq("id", existingId)
-      .eq("user_id", userId);
+      .eq("id", existingId);
     if (error) redirect("/app/jobs");
   } else {
     const { data, error } = await supabase
       .from("jobs")
       .insert({
         user_id: userId,
+        company_id: access.companyId ?? null,
         title,
         zip,
         weather_snapshot: kind === "weather" ? payload : null,
@@ -100,10 +103,10 @@ export async function snapshotJob(formData: FormData) {
 }
 
 export async function deleteJob(id: string) {
-  const userId = await currentUserId();
+  await requireAccess("/app/jobs");
   const supabase = await createClient();
-  if (!userId || !supabase) return;
-  await supabase.from("jobs").delete().eq("id", id).eq("user_id", userId);
+  if (!supabase) return;
+  await supabase.from("jobs").delete().eq("id", id);
   revalidatePath("/app/jobs");
   revalidatePath("/app");
 }

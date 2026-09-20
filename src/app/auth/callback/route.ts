@@ -27,6 +27,19 @@ export async function GET(request: Request) {
       token_hash: tokenHash,
     });
     if (!error) {
+      const { data: sessionUser } = await supabase.auth.getUser();
+      const uid = sessionUser.user?.id;
+      if (uid) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("access_enabled")
+          .eq("user_id", uid)
+          .maybeSingle();
+        if (profile?.access_enabled === false) {
+          await supabase.auth.signOut();
+          return NextResponse.redirect(`${origin}/login?error=disabled`);
+        }
+      }
       const dest = type === "recovery" ? "/login/reset" : next;
       return NextResponse.redirect(`${origin}${dest}`);
     }
@@ -35,6 +48,19 @@ export async function GET(request: Request) {
   if (supabase && code) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) {
+      const { data: sessionUser } = await supabase.auth.getUser();
+      const uid = sessionUser.user?.id;
+      if (uid) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("access_enabled")
+          .eq("user_id", uid)
+          .maybeSingle();
+        if (profile?.access_enabled === false) {
+          await supabase.auth.signOut();
+          return NextResponse.redirect(`${origin}/login?error=disabled`);
+        }
+      }
       return NextResponse.redirect(`${origin}${next}`);
     }
   }

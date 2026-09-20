@@ -1,23 +1,25 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { currentUserId } from "@/lib/auth/current-user";
+import { requireAccess } from "@/lib/auth/access";
 import { ensureProfile } from "@/lib/auth/ensure-profile";
 import { geocodeZip } from "@/lib/geo/geocode";
 import { createClient } from "@/lib/supabase/server";
 import { isUsZip } from "@/lib/utils";
 
 export async function saveLocation(formData: FormData) {
-  const userId = await currentUserId();
+  const access = await requireAccess("/app/locations");
   const supabase = await createClient();
-  if (!userId || !supabase) return;
-  await ensureProfile(userId);
+  if (!supabase) return;
+  await ensureProfile(access.userId);
+  const userId = access.userId;
   const zip = String(formData.get("zip") ?? "").trim();
   const label = String(formData.get("label") ?? "").trim() || zip;
   if (!isUsZip(zip)) return;
   const place = await geocodeZip(zip);
   await supabase.from("locations").insert({
     user_id: userId,
+    company_id: access.companyId ?? null,
     label,
     zip,
     lat: place?.lat ?? null,
@@ -29,10 +31,10 @@ export async function saveLocation(formData: FormData) {
 }
 
 export async function deleteLocation(id: string) {
-  const userId = await currentUserId();
+  await requireAccess("/app/locations");
   const supabase = await createClient();
-  if (!userId || !supabase) return;
-  await supabase.from("locations").delete().eq("id", id).eq("user_id", userId);
+  if (!supabase) return;
+  await supabase.from("locations").delete().eq("id", id);
   revalidatePath("/app");
   revalidatePath("/app/locations");
 }

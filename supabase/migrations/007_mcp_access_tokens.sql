@@ -14,3 +14,5 @@ create index if not exists idx_mcp_access_tokens_user_active
   where revoked_at is null;
 
 alter table public.mcp_access_tokens enable row level security;
+
+grant select, insert, update, delete on table public.mcp_access_tokens to service_role;

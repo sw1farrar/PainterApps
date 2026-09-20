@@ -1,5 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
+import { currentAccess } from "@/lib/auth/access";
 import { currentUserId } from "@/lib/auth/current-user";
 import { createClient } from "@/lib/supabase/server";
 
@@ -19,16 +20,31 @@ export default async function EstimatePrintPage({
     .from("estimates")
     .select("*")
     .eq("id", id)
-    .eq("user_id", userId)
     .maybeSingle();
   if (!estimate) notFound();
+  const access = await currentAccess();
   const [{ data: settings }, { data: customer }, { data: areas }] =
     await Promise.all([
-      supabase
-        .from("company_settings")
-        .select("company_name,phone,show_hours_on_proposal")
-        .eq("user_id", userId)
-        .maybeSingle(),
+      access?.companyId
+        ? supabase
+            .from("companies")
+            .select("name,phone,show_hours_on_proposal")
+            .eq("id", access.companyId)
+            .maybeSingle()
+            .then((res) => ({
+              data: res.data
+                ? {
+                    company_name: res.data.name,
+                    phone: res.data.phone,
+                    show_hours_on_proposal: res.data.show_hours_on_proposal,
+                  }
+                : null,
+            }))
+        : supabase
+            .from("company_settings")
+            .select("company_name,phone,show_hours_on_proposal")
+            .eq("user_id", userId)
+            .maybeSingle(),
       estimate.customer_id
         ? supabase
             .from("customers")

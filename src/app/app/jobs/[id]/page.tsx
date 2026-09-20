@@ -35,7 +35,6 @@ export default async function JobDetailPage({
       "id,title,zip,notes,weather_snapshot,system_snapshot,coverage_snapshot",
     )
     .eq("id", id)
-    .eq("user_id", userId)
     .maybeSingle();
   if (!job) notFound();
 

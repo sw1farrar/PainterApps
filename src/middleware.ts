@@ -80,6 +80,25 @@ export async function middleware(request: NextRequest) {
     return withLocaleCookie(request, copyCookies(response, redirect));
   }
 
+  if (user) {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("access_enabled")
+      .eq("user_id", user.id)
+      .maybeSingle();
+    if (profile && profile.access_enabled === false) {
+      await supabase.auth.signOut();
+      if (isProtected(request.nextUrl.pathname)) {
+        const dest = request.nextUrl.clone();
+        dest.pathname = "/login";
+        dest.search = "";
+        dest.searchParams.set("error", "disabled");
+        const redirect = NextResponse.redirect(dest);
+        return withLocaleCookie(request, copyCookies(response, redirect));
+      }
+    }
+  }
+
   return withLocaleCookie(request, response);
 }
 

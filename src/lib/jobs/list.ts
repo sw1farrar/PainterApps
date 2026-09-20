@@ -10,7 +10,6 @@ export async function listMyJobs(): Promise<JobOption[]> {
   const { data } = await supabase
     .from("jobs")
     .select("id,title,zip")
-    .eq("user_id", userId)
     .order("created_at", { ascending: false })
     .limit(50);
   return data ?? [];

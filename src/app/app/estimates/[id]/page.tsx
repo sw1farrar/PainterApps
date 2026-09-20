@@ -23,7 +23,6 @@ export default async function EstimateBuilderPage({
     .from("estimates")
     .select("id,number,status,zip,hourly_rate_snapshot,totals,notes,customer_id")
     .eq("id", id)
-    .eq("user_id", userId)
     .maybeSingle();
   if (!estimate) notFound();
   const [{ data: areas }, { data: rates }, { data: customer }] = await Promise.all([

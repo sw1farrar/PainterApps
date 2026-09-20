@@ -27,11 +27,11 @@ export function HomeMapBoard({ board }: { board: MapBoard }) {
 
   return (
     <>
-      <div className="flex items-center gap-3">
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
         <div className="min-w-0 flex-1">
           <ZipSearch size="hero" />
         </div>
-        <div className="flex shrink-0 items-center gap-0.5">
+        <div className="flex flex-wrap items-center justify-end gap-0.5">
           <button
             type="button"
             className="rounded-md px-2 py-1 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-30"
@@ -49,7 +49,7 @@ export function HomeMapBoard({ board }: { board: MapBoard }) {
           >
             <ChevronLeft className="size-5" />
           </button>
-          <p className="min-w-[10.5rem] text-right text-sm font-medium leading-5">
+          <p className="whitespace-nowrap text-right text-sm font-medium tabular-nums leading-5">
             {label}
           </p>
           <button

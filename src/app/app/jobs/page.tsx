@@ -21,7 +21,6 @@ export default async function JobsPage() {
           .select(
             "id,title,zip,notes,weather_snapshot,system_snapshot,coverage_snapshot",
           )
-          .eq("user_id", userId)
           .order("created_at", { ascending: false })
       : { data: [] };
 

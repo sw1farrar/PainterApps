@@ -10,6 +10,7 @@ import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
+  SheetClose,
   SheetContent,
   SheetHeader,
   SheetTitle,
@@ -41,38 +42,38 @@ export function Header({
   const t = useTranslations("nav");
   const pathname = usePathname();
 
-  const nav = (
-    <>
-      {LINKS.map((link) => {
-        const active =
-          link.href === "/"
-            ? pathname === "/"
-            : pathname === link.href || pathname.startsWith(`${link.href}/`);
-        return (
-          <Link
-            key={link.href}
-            href={link.href}
-            className={cn(
-              "text-sm transition-colors",
-              active
-                ? "text-foreground"
-                : "text-muted-foreground hover:text-foreground",
-            )}
-          >
-            {t(link.key)}
-          </Link>
-        );
-      })}
-      {isEditor ? (
+  const navLinks = (close: boolean) => {
+    const items = [
+      ...LINKS.map((link) => ({ href: link.href, label: t(link.key) })),
+      ...(isEditor ? [{ href: "/app/news", label: t("write") }] : []),
+    ];
+    return items.map((link) => {
+      const active =
+        link.href === "/"
+          ? pathname === "/"
+          : pathname === link.href || pathname.startsWith(`${link.href}/`);
+      const node = (
         <Link
-          href="/app/news"
-          className="text-sm text-muted-foreground hover:text-foreground"
+          href={link.href}
+          className={cn(
+            "text-sm transition-colors",
+            active
+              ? "text-foreground"
+              : "text-muted-foreground hover:text-foreground",
+          )}
         >
-          {t("write")}
+          {link.label}
         </Link>
-      ) : null}
-    </>
-  );
+      );
+      return close ? (
+        <SheetClose asChild key={link.href}>
+          {node}
+        </SheetClose>
+      ) : (
+        <span key={link.href}>{node}</span>
+      );
+    });
+  };
 
   return (
     <header className="sticky top-0 z-40 border-b border-border/80 bg-background/80 backdrop-blur-md">
@@ -81,14 +82,21 @@ export function Header({
           <Logo />
         </Link>
         <nav className="hidden items-center gap-6 md:flex" aria-label="Primary">
-          {nav}
+          {navLinks(false)}
         </nav>
         <div className="flex items-center gap-2">
           <LanguageSwitcher locale={locale} />
           <ThemeToggle />
-          <div className="hidden sm:block">
+          <div className="hidden md:block">
             <AuthButtons authEnabled={authEnabled} signedIn={signedIn} />
           </div>
+          {authEnabled ? (
+            <Button asChild variant="ghost" size="sm" className="md:hidden">
+              <Link href={signedIn ? "/app" : "/login"}>
+                {signedIn ? t("app") : t("login")}
+              </Link>
+            </Button>
+          ) : null}
           <Sheet>
             <SheetTrigger asChild>
               <Button
@@ -106,7 +114,7 @@ export function Header({
                   <Logo />
                 </SheetTitle>
               </SheetHeader>
-              <nav className="mt-6 flex flex-col gap-4 px-4">{nav}</nav>
+              <nav className="mt-6 flex flex-col gap-4 px-4">{navLinks(true)}</nav>
               <div className="mt-8 px-4">
                 <AuthButtons authEnabled={authEnabled} signedIn={signedIn} />
               </div>

@@ -3,6 +3,7 @@ import { LanguageSwitcher } from "@/components/i18n/LanguageSwitcher";
 import { UnitsSwitcher } from "@/components/settings/UnitsSwitcher";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { currentAccess } from "@/lib/auth/access";
 import { currentUnits } from "@/lib/auth/current-units";
 import { currentUserId } from "@/lib/auth/current-user";
 import { createClient } from "@/lib/supabase/server";
@@ -18,15 +19,37 @@ export default async function SettingsPage() {
   const units = await currentUnits();
   await ensureCompany();
   const userId = await currentUserId();
+  const access = await currentAccess();
   const supabase = await createClient();
-  const { data: company } =
-    userId && supabase
-      ? await supabase
-          .from("company_settings")
-          .select("company_name,phone,hourly_rate,show_hours_on_proposal")
-          .eq("user_id", userId)
-          .maybeSingle()
-      : { data: null };
+  let company: {
+    company_name: string;
+    phone: string;
+    hourly_rate: number;
+    show_hours_on_proposal: boolean;
+  } | null = null;
+  if (supabase && access?.companyId) {
+    const { data: shared } = await supabase
+      .from("companies")
+      .select("name,phone,hourly_rate,show_hours_on_proposal")
+      .eq("id", access.companyId)
+      .maybeSingle();
+    if (shared) {
+      company = {
+        company_name: shared.name ?? "",
+        phone: shared.phone ?? "",
+        hourly_rate: Number(shared.hourly_rate ?? 65),
+        show_hours_on_proposal: Boolean(shared.show_hours_on_proposal),
+      };
+    }
+  }
+  if (!company && userId && supabase) {
+    const { data } = await supabase
+      .from("company_settings")
+      .select("company_name,phone,hourly_rate,show_hours_on_proposal")
+      .eq("user_id", userId)
+      .maybeSingle();
+    company = data;
+  }
   return (
     <div className="max-w-lg space-y-8">
       <h1 className="text-2xl font-semibold tracking-tight">

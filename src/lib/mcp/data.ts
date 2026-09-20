@@ -22,7 +22,15 @@ export async function getWhoami(userId: string) {
   if (error || !data.user) throw new McpToolError("Account not found.");
   const { data: profile } = await db
     .from("profiles")
-    .select("locale, units, is_editor")
+    .select("locale, units, is_editor, access_enabled, account_role, company_id")
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (profile?.access_enabled !== true) {
+    throw new McpToolError("This account is disabled.");
+  }
+  const { data: company } = await db
+    .from("company_settings")
+    .select("company_name, phone, hourly_rate")
     .eq("user_id", userId)
     .maybeSingle();
   return {
@@ -31,7 +39,25 @@ export async function getWhoami(userId: string) {
     locale: profile?.locale ?? "en",
     units: profile?.units ?? "imperial",
     isEditor: Boolean(profile?.is_editor),
+    accessEnabled: profile?.access_enabled === true,
+    role: profile?.account_role ?? "owner",
+    companyId: profile?.company_id ?? null,
+    companyName: company?.company_name || null,
+    companyPhone: company?.phone || null,
+    hourlyRate: company?.hourly_rate != null ? Number(company.hourly_rate) : null,
   };
+}
+
+async function companyScope(userId: string) {
+  const { data: profile } = await admin()
+    .from("profiles")
+    .select("company_id, access_enabled")
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (profile?.access_enabled !== true) {
+    throw new McpToolError("This account is disabled.");
+  }
+  return { companyId: profile?.company_id ?? null };
 }
 
 export async function getPaintDay(zip: string) {
@@ -61,34 +87,40 @@ export async function getPaintDay(zip: string) {
 }
 
 export async function listJobs(userId: string) {
-  const { data, error } = await admin()
+  const { companyId } = await companyScope(userId);
+  let q = admin()
     .from("jobs")
     .select("id,title,zip,notes,created_at")
-    .eq("user_id", userId)
     .order("created_at", { ascending: false })
     .limit(25);
+  q = companyId ? q.eq("company_id", companyId) : q.eq("user_id", userId);
+  const { data, error } = await q;
   if (error) throw new McpToolError("Could not list jobs.");
   return data ?? [];
 }
 
 export async function listCustomers(userId: string) {
-  const { data, error } = await admin()
+  const { companyId } = await companyScope(userId);
+  let q = admin()
     .from("customers")
     .select("id,name,phone,email,address,zip")
-    .eq("user_id", userId)
     .order("name")
     .limit(50);
+  q = companyId ? q.eq("company_id", companyId) : q.eq("user_id", userId);
+  const { data, error } = await q;
   if (error) throw new McpToolError("Could not list customers.");
   return data ?? [];
 }
 
 export async function listEstimates(userId: string) {
-  const { data, error } = await admin()
+  const { companyId } = await companyScope(userId);
+  let q = admin()
     .from("estimates")
     .select("id,number,status,zip,totals,created_at")
-    .eq("user_id", userId)
     .order("created_at", { ascending: false })
     .limit(25);
+  q = companyId ? q.eq("company_id", companyId) : q.eq("user_id", userId);
+  const { data, error } = await q;
   if (error) throw new McpToolError("Could not list estimates.");
   return data ?? [];
 }
@@ -197,10 +229,19 @@ export async function createCustomer(
 ) {
   const name = input.name.trim();
   if (!name) throw new McpToolError("name is required.");
+  const { data: profile } = await admin()
+    .from("profiles")
+    .select("company_id, access_enabled")
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (profile?.access_enabled !== true) {
+    throw new McpToolError("This account is disabled.");
+  }
   const { data, error } = await admin()
     .from("customers")
     .insert({
       user_id: userId,
+      company_id: profile?.company_id ?? null,
       name,
       phone: input.phone?.trim() ?? "",
       email: input.email?.trim() ?? "",

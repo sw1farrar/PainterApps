@@ -71,9 +71,22 @@ function normalizeName(name: string | undefined): string {
   return trimmed;
 }
 
+async function assertUserEnabled(userId: string) {
+  const supabase = admin();
+  const { data } = await supabase
+    .from("profiles")
+    .select("access_enabled")
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (data?.access_enabled !== true) {
+    throw new McpAccessTokenError("This account is disabled.", "not_found");
+  }
+}
+
 export async function listMcpAccessTokens(
   userId: string,
 ): Promise<McpAccessTokenSummary[]> {
+  await assertUserEnabled(userId);
   const supabase = admin();
   const { data, error } = await supabase
     .from("mcp_access_tokens")
@@ -85,7 +98,9 @@ export async function listMcpAccessTokens(
     if (isSchemaMissing(error)) {
       throw new McpAccessTokenError("MCP token table is missing.", "table_missing");
     }
-    throw new McpAccessTokenError("Could not list tokens.");
+    throw new McpAccessTokenError(
+      error.message || "Could not list tokens.",
+    );
   }
   return (data ?? []).map((row) => ({
     id: row.id,
@@ -100,6 +115,7 @@ export async function createMcpAccessToken(
   userId: string,
   name?: string,
 ): Promise<{ token: string; summary: McpAccessTokenSummary }> {
+  await assertUserEnabled(userId);
   const supabase = admin();
   const existing = await listMcpAccessTokens(userId);
   if (existing.length >= MCP_ACCESS_TOKEN_MAX_PER_USER) {
@@ -139,6 +155,7 @@ export async function createMcpAccessToken(
 }
 
 export async function revokeMcpAccessToken(userId: string, tokenId: string) {
+  await assertUserEnabled(userId);
   const supabase = admin();
   const { data, error } = await supabase
     .from("mcp_access_tokens")
@@ -166,6 +183,12 @@ export async function resolveMcpAccessToken(token: string): Promise<string | nul
     .maybeSingle();
   if (error || !data || data.revoked_at) return null;
   if (!hashesMatch(data.token_hash, tokenHash)) return null;
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("access_enabled")
+    .eq("user_id", data.user_id)
+    .maybeSingle();
+  if (profile?.access_enabled !== true) return null;
   void supabase
     .from("mcp_access_tokens")
     .update({ last_used_at: new Date().toISOString() })

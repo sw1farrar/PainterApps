@@ -22,7 +22,6 @@ export default async function NewEstimatePage({
       ? await supabase
           .from("customers")
           .select("id,name,zip")
-          .eq("user_id", userId)
           .order("name")
       : { data: [] };
 

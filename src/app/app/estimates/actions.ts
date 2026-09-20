@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { currentUserId } from "@/lib/auth/current-user";
+import { requireAccess } from "@/lib/auth/access";
 import { ensureProfile } from "@/lib/auth/ensure-profile";
 import { DEFAULT_HOURLY_RATE, DEFAULT_RATES } from "@/lib/estimates/defaults";
 import {
@@ -14,11 +14,11 @@ import {
 import { createClient } from "@/lib/supabase/server";
 
 async function requireUser() {
-  const userId = await currentUserId();
+  const access = await requireAccess("/app/estimates");
   const supabase = await createClient();
-  if (!userId || !supabase) redirect("/login?next=/app/estimates");
-  await ensureProfile(userId);
-  return { userId, supabase };
+  if (!supabase) redirect("/login?next=/app/estimates");
+  await ensureProfile(access.userId);
+  return { userId: access.userId, supabase, companyId: access.companyId };
 }
 
 export async function ensureCompany() {
@@ -48,24 +48,40 @@ export async function ensureCompany() {
 }
 
 export async function saveCompanySettings(formData: FormData) {
-  const { userId, supabase } = await requireUser();
+  const { userId, supabase, companyId } = await requireUser();
   await ensureCompany();
+  const companyName = String(formData.get("company_name") ?? "").trim();
+  const phone = String(formData.get("phone") ?? "").trim();
+  const hourlyRate = Number(formData.get("hourly_rate") ?? DEFAULT_HOURLY_RATE);
+  const showHours = formData.get("show_hours") === "on";
   await supabase.from("company_settings").upsert({
     user_id: userId,
-    company_name: String(formData.get("company_name") ?? "").trim(),
-    phone: String(formData.get("phone") ?? "").trim(),
-    hourly_rate: Number(formData.get("hourly_rate") ?? DEFAULT_HOURLY_RATE),
-    show_hours_on_proposal: formData.get("show_hours") === "on",
+    company_name: companyName,
+    phone,
+    hourly_rate: hourlyRate,
+    show_hours_on_proposal: showHours,
   });
+  if (companyId) {
+    await supabase
+      .from("companies")
+      .update({
+        name: companyName,
+        phone,
+        hourly_rate: hourlyRate,
+        show_hours_on_proposal: showHours,
+      })
+      .eq("id", companyId);
+  }
   revalidatePath("/app/settings");
   revalidatePath("/app/estimates");
 }
 
 export async function saveCustomer(formData: FormData) {
-  const { userId, supabase } = await requireUser();
+  const { userId, supabase, companyId } = await requireUser();
   const id = String(formData.get("id") ?? "");
   const payload = {
     user_id: userId,
+    company_id: companyId ?? null,
     name: String(formData.get("name") ?? "Customer").trim() || "Customer",
     phone: String(formData.get("phone") ?? "").trim(),
     email: String(formData.get("email") ?? "").trim(),
@@ -74,7 +90,7 @@ export async function saveCustomer(formData: FormData) {
     notes: String(formData.get("notes") ?? "").trim(),
   };
   if (id) {
-    await supabase.from("customers").update(payload).eq("id", id).eq("user_id", userId);
+    await supabase.from("customers").update(payload).eq("id", id);
   } else {
     await supabase.from("customers").insert(payload);
   }
@@ -82,35 +98,49 @@ export async function saveCustomer(formData: FormData) {
 }
 
 export async function deleteCustomer(id: string) {
-  const { userId, supabase } = await requireUser();
-  await supabase.from("customers").delete().eq("id", id).eq("user_id", userId);
+  const { supabase } = await requireUser();
+  await supabase.from("customers").delete().eq("id", id);
   revalidatePath("/app/customers");
 }
 
 export async function createEstimate(formData: FormData) {
-  const { userId, supabase } = await requireUser();
+  const { userId, supabase, companyId } = await requireUser();
   await ensureCompany();
-  const { data: settings } = await supabase
-    .from("company_settings")
-    .select("hourly_rate")
-    .eq("user_id", userId)
-    .maybeSingle();
-  const { data: last } = await supabase
+  let hourlyRate = DEFAULT_HOURLY_RATE;
+  if (companyId) {
+    const { data: shared } = await supabase
+      .from("companies")
+      .select("hourly_rate")
+      .eq("id", companyId)
+      .maybeSingle();
+    if (shared?.hourly_rate != null) hourlyRate = Number(shared.hourly_rate);
+  } else {
+    const { data: settings } = await supabase
+      .from("company_settings")
+      .select("hourly_rate")
+      .eq("user_id", userId)
+      .maybeSingle();
+    hourlyRate = Number(settings?.hourly_rate ?? DEFAULT_HOURLY_RATE);
+  }
+  let lastQuery = supabase
     .from("estimates")
     .select("number")
-    .eq("user_id", userId)
     .order("number", { ascending: false })
-    .limit(1)
-    .maybeSingle();
+    .limit(1);
+  lastQuery = companyId
+    ? lastQuery.eq("company_id", companyId)
+    : lastQuery.eq("user_id", userId);
+  const { data: last } = await lastQuery.maybeSingle();
   const { data, error } = await supabase
     .from("estimates")
     .insert({
       user_id: userId,
+      company_id: companyId ?? null,
       customer_id: String(formData.get("customer_id") ?? "") || null,
       job_id: String(formData.get("job_id") ?? "") || null,
       zip: String(formData.get("zip") ?? "").trim(),
       number: (last?.number ?? 0) + 1,
-      hourly_rate_snapshot: Number(settings?.hourly_rate ?? DEFAULT_HOURLY_RATE),
+      hourly_rate_snapshot: hourlyRate,
       notes: String(formData.get("notes") ?? "").trim(),
     })
     .select("id")
@@ -122,14 +152,12 @@ export async function createEstimate(formData: FormData) {
 
 async function retotal(
   estimateId: string,
-  userId: string,
   supabase: NonNullable<Awaited<ReturnType<typeof createClient>>>,
 ) {
   const { data: estimate } = await supabase
     .from("estimates")
     .select("id,hourly_rate_snapshot")
     .eq("id", estimateId)
-    .eq("user_id", userId)
     .maybeSingle();
   if (!estimate) return;
   const { data: areas } = await supabase
@@ -157,12 +185,11 @@ async function retotal(
     .update({
       totals: { hours, labor: hours * hourly, material, total },
     })
-    .eq("id", estimateId)
-    .eq("user_id", userId);
+    .eq("id", estimateId);
 }
 
 export async function addArea(formData: FormData) {
-  const { userId, supabase } = await requireUser();
+  const { supabase } = await requireUser();
   const estimateId = String(formData.get("estimate_id") ?? "");
   await supabase.from("estimate_areas").insert({
     estimate_id: estimateId,
@@ -173,7 +200,7 @@ export async function addArea(formData: FormData) {
     height: Number(formData.get("height") ?? 8),
     opening_sqft: Number(formData.get("opening_sqft") ?? 0),
   });
-  await retotal(estimateId, userId, supabase);
+  await retotal(estimateId, supabase);
   revalidatePath(`/app/estimates/${estimateId}`);
 }
 
@@ -239,15 +266,15 @@ export async function addSurface(formData: FormData) {
     gallons,
     amount: (hours + prep) * hourly + material,
   });
-  await retotal(estimateId, userId, supabase);
+  await retotal(estimateId, supabase);
   revalidatePath(`/app/estimates/${estimateId}`);
 }
 
 export async function deleteArea(formData: FormData) {
-  const { userId, supabase } = await requireUser();
+  const { supabase } = await requireUser();
   const estimateId = String(formData.get("estimate_id") ?? "");
   const areaId = String(formData.get("area_id") ?? "");
   await supabase.from("estimate_areas").delete().eq("id", areaId);
-  await retotal(estimateId, userId, supabase);
+  await retotal(estimateId, supabase);
   revalidatePath(`/app/estimates/${estimateId}`);
 }

@@ -44,15 +44,31 @@ export function LoginForm({ nextPath }: { nextPath: string }) {
       return;
     }
 
-    const { error: signInError } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-    setPending(false);
+    const { error: signInError, data: signed } =
+      await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
     if (signInError) {
+      setPending(false);
       setError(t("errorInvalid"));
       return;
     }
+    const userId = signed.user?.id;
+    if (userId) {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("access_enabled")
+        .eq("user_id", userId)
+        .maybeSingle();
+      if (profile?.access_enabled === false) {
+        await supabase.auth.signOut();
+        setPending(false);
+        setError(t("errorDisabled"));
+        return;
+      }
+    }
+    setPending(false);
     router.push(next);
     router.refresh();
   }

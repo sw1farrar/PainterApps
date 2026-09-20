@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { requireAccess } from "@/lib/auth/access";
 import { NEWS_CATEGORIES, type NewsCategory } from "@/lib/news/types";
 import { requireNewsEditor } from "@/lib/news/editors";
 import { slugify } from "@/lib/news/slug";
@@ -28,6 +29,7 @@ function revalidateNews(slug?: string) {
 }
 
 export async function saveNewsPost(formData: FormData) {
+  await requireAccess("/app/news");
   const editorId = await requireNewsEditor();
   const db = await newsDb();
   if (!editorId || !db) return { error: "forbidden" };
@@ -74,6 +76,7 @@ export async function saveNewsPost(formData: FormData) {
 }
 
 export async function deleteNewsPost(id: string, slug: string) {
+  await requireAccess("/app/news");
   const editorId = await requireNewsEditor();
   const db = await newsDb();
   if (!editorId || !db) return;

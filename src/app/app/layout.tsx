@@ -9,6 +9,15 @@ export default async function AppLayout({
   children: React.ReactNode;
 }) {
   const t = await getTranslations("nav");
+  const { currentAccess } = await import("@/lib/auth/access");
+  const access = await currentAccess();
+  if (access && !access.accessEnabled) {
+    const { createClient } = await import("@/lib/supabase/server");
+    const supabase = await createClient();
+    await supabase?.auth.signOut();
+    const { redirect } = await import("next/navigation");
+    redirect("/login?error=disabled");
+  }
   const editor = await isNewsEditor(await currentUserId());
   const links = [
     { href: "/app", label: t("dashboard") },
@@ -17,6 +26,8 @@ export default async function AppLayout({
     { href: "/app/customers", label: t("customers") },
     { href: "/app/locations", label: t("locations") },
     { href: "/app/settings", label: t("settings") },
+    ...(access?.isOwner ? [{ href: "/app/team", label: t("team") }] : []),
+    ...(access?.isPlatformAdmin ? [{ href: "/app/admin", label: t("admin") }] : []),
     ...(editor ? [{ href: "/app/news", label: t("write") }] : []),
   ];
   return (

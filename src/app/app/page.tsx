@@ -18,13 +18,11 @@ export default async function DashboardPage() {
     const loc = await supabase
       .from("locations")
       .select("id,label,zip")
-      .eq("user_id", userId)
       .order("created_at", { ascending: false });
     locations = loc.data ?? [];
     const job = await supabase
       .from("jobs")
       .select("id,title,zip")
-      .eq("user_id", userId)
       .order("created_at", { ascending: false })
       .limit(8);
     jobs = job.data ?? [];
@@ -49,7 +47,7 @@ export default async function DashboardPage() {
             {t("dashboardEmpty")}
           </p>
           <Link href="/" className="mt-3 inline-block text-sm underline">
-            {t("dashboardTitle")}
+            {t("dashboardCheckZip")}
           </Link>
         </div>
       ) : (

@@ -16,7 +16,6 @@ export default async function CustomersPage() {
       ? await supabase
           .from("customers")
           .select("id,name,phone,email,address,zip")
-          .eq("user_id", userId)
           .order("name")
       : { data: [] };
 

@@ -17,7 +17,6 @@ export default async function EstimatesPage() {
       ? await supabase
           .from("estimates")
           .select("id,number,status,zip,totals,created_at,customers(name)")
-          .eq("user_id", userId)
           .order("created_at", { ascending: false })
       : { data: [] };
 

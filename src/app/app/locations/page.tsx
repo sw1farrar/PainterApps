@@ -22,7 +22,6 @@ export default async function LocationsPage({
       ? await supabase
           .from("locations")
           .select("id,label,zip,is_default")
-          .eq("user_id", userId)
           .order("created_at", { ascending: false })
       : { data: [] };
 
