@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -41,7 +42,11 @@ export default async function CustomersPage() {
         {(data ?? []).map((c) => (
           <li key={c.id} className="flex items-center justify-between gap-3 px-4 py-3 text-sm">
             <div>
-              <p className="font-medium">{c.name}</p>
+              <p className="font-medium">
+                <Link href={`/app/customers/${c.id}`} className="hover:underline">
+                  {c.name}
+                </Link>
+              </p>
               <p className="text-muted-foreground">
                 {c.phone} {c.zip}
               </p>

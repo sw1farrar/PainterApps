@@ -5,6 +5,7 @@ type SendEmailInput = {
   html: string;
   text?: string;
   tags?: string[];
+  replyTo?: { email: string; name?: string };
 };
 
 export type SendEmailResult =
@@ -49,6 +50,7 @@ export async function sendEmail(
       htmlContent: input.html,
       textContent: input.text,
       tags: input.tags,
+      replyTo: input.replyTo,
     }),
   });
 

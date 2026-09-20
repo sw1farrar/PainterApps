@@ -29,7 +29,7 @@ export function AuthButtons({
   return (
     <div className="flex items-center gap-2">
       <Button asChild variant="ghost" size="sm">
-        <Link href="/app">{t("dashboard")}</Link>
+        <Link href="/app">{t("app")}</Link>
       </Button>
       <form action={signOut}>
         <Button type="submit" variant="ghost" size="sm">
