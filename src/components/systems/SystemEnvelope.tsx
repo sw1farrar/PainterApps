@@ -3,6 +3,7 @@
 import { useTranslations } from "next-intl";
 import { SnapshotJobButton } from "@/components/jobs/SnapshotJobButton";
 import { Button } from "@/components/ui/button";
+import { ProductStory } from "@/components/systems/ProductStory";
 import { formatTempRange, type UnitSystem } from "@/lib/units";
 import type { JobOption } from "@/lib/jobs/list";
 import type { Manufacturer, MatchedSystem, TdsProduct } from "@/lib/systems/types";
@@ -34,10 +35,7 @@ export function SystemEnvelope({
 }) {
   const t = useTranslations("systems");
   const { system, manufacturer, primer, topcoat, midcoat } = match;
-  const primerPdf = storedPdf(primer);
-  const topcoatPdf = storedPdf(topcoat);
-  const paperPdf = topcoatPdf ?? primerPdf;
-  const paperUrl = paperPdf ?? sheetUrl(topcoat) ?? sheetUrl(primer);
+  const paperPdf = storedPdf(topcoat) ?? storedPdf(primer);
 
   return (
     <div
@@ -48,7 +46,7 @@ export function SystemEnvelope({
       onClick={onClose}
     >
       <div
-        className="envelope-panel my-4 w-full max-w-3xl"
+        className="envelope-panel my-4 w-full max-w-4xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="envelope-flap mx-auto w-[min(100%,42rem)]" />
@@ -74,36 +72,25 @@ export function SystemEnvelope({
             </button>
           </div>
 
-          <div className="space-y-5 px-5 py-5 sm:px-8">
+          <div className="space-y-8 px-5 py-5 sm:px-8">
             <p className="text-sm">{system.prepNotes}</p>
-            <CoatBlock
-              label={t("primer")}
+            <ProductStory
               product={primer}
               manufacturer={manufacturer.name}
+              units={units}
             />
             {midcoat ? (
-              <CoatBlock
-                label={t("midcoat")}
+              <ProductStory
                 product={midcoat}
                 manufacturer={manufacturer.name}
+                units={units}
               />
             ) : null}
-            <CoatBlock
-              label={t("topcoat")}
+            <ProductStory
               product={topcoat}
               manufacturer={manufacturer.name}
+              units={units}
             />
-            <p className="text-sm text-muted-foreground">
-              {t("window")}:{" "}
-              {formatTempRange(topcoat.minTempF, topcoat.maxTempF, units)}, RH ≤{" "}
-              {topcoat.maxHumidityPct}%
-              {topcoat.rainReadyMinutes
-                ? ` · ${t("rainReady", { n: topcoat.rainReadyMinutes })}`
-                : ""}
-              {topcoat.recoatHours
-                ? ` · ${t("recoat", { n: topcoat.recoatHours })}`
-                : ""}
-            </p>
             <ul className="list-disc space-y-1 pl-5 text-sm text-muted-foreground">
               {match.reasons.map((reason) => (
                 <li key={reason}>{reason}</li>
@@ -121,21 +108,6 @@ export function SystemEnvelope({
               >
                 {t("letterSheet")}
               </Button>
-              {paperUrl ? (
-                paperPdf ? (
-                  <Button asChild variant="outline">
-                    <a href={paperPdf} target="_blank" rel="noreferrer">
-                      {t("pdfPreview")}
-                    </a>
-                  </Button>
-                ) : (
-                  <Button asChild variant="outline">
-                    <a href={paperUrl} target="_blank" rel="noreferrer">
-                      {t("openTds")}
-                    </a>
-                  </Button>
-                )
-              ) : null}
               <SnapshotJobButton
                 signedIn={signedIn}
                 loginNext="/systems"
@@ -190,8 +162,6 @@ export function ProductEnvelope({
   onClose: () => void;
 }) {
   const t = useTranslations("systems");
-  const pdf = storedPdf(product);
-  const url = sheetUrl(product);
   return (
     <div
       className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 p-3 sm:p-8"
@@ -201,45 +171,31 @@ export function ProductEnvelope({
       onClick={onClose}
     >
       <div
-        className="envelope-panel my-4 w-full max-w-3xl"
+        className="envelope-panel my-4 w-full max-w-4xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="envelope-flap mx-auto w-[min(100%,42rem)]" />
         <div className="rounded-b-2xl rounded-t-md border border-border bg-background shadow-2xl">
           <div className="flex items-start justify-between gap-3 border-b border-border px-5 py-4 sm:px-8">
-            <div>
-              <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
-                {manufacturer.name} · {product.kind}
-              </p>
-              <h2
-                id="envelope-title"
-                className="mt-1 text-2xl font-semibold tracking-tight"
-              >
-                {product.name}
-              </h2>
-            </div>
+            <h2 id="envelope-title" className="sr-only">
+              {product.name}
+            </h2>
             <button
               type="button"
               onClick={onClose}
-              className="rounded-md px-2 py-1 text-sm text-muted-foreground hover:bg-muted hover:text-foreground"
+              className="ml-auto rounded-md px-2 py-1 text-sm text-muted-foreground hover:bg-muted hover:text-foreground"
             >
               {t("close")}
             </button>
           </div>
-          <div className="space-y-5 px-5 py-5 sm:px-8">
-            <CoatBlock
-              label={product.kind === "primer" ? t("primer") : t("topcoat")}
+          <div className="px-5 py-5 sm:px-8">
+            <ProductStory
               product={product}
               manufacturer={manufacturer.name}
+              units={units}
             />
-            <p className="text-sm text-muted-foreground">
-              {t("window")}:{" "}
-              {formatTempRange(product.minTempF, product.maxTempF, units)}, RH ≤{" "}
-              {product.maxHumidityPct}%
-            </p>
-            {product.notes ? <p className="text-sm">{product.notes}</p> : null}
             {usedIn.length ? (
-              <div>
+              <div className="mt-6">
                 <p className="text-sm font-medium">{t("usedIn")}</p>
                 <ul className="mt-1 list-disc space-y-1 pl-5 text-sm text-muted-foreground">
                   {usedIn.map((r) => (
@@ -248,73 +204,9 @@ export function ProductEnvelope({
                 </ul>
               </div>
             ) : null}
-            <div className="flex flex-wrap gap-2 pt-1">
-              {pdf ? (
-                <Button asChild className="paint-gradient border-0 text-white">
-                  <a href={pdf} target="_blank" rel="noreferrer">
-                    {t("pdfPreview")}
-                  </a>
-                </Button>
-              ) : url ? (
-                <Button asChild className="paint-gradient border-0 text-white">
-                  <a href={url} target="_blank" rel="noreferrer">
-                    {t("openTds")}
-                  </a>
-                </Button>
-              ) : null}
-            </div>
           </div>
         </div>
       </div>
-    </div>
-  );
-}
-
-function CoatBlock({
-  label,
-  product,
-  manufacturer,
-}: {
-  label: string;
-  product: TdsProduct;
-  manufacturer: string;
-}) {
-  const t = useTranslations("systems");
-  const url = sheetUrl(product);
-  const pdf = storedPdf(product);
-  return (
-    <div className="text-sm">
-      <p className="font-medium">
-        {label}: {manufacturer} {product.name}
-      </p>
-      <p className="text-muted-foreground">
-        {t("revision", {
-          revision: product.tdsRevision,
-          date: product.tdsDate,
-        })}
-        {product.vocGL != null ? ` · ${product.vocGL} g/L VOC` : ""}
-      </p>
-      {pdf ? (
-        <a
-          href={pdf}
-          className="underline underline-offset-4"
-          target="_blank"
-          rel="noreferrer"
-        >
-          {t("pdfPreview")}
-        </a>
-      ) : url ? (
-        <a
-          href={url}
-          className="underline underline-offset-4"
-          target="_blank"
-          rel="noreferrer"
-        >
-          {t("openTds")}
-        </a>
-      ) : (
-        <span className="text-muted-foreground">{t("noTds")}</span>
-      )}
     </div>
   );
 }

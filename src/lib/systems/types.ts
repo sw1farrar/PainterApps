@@ -108,6 +108,9 @@ export type TdsProduct = {
   tdsRevision: string;
   tdsDate: string;
   notes: string;
+  description?: string;
+  features?: string[];
+  benefits?: string[];
   attrs?: Record<string, unknown>;
   specs?: Record<string, unknown>;
   documents?: Array<{

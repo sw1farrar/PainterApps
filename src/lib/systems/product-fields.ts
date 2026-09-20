@@ -12,6 +12,15 @@ export const PRODUCT_FIELD_GROUPS: Array<{
   fields: ProductFieldDef[];
 }> = [
   {
+    id: "copy",
+    label: "Story",
+    fields: [
+      { key: "description", kind: "text", label: "What it does" },
+      { key: "features", kind: "text[]", label: "Features" },
+      { key: "benefits", kind: "text[]", label: "Benefits" },
+    ],
+  },
+  {
     id: "application",
     label: "Application",
     fields: [

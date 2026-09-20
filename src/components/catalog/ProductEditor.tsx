@@ -238,7 +238,8 @@ export function ProductEditor({
               >
                 <span className="text-muted-foreground">{field.label}</span>
                 {field.kind === "text[]" ||
-                field.key === "rain_ready_conditions" ? (
+                field.key === "rain_ready_conditions" ||
+                field.key === "description" ? (
                   <textarea
                     name={field.key}
                     defaultValue={str(product, field.key)}

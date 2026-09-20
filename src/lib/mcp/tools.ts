@@ -339,6 +339,9 @@ const MCP_TOOLS: McpToolDefinition[] = [
         tds_revision: { type: "string" },
         tds_date: { type: "string" },
         notes: { type: "string" },
+        description: { type: "string" },
+        features: { type: "array", items: { type: "string" } },
+        benefits: { type: "array", items: { type: "string" } },
         attrs: { type: "object" },
       },
       required: ["name", "manufacturer_id"],
@@ -349,7 +352,7 @@ const MCP_TOOLS: McpToolDefinition[] = [
   {
     name: "update_product",
     description:
-      "Patch a product by id (editors / platform_admin). Only provided fields change. Typed TDS columns plus notes, tds_*, attrs. Extra keys merge into attrs. Never invents values.",
+      "Patch a product by id (editors / platform_admin). Only provided fields change. Set description, features, and benefits for the Systems product envelope. Typed TDS columns plus notes, tds_*, attrs. Extra keys merge into attrs. Never invents values.",
     inputSchema: {
       type: "object",
       properties: {
@@ -373,6 +376,20 @@ const MCP_TOOLS: McpToolDefinition[] = [
         tds_revision: { type: "string" },
         tds_date: { type: "string" },
         notes: { type: "string" },
+        description: {
+          type: "string",
+          description: "What the product does — shown in the product envelope.",
+        },
+        features: {
+          type: "array",
+          items: { type: "string" },
+          description: "Feature bullets for the product envelope.",
+        },
+        benefits: {
+          type: "array",
+          items: { type: "string" },
+          description: "Benefit bullets for the product envelope.",
+        },
         volume_solids_pct: { type: "number" },
         weight_solids_pct: { type: "number" },
         coverage_sqft_gal_min: { type: "number" },

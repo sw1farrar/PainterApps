@@ -42,6 +42,9 @@ export function productFromRow(row: Record<string, unknown>): TdsProduct {
     tdsRevision: String(row.tds_revision ?? ""),
     tdsDate: String(row.tds_date ?? ""),
     notes: String(row.notes ?? ""),
+    description: row.description ? String(row.description) : undefined,
+    features: asStringArray(row.features),
+    benefits: asStringArray(row.benefits),
     attrs,
     specs: Object.fromEntries(
       TYPED_TDS_KEYS.filter((key) => row[key] != null && row[key] !== "").map(
@@ -109,6 +112,9 @@ export function productToRow(p: Partial<TdsProduct> & { id: string; manufacturer
     tds_revision: p.tdsRevision ?? "",
     tds_date: p.tdsDate || null,
     notes: p.notes ?? "",
+    description: p.description ?? null,
+    features: p.features ?? [],
+    benefits: p.benefits ?? [],
     attrs: p.attrs ?? {},
     updated_at: new Date().toISOString(),
     ...(p.specs ?? {}),
