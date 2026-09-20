@@ -485,24 +485,18 @@ function SystemRow({
   const t = useTranslations("systems");
   return (
     <div className="flex items-center gap-4 px-4 py-3.5 transition hover:bg-muted/50">
-      <span className="flex shrink-0 items-end -space-x-2">
-        <button
-          type="button"
-          className="rounded-sm"
-          onClick={() => onOpenProduct(match.primer, match.manufacturer)}
-          aria-label={match.primer.name}
-        >
-          <CanImage src={match.primer.canImageUrl} alt={match.primer.name} size="sm" />
-        </button>
-        <button
-          type="button"
-          className="rounded-sm"
-          onClick={() => onOpenProduct(match.topcoat, match.manufacturer)}
-          aria-label={match.topcoat.name}
-        >
-          <CanImage src={match.topcoat.canImageUrl} alt={match.topcoat.name} size="md" />
-        </button>
-      </span>
+      <button
+        type="button"
+        className="shrink-0 rounded-sm"
+        onClick={() => onOpenProduct(match.topcoat, match.manufacturer)}
+        aria-label={match.topcoat.name}
+      >
+        <CanImage
+          src={match.topcoat.canImageUrl}
+          alt={match.topcoat.name}
+          size="md"
+        />
+      </button>
       <button
         type="button"
         onClick={onOpen}
