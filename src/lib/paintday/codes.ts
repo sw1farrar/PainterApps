@@ -13,3 +13,10 @@ export function isWetCode(code?: number) {
   const kind = precipKind(code);
   return kind === "rain" || kind === "storm" || kind === "snow";
 }
+
+/** Storm, snow, or ice — wet even at 0 mm. Rain/drizzle codes at 0 mm are not. */
+export function isHardPrecip(code?: number, precipMm = 0) {
+  const kind = precipKind(code);
+  if (kind === "storm" || kind === "snow") return true;
+  return precipMm >= 0.05;
+}

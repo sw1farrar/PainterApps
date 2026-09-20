@@ -12,10 +12,32 @@ export function formatWeekday(isoDate: string, locale: string) {
   });
 }
 
+export function fitCall(total: number): "GO" | "WAIT" | "NO" {
+  if (total >= 70) return "GO";
+  if (total >= 30) return "WAIT";
+  return "NO";
+}
+
+export function rainLabel(snap: WeatherSnapshot) {
+  const mm = snap.precipMm ?? 0;
+  if (mm >= 0.05) return `${mm.toFixed(1)} mm`;
+  return `${Math.round(snap.precipProbability)}%`;
+}
+
 export function verdictFor(band: ScoreBand): "go" | "caution" | "no" {
   if (band === "excellent" || band === "good") return "go";
   if (band === "do-not-paint") return "no";
   return "caution";
+}
+
+/** Hero call: red NO only when this hour is wet. */
+export function precipVerdict(
+  wet: boolean,
+  band: ScoreBand,
+): "go" | "caution" | "no" {
+  if (wet) return "no";
+  if (band === "do-not-paint") return "caution";
+  return verdictFor(band);
 }
 
 export function formatTemp(tempF: number, units: UnitSystem) {
@@ -31,7 +53,7 @@ export function formatFactorValue(
     case "precip": {
       const mm = snap.precipMm ?? 0;
       if (mm >= 0.05) return `${mm.toFixed(1)} mm`;
-      return `${Math.round(snap.precipProbability)}%`;
+      return `${Math.round(snap.precipProbability)}% chance`;
     }
     case "humidity":
       return `${Math.round(snap.humidity)}% RH`;
@@ -39,7 +61,7 @@ export function formatFactorValue(
       return formatTemp(snap.tempF, units);
     case "dewPoint": {
       const spread = snap.tempF - snap.dewPointF;
-      return `${Math.round(spread)}° spread`;
+      return `${Math.round(spread)}°F above dew`;
     }
     case "wind": {
       const gust = snap.gustMph;

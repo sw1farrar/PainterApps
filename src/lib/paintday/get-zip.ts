@@ -18,7 +18,7 @@ async function loadLiveZip(zip: string): Promise<ZipPaintDay | null> {
   return { place, forecast };
 }
 
-const getLiveZipCached = unstable_cache(loadLiveZip, ["paintday-zip-v2"], {
+const getLiveZipCached = unstable_cache(loadLiveZip, ["paintday-zip-v3"], {
   revalidate: 900,
 });
 

@@ -21,7 +21,7 @@ describe("SCORE_WEIGHTS", () => {
 describe("factor scorers", () => {
   it("rewards a dry day", () => {
     expect(scorePrecip(0)).toBe(100);
-    expect(scorePrecip(60)).toBeLessThan(10);
+    expect(scorePrecip(10, 0, 1.2, 61)).toBeLessThan(10);
   });
 
   it("likes 40–70% humidity", () => {
@@ -46,7 +46,8 @@ describe("factor scorers", () => {
   });
 
   it("penalizes freeze risk", () => {
-    expect(scoreFreeze(50)).toBe(100);
+    expect(scoreFreeze(55)).toBe(100);
+    expect(scoreFreeze(50)).toBe(75);
     expect(scoreFreeze(28)).toBeLessThan(10);
   });
 });
@@ -66,20 +67,48 @@ describe("scorePaintDay", () => {
     expect(result.summaryKey).toBe("excellent-exterior");
   });
 
-  it("flags rain as do-not-paint", () => {
+  it("flags measurable rain as do-not-paint", () => {
     const result = scorePaintDay({
-      precipProbability: 80,
-      humidity: 90,
-      tempF: 68,
-      dewPointF: 64,
-      windMph: 12,
-      minTempNext48hF: 60,
+      precipProbability: 40,
+      precipMm: 1.2,
+      weatherCode: 61,
+      humidity: 55,
+      tempF: 72,
+      dewPointF: 50,
+      windMph: 6,
+      minTempNext48hF: 55,
     });
-    expect(result.total).toBeLessThan(40);
-    expect(result.band === "poor" || result.band === "do-not-paint").toBe(
-      true,
-    );
-    expect(result.summaryKey).toMatch(/rain|do-not-paint/);
+    expect(result.total).toBeLessThan(30);
+    expect(result.band).toBe("do-not-paint");
+  });
+
+  it("does not veto a dry 40% PoP hour", () => {
+    const result = scorePaintDay({
+      precipProbability: 40,
+      precipMm: 0,
+      humidity: 48,
+      tempF: 72,
+      dewPointF: 52,
+      windMph: 6,
+      minTempNext48hF: 55,
+    });
+    expect(result.total).toBeGreaterThan(70);
+  });
+
+  it("keeps spray-fit low on 20 mph gusts without painting the day red", () => {
+    const result = scorePaintDay({
+      precipProbability: 5,
+      humidity: 48,
+      tempF: 72,
+      dewPointF: 52,
+      windMph: 8,
+      gustMph: 20,
+      minTempNext48hF: 55,
+    });
+    const wind = result.factors.find((f) => f.id === "wind");
+    expect(wind?.score).toBeLessThanOrEqual(10);
+    expect(result.band).not.toBe("do-not-paint");
+    expect(result.total).toBeGreaterThan(50);
   });
 
   it("maps bands correctly", () => {

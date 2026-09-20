@@ -24,6 +24,7 @@ export function ForecastChart({ days }: { days: DailyWindow[] }) {
   const data = days.map((d) => ({
     date: d.date.slice(5),
     score: d.score.total,
+    label: "Day fit",
   }));
 
   return (

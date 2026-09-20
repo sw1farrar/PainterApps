@@ -84,7 +84,7 @@
     "searchPlaceholder": "ZIP or city in the US",
     "searchCta": "Check weather",
     "mapLegend": "PaintDay score",
-    "scoreLabel": "PaintDay score",
+    "scoreLabel": "Day fit",
     "today": "Today",
     "fourteen": "14-day exterior window",
     "factors": "What is driving the score",
@@ -101,7 +101,8 @@
     "verdictGo": "Paint",
     "verdictCaution": "Caution",
     "verdictNo": "Do not paint",
-    "scoreHint": "PaintDay score",
+    "scoreHint": "Fit",
+    "fitOf": "Fit {n}",
     "matchSystem": "Match a system",
     "figureGallons": "How many gallons?",
     "windowHint": "Scored on the application clock (7am–6pm local), not the daily high.",
@@ -113,7 +114,7 @@
     "rainAfter": "Rain after {time}",
     "forecastAge": "Forecast pulled {time}",
     "productWindow": "Scored for {name} ({min}–{max}°F, RH ≤ {rh}%)",
-    "hourlyTitle": "Today’s application hours",
+    "hourlyTitle": "Today by the hour",
     "bands": {
       "excellent": "Excellent",
       "good": "Good",
@@ -135,20 +136,28 @@
       "do-not-paint": "Do not paint today"
     },
     "factor": {
-      "precip": "Precipitation",
+      "precip": "Rain",
       "humidity": "Humidity",
-      "temperature": "Temperature",
-      "dewPoint": "Dew point / condensation",
+      "temperature": "Air temp",
+      "dewPoint": "Dew / moisture",
       "wind": "Wind",
-      "freeze": "Freeze risk"
+      "freeze": "Overnight freeze"
+    },
+    "factorHint": {
+      "precip": "this hour",
+      "humidity": "air now · aim 40–70%",
+      "temperature": "now · latex likes 50–90°F",
+      "dewPoint": "need 5°F+, best 10°F+",
+      "wind": "spray hates 15+ mph",
+      "freeze": "next 2 nights"
     },
     "factorHelp": {
-      "precip": "Rain during or right after application washes film and kills adhesion.",
-      "humidity": "High RH slows cure and can blush latex. Sweet spot is roughly 40–70%.",
-      "temperature": "Typical architectural latex wants 50–90°F, happiest around 60–80°F.",
-      "dewPoint": "If air temperature is within ~5°F of dew point, expect condensation on the surface.",
-      "wind": "Wind dries spray in the air, throws debris, and carries overspray.",
-      "freeze": "A freeze in the next 48 hours can ruin a coat that has not coalesced."
+      "precip": "Wet film fails. Under 20% chance is a go; rain now is a no.",
+      "humidity": "Too wet and latex blushes and stays tacky. Too dry and it flashes.",
+      "temperature": "Cold = won’t film. Hot = flashes and lap marks.",
+      "dewPoint": "Close to dew, walls sweat. Don’t paint wet siding.",
+      "wind": "Wind dries spray in the air and throws overspray on cars.",
+      "freeze": "If it hits 32°F before the coat cures, the film can fail."
     }
   },
   "systems": {

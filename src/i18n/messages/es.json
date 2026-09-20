@@ -84,7 +84,7 @@
     "searchPlaceholder": "ZIP o ciudad en EE. UU.",
     "searchCta": "Ver clima",
     "mapLegend": "Puntaje PaintDay",
-    "scoreLabel": "Puntaje PaintDay",
+    "scoreLabel": "Ajuste del día",
     "today": "Hoy",
     "fourteen": "Ventana de 14 días en exterior",
     "factors": "Qué mueve el puntaje",
@@ -101,7 +101,8 @@
     "verdictGo": "Pinte",
     "verdictCaution": "Cuidado",
     "verdictNo": "No pinte",
-    "scoreHint": "Puntaje PaintDay",
+    "scoreHint": "Ajuste",
+    "fitOf": "Ajuste {n}",
     "matchSystem": "Buscar sistema",
     "figureGallons": "¿Cuántos galones?",
     "windowHint": "Puntaje del reloj de aplicación (7 a.m. a 6 p.m. local), no el máximo del día.",
@@ -113,7 +114,7 @@
     "rainAfter": "Lluvia después de las {time}",
     "forecastAge": "Pronóstico de las {time}",
     "productWindow": "Puntaje para {name} ({min}–{max}°F, HR ≤ {rh}%)",
-    "hourlyTitle": "Horas de aplicación de hoy",
+    "hourlyTitle": "Hoy por hora",
     "bands": {
       "excellent": "Excelente",
       "good": "Bueno",
@@ -135,20 +136,28 @@
       "do-not-paint": "Hoy no conviene pintar"
     },
     "factor": {
-      "precip": "Precipitación",
+      "precip": "Lluvia",
       "humidity": "Humedad",
-      "temperature": "Temperatura",
-      "dewPoint": "Punto de rocío / condensación",
+      "temperature": "Aire",
+      "dewPoint": "Rocío / humedad",
       "wind": "Viento",
-      "freeze": "Riesgo de helada"
+      "freeze": "Helada nocturna"
+    },
+    "factorHint": {
+      "precip": "esta hora",
+      "humidity": "aire ahora · busque 40–70%",
+      "temperature": "ahora · el látex quiere 50–90 °F",
+      "dewPoint": "mínimo 5 °F, mejor 10 °F+",
+      "wind": "el spray no aguanta 15+ mph",
+      "freeze": "próximas 2 noches"
     },
     "factorHelp": {
-      "precip": "La lluvia durante o justo después de aplicar lava la película y mata la adherencia.",
-      "humidity": "La HR alta atrasa el curado y puede velar el látex. El rango cómodo es más o menos 40–70 %.",
-      "temperature": "El látex arquitectónico típico quiere 50–90 °F (10–32 °C); rinde mejor entre 60 y 80 °F.",
-      "dewPoint": "Si el aire está a menos de ~5 °F del punto de rocío, espere condensación en la superficie.",
-      "wind": "El viento seca el spray en el aire, levanta basura y se lleva el overspray.",
-      "freeze": "Una helada en las próximas 48 horas puede echar a perder una mano que no ha coalescido."
+      "precip": "La película mojada falla. Menos de 20% de chance es sí; lluvia ahora es no.",
+      "humidity": "Muy húmedo y el látex se vela y queda pegajoso. Muy seco y se quema.",
+      "temperature": "Frío = no forma película. Calor = se quema y deja empalmes.",
+      "dewPoint": "Cerca del rocío, el muro suda. No pinte siding mojado.",
+      "wind": "El viento seca el spray en el aire y tira overspray a los carros.",
+      "freeze": "Si llega a 32 °F antes de curar, la película puede fallar."
     }
   },
   "systems": {

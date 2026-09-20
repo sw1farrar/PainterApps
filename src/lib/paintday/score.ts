@@ -15,7 +15,7 @@
  * Weather fetching lives in `lib/weather`.
  */
 
-import { isWetCode, precipKind } from "./codes";
+import { isHardPrecip, precipKind } from "./codes";
 import type { ProductWindow } from "./product-window";
 import { LATEX_WINDOW } from "./product-window";
 
@@ -85,51 +85,40 @@ function lerp(x: number, x0: number, x1: number, y0: number, y1: number) {
   return y0 + t * (y1 - y0);
 }
 
-/** Precipitation: chance, amount, and type. */
+/** Precipitation: this hour’s water and type. PoP is caution only. */
 export function scorePrecip(
-  p24: number,
-  p48 = p24,
+  pHour: number,
+  _p48 = 0,
   precipMm = 0,
   weatherCode?: number,
 ): number {
   const kind = precipKind(weatherCode);
-  if (kind === "storm" || precipMm >= 1) return 0;
-  if (kind === "rain" || precipMm >= 0.2) return 8;
-  if (kind === "drizzle" || precipMm >= 0.05) return 25;
-  const near = clamp(p24);
-  const later = clamp(p48);
-  const primary =
-    near <= 10
-      ? lerp(near, 0, 10, 100, 90)
-      : near <= 20
-        ? lerp(near, 10, 20, 90, 70)
-        : near <= 40
-          ? lerp(near, 20, 40, 70, 35)
-          : near <= 60
-            ? lerp(near, 40, 60, 35, 5)
-            : lerp(near, 60, 100, 5, 0);
-  const laterPenalty = later > 50 ? (later - 50) * 0.25 : 0;
-  return clamp(primary - laterPenalty);
+  if (kind === "storm" || kind === "snow" || precipMm >= 1) return 0;
+  if (precipMm >= 0.2) return 8;
+  if (precipMm >= 0.05) return 25;
+  const near = clamp(pHour);
+  if (near <= 20) return lerp(near, 0, 20, 100, 90);
+  if (near <= 50) return lerp(near, 20, 50, 90, 70);
+  if (near <= 80) return lerp(near, 50, 80, 70, 45);
+  return lerp(near, 80, 100, 45, 25);
 }
 
-/** Humidity: sweet spot 40–70% RH, capped by product max. */
+/** Humidity: 40–70% is film-safe; TDS max is legal, not good. */
 export function scoreHumidity(rh: number, window: ProductWindow = LATEX_WINDOW): number {
   const h = clamp(rh);
   const maxH = window.maxHumidityPct;
-  if (h > maxH) return clamp(lerp(h, maxH, Math.min(100, maxH + 15), 25, 5));
   if (h >= 40 && h <= 70) return 100;
   if (h < 40) {
-    if (h >= 30) return lerp(h, 30, 40, 80, 100);
-    if (h >= 20) return lerp(h, 20, 30, 40, 80);
-    return lerp(h, 0, 20, 25, 40);
+    if (h >= 32) return lerp(h, 32, 40, 88, 100);
+    if (h >= 20) return lerp(h, 20, 32, 62, 88);
+    return lerp(h, 0, 20, 45, 62);
   }
-  if (h <= 80) return lerp(h, 70, 80, 100, 80);
-  if (h <= 85) return lerp(h, 80, 85, 80, 50);
-  if (h <= 90) return lerp(h, 85, 90, 50, 25);
-  return lerp(h, 90, 100, 25, 5);
+  if (h <= 80) return lerp(h, 70, 80, 100, 72);
+  if (h <= maxH) return lerp(h, 80, maxH, 72, 32);
+  return clamp(lerp(h, maxH, maxH + 10, 32, 5));
 }
 
-/** Temperature vs product window (default architectural latex 50–90°F). */
+/** Temperature vs product window. TDS min is legal (~45), not a 70. */
 export function scoreTemperature(
   tempF: number,
   window: ProductWindow = LATEX_WINDOW,
@@ -137,46 +126,55 @@ export function scoreTemperature(
   const t = tempF;
   const lo = window.minTempF;
   const hi = window.maxTempF;
-  const sweetLo = lo + 10;
+  const sweetLo = lo + 15;
   const sweetHi = Math.max(sweetLo + 5, hi - 10);
   if (t >= sweetLo && t <= sweetHi) return 100;
-  if (t >= lo && t < sweetLo) return lerp(t, lo, sweetLo, 70, 100);
-  if (t > sweetHi && t <= hi) return lerp(t, sweetHi, hi, 100, 70);
-  if (t >= lo - 5 && t < lo) return lerp(t, lo - 5, lo, 35, 70);
-  if (t > hi && t <= hi + 5) return lerp(t, hi, hi + 5, 70, 35);
-  if (t < lo - 5) return clamp(lerp(t, lo - 20, lo - 5, 0, 35));
-  return clamp(lerp(t, hi + 5, hi + 20, 35, 0));
+  if (t >= lo && t < sweetLo) return lerp(t, lo, sweetLo, 45, 100);
+  if (t > sweetHi && t <= hi) return lerp(t, sweetHi, hi, 100, 50);
+  if (t >= lo - 5 && t < lo) return lerp(t, lo - 5, lo, 15, 45);
+  if (t > hi && t <= hi + 8) return lerp(t, hi, hi + 8, 50, 10);
+  if (t < lo - 5) return clamp(lerp(t, lo - 15, lo - 5, 0, 15));
+  return clamp(lerp(t, hi + 8, hi + 20, 10, 0));
 }
 
-/** Dew-point spread: air temp − dew point. Need ≥5°F, ideally ≥10°F. */
+/** Dew-point spread: TDS min is 5°F above dew; 10°F is comfortable. */
 export function scoreDewPoint(tempF: number, dewPointF: number): number {
   const spread = tempF - dewPointF;
   if (spread >= 10) return 100;
-  if (spread >= 5) return lerp(spread, 5, 10, 60, 100);
-  if (spread >= 3) return lerp(spread, 3, 5, 25, 60);
-  if (spread >= 0) return lerp(spread, 0, 3, 5, 25);
+  if (spread >= 5) return lerp(spread, 5, 10, 50, 100);
+  if (spread >= 3) return lerp(spread, 3, 5, 18, 50);
+  if (spread >= 0) return lerp(spread, 0, 3, 0, 18);
   return 0;
 }
 
-/** Wind: 0–8 mph ideal; 15+ overspray; 25+ do not spray. Gusts count. */
+/** Airless spray fit. Effective wind = max(sustained, gust). */
 export function scoreWind(windMph: number, gustMph?: number): number {
-  const w = Math.max(0, windMph, (gustMph ?? 0) * 0.7);
+  const w = Math.max(0, windMph, gustMph ?? 0);
   if (w <= 8) return 100;
-  if (w <= 12) return lerp(w, 8, 12, 100, 85);
-  if (w <= 15) return lerp(w, 12, 15, 85, 60);
-  if (w <= 20) return lerp(w, 15, 20, 60, 30);
-  if (w <= 25) return lerp(w, 20, 25, 30, 10);
-  return clamp(lerp(w, 25, 40, 10, 0));
+  if (w <= 10) return lerp(w, 8, 10, 100, 85);
+  if (w <= 12) return lerp(w, 10, 12, 85, 60);
+  if (w <= 15) return lerp(w, 12, 15, 60, 30);
+  if (w <= 20) return lerp(w, 15, 20, 30, 10);
+  if (w <= 25) return lerp(w, 20, 25, 10, 0);
+  return 0;
 }
 
-/** Freeze risk from the next 48h minimum temperature */
-export function scoreFreeze(minTempNext48hF: number): number {
+export function effectiveWind(windMph: number, gustMph?: number) {
+  return Math.max(0, windMph, gustMph ?? 0);
+}
+
+/** Overnight min vs product min — 50°F latex should not freeze a wet film. */
+export function scoreFreeze(
+  minTempNext48hF: number,
+  window: ProductWindow = LATEX_WINDOW,
+): number {
   const t = minTempNext48hF;
-  if (t >= 45) return 100;
-  if (t >= 40) return lerp(t, 40, 45, 70, 100);
-  if (t >= 35) return lerp(t, 35, 40, 35, 70);
-  if (t >= 32) return lerp(t, 32, 35, 10, 35);
-  return clamp(lerp(t, 20, 32, 0, 10));
+  const lo = window.minTempF;
+  if (t >= lo + 5) return 100;
+  if (t >= lo) return lerp(t, lo, lo + 5, 75, 100);
+  if (t >= lo - 8) return lerp(t, lo - 8, lo, 28, 75);
+  if (t >= 32) return lerp(t, 32, lo - 8, 8, 28);
+  return clamp(lerp(t, 20, 32, 0, 8));
 }
 
 export function bandForScore(total: number): ScoreBand {
@@ -235,7 +233,7 @@ export function scorePaintDay(
     temperature: scoreTemperature(input.tempF, window),
     dewPoint: scoreDewPoint(input.tempF, input.dewPointF),
     wind: scoreWind(input.windMph, input.gustMph),
-    freeze: scoreFreeze(input.minTempNext48hF),
+    freeze: scoreFreeze(input.minTempNext48hF, window),
   };
 
   const factors: FactorScore[] = (
@@ -249,11 +247,18 @@ export function scorePaintDay(
 
   let total = clamp(factors.reduce((sum, f) => sum + f.contribution, 0));
 
-  // Hard weather vetoes: rain, storms, and freeze dominate a crew day.
-  if (isWetCode(input.weatherCode) || (input.precipMm ?? 0) >= 0.2) {
+  const mm = input.precipMm ?? 0;
+  const spread = input.tempF - input.dewPointF;
+  if (isHardPrecip(input.weatherCode, mm) && (precipKind(input.weatherCode) === "storm" || precipKind(input.weatherCode) === "snow" || mm >= 0.2)) {
     total = Math.min(total, 22);
-  } else if (input.precipProbability >= 60) total = Math.min(total, 28);
-  else if (input.precipProbability >= 40) total = Math.min(total, 48);
+  } else if (mm >= 0.05 && mm < 0.2) {
+    total = Math.min(total, 48);
+  }
+  if (input.humidity > window.maxHumidityPct + 5 || spread < 3) {
+    total = Math.min(total, 28);
+  } else if (input.humidity > window.maxHumidityPct || spread < 5) {
+    total = Math.min(total, 48);
+  }
   if (input.minTempNext48hF < 32) total = Math.min(total, 28);
   if (input.tempF < window.minTempF - 2) total = Math.min(total, 35);
 

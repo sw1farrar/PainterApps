@@ -1,6 +1,5 @@
-import { formatClock, slotIsOpen, type HourSlot } from "@/lib/paintday/crew-plan";
-import { verdictFor } from "@/lib/paintday/format";
-import { scoreColor } from "@/lib/paintday/score";
+import { formatClock, hourCall, type HourSlot } from "@/lib/paintday/crew-plan";
+import { rainLabel } from "@/lib/paintday/format";
 
 export function HourlyStrip({
   hours,
@@ -13,27 +12,29 @@ export function HourlyStrip({
   return (
     <div className="flex gap-1 overflow-x-auto pb-1">
       {hours.map((slot) => {
-        const v = verdictFor(slot.score.band);
-        const open = slotIsOpen(slot);
+        const call = hourCall(slot);
         const now = slot.hour === nowHour;
+        const color =
+          call === "NO"
+            ? "var(--color-score-bad)"
+            : call === "WAIT"
+              ? "var(--color-score-fair)"
+              : "var(--color-score-excellent)";
         return (
           <div
             key={slot.time}
-            className={`min-w-12 shrink-0 rounded-lg border px-1.5 py-2 text-center ${
+            className={`min-w-14 shrink-0 rounded-lg border px-1.5 py-2 text-center ${
               now ? "border-foreground" : "border-border"
             }`}
           >
             <p className="text-[10px] text-muted-foreground">
               {formatClock(slot.hour)}
             </p>
-            <p
-              className="score-numeral text-sm font-semibold"
-              style={{ color: scoreColor(slot.score.total) }}
-            >
-              {slot.score.total}
+            <p className="text-xs font-semibold" style={{ color }}>
+              {call}
             </p>
-            <p className="text-[10px] font-medium">
-              {open ? "GO" : v === "no" ? "NO" : "WAIT"}
+            <p className="text-[10px] text-muted-foreground">
+              {rainLabel(slot.snapshot)}
             </p>
           </div>
         );

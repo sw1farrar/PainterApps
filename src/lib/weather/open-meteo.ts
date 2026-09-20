@@ -1,4 +1,5 @@
-import { buildCrewPlan, type HourSlot } from "@/lib/paintday/crew-plan";
+import { DAY_END, DAY_START, buildCrewPlan, type HourSlot } from "@/lib/paintday/crew-plan";
+import { scoreDayFromHours } from "@/lib/paintday/day-score";
 import type { ProductWindow } from "@/lib/paintday/product-window";
 import { LATEX_WINDOW } from "@/lib/paintday/product-window";
 import { scorePaintDay } from "@/lib/paintday/score";
@@ -27,8 +28,7 @@ type OpenMeteoResponse = {
   };
 };
 
-const WINDOW_START = 7;
-const WINDOW_END = 18;
+
 
 function clockInTz(tz: string) {
   const parts = new Intl.DateTimeFormat("en-US", {
@@ -57,11 +57,9 @@ function snapshotAt(
   hourly: NonNullable<OpenMeteoResponse["hourly"]>,
   i: number,
   minTempNext48hF: number,
-  precip48?: number,
 ): WeatherSnapshot {
   return {
     precipProbability: hourly.precipitation_probability[i] ?? 0,
-    precipProbability48h: precip48,
     precipMm: hourly.precipitation?.[i] ?? 0,
     weatherCode: hourly.weather_code?.[i],
     humidity: hourly.relative_humidity_2m[i] ?? 50,
@@ -71,14 +69,6 @@ function snapshotAt(
     gustMph: hourly.wind_gusts_10m?.[i],
     minTempNext48hF,
   };
-}
-
-function dayIndex(times: string[], date: string, hour: number) {
-  const exact = times.findIndex(
-    (t) => t.startsWith(date) && Number(t.slice(11, 13)) === hour,
-  );
-  if (exact >= 0) return exact;
-  return times.findIndex((t) => t.startsWith(date));
 }
 
 export class OpenMeteoProvider implements WeatherProvider {
@@ -131,7 +121,6 @@ export class OpenMeteoProvider implements WeatherProvider {
         hourly,
         i,
         minNext48(json.daily!, dayIdx),
-        json.daily!.precipitation_probability_max[dayIdx + 1],
       );
       return {
         time,
@@ -148,46 +137,16 @@ export class OpenMeteoProvider implements WeatherProvider {
     );
     const current = hours[currentIdx] ?? hours[0];
     const todayHours = hours.filter(
-      (h) =>
-        h.date === now.date && h.hour >= WINDOW_START && h.hour <= WINDOW_END,
+      (h) => h.date === now.date && h.hour >= DAY_START && h.hour <= DAY_END,
     );
     const crewPlan = buildCrewPlan(todayHours, now.hour);
 
-    const days: DailyWindow[] = json.daily.time.map((date, i) => {
-      const idx = dayIndex(hourly.time, date, 10);
-      const iSafe = idx >= 0 ? idx : 0;
-      const snapshot = snapshotAt(
-        hourly,
-        iSafe,
-        minNext48(json.daily!, i),
-        json.daily!.precipitation_probability_max[i + 1],
-      );
+    const days: DailyWindow[] = json.daily.time.map((date) => {
       const dayHours = hours.filter(
-        (h) =>
-          h.date === date && h.hour >= WINDOW_START && h.hour <= WINDOW_END,
+        (h) => h.date === date && h.hour >= DAY_START && h.hour <= DAY_END,
       );
-      const wet = dayHours.reduce(
-        (m, h) => Math.max(m, h.snapshot.precipProbability, (h.snapshot.precipMm ?? 0) * 40),
-        0,
-      );
-      const gust = dayHours.reduce(
-        (m, h) => Math.max(m, h.snapshot.windMph, h.snapshot.gustMph ?? 0),
-        0,
-      );
-      const rh =
-        dayHours.reduce((s, h) => s + h.snapshot.humidity, 0) /
-        Math.max(1, dayHours.length);
-      snapshot.precipProbability = Math.max(snapshot.precipProbability, wet > 100 ? 100 : wet);
-      snapshot.windMph = Math.max(snapshot.windMph, gust);
-      snapshot.humidity = rh || snapshot.humidity;
-      snapshot.precipMm = dayHours.reduce((s, h) => s + (h.snapshot.precipMm ?? 0), 0);
-      const storm = dayHours.find((h) => (h.snapshot.weatherCode ?? 0) >= 95);
-      if (storm) snapshot.weatherCode = storm.snapshot.weatherCode;
-      return {
-        date,
-        snapshot,
-        score: scorePaintDay(snapshot, window),
-      };
+      const day = scoreDayFromHours(dayHours, window);
+      return { date, snapshot: day.snapshot, score: day.score };
     });
 
     return {

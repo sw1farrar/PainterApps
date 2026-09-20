@@ -15,10 +15,12 @@ import { getLocale } from "next-intl/server";
 import { listMyJobs } from "@/lib/jobs/list";
 import { productWindowForZip } from "@/lib/jobs/product-window";
 import { formatClock } from "@/lib/paintday/crew-plan";
+import { isHardPrecip } from "@/lib/paintday/codes";
 import {
+  fitCall,
   formatFactorValue,
   formatWeekday,
-  verdictFor,
+  precipVerdict,
 } from "@/lib/paintday/format";
 import { getZipPaintDay } from "@/lib/paintday/get-zip";
 import { LATEX_WINDOW } from "@/lib/paintday/product-window";
@@ -60,7 +62,10 @@ export default async function ZipPage({
   const score = forecast.currentScore;
   const snap = forecast.current;
   const summary = t(`summaries.${score.summaryKey}` as never);
-  const verdict = verdictFor(score.band);
+  const verdict = precipVerdict(
+    isHardPrecip(snap.weatherCode, snap.precipMm ?? 0),
+    score.band,
+  );
   const verdictLabel =
     verdict === "go"
       ? t("verdictGo")
@@ -169,14 +174,17 @@ export default async function ZipPage({
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p
-                  className="text-2xl font-semibold"
-                  style={{ color: scoreColor(f.score) }}
-                >
+                <p className="text-2xl font-semibold text-foreground">
                   {formatFactorValue(f.id, snap, units)}
                 </p>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  {t("scoreHint")} {f.score}
+                  {t(`factorHint.${f.id}` as never)}
+                </p>
+                <p
+                  className="mt-2 text-sm font-medium"
+                  style={{ color: scoreColor(f.score) }}
+                >
+                  {t("fitOf", { n: f.score })} {fitCall(f.score)}
                 </p>
                 <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
                   {t(`factorHelp.${f.id as ScoreFactorId}`)}
@@ -212,7 +220,8 @@ export default async function ZipPage({
               key={d.date}
               className="rounded-full border border-border px-3 py-1 text-sm"
             >
-              {formatWeekday(d.date, locale)} · {d.score.total}
+              {formatWeekday(d.date, locale)} {fitCall(d.score.total)} ·{" "}
+              {t("fitOf", { n: d.score.total })}
             </span>
           ))}
         </div>

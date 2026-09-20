@@ -1,5 +1,4 @@
-import { isWetCode } from "./codes";
-import { verdictFor } from "./format";
+import { isHardPrecip } from "./codes";
 import type { PaintDayScore, WeatherSnapshot } from "./score";
 
 export type HourSlot = {
@@ -18,26 +17,30 @@ export type CrewPlan = {
   rainHour: number | null;
 };
 
-const DAY_START = 7;
-const DAY_END = 18;
-const RECOAT_HOURS = 4;
+export const DAY_START = 7;
+export const DAY_END = 18;
+export const RECOAT_HOURS = 4;
 
+export function slotIsWet(slot: HourSlot) {
+  return isHardPrecip(slot.snapshot.weatherCode, slot.snapshot.precipMm ?? 0);
+}
+
+/** Dry enough to coat. Wind does not close the rain window. */
 export function slotIsOpen(slot: HourSlot) {
-  const v = verdictFor(slot.score.band);
-  if (v === "no") return false;
-  if ((slot.snapshot.precipMm ?? 0) >= 0.2) return false;
-  if (isWetCode(slot.snapshot.weatherCode)) return false;
-  if (slot.snapshot.precipProbability >= 50) return false;
-  return v === "go" || slot.score.total >= 60;
+  return !slotIsWet(slot);
+}
+
+/** GO / WAIT / NO for a clock hour. NO is rain only. */
+export function hourCall(slot: HourSlot): "GO" | "WAIT" | "NO" {
+  if (slotIsWet(slot)) return "NO";
+  if (slot.score.total >= 70) return "GO";
+  return "WAIT";
 }
 
 export function buildCrewPlan(slots: HourSlot[], fromHour?: number): CrewPlan {
   const today = slots.filter((s) => s.hour >= DAY_START && s.hour <= DAY_END);
-  const rain = today.find(
-    (s) =>
-      (s.snapshot.precipMm ?? 0) >= 0.2 ||
-      isWetCode(s.snapshot.weatherCode) ||
-      s.snapshot.precipProbability >= 60,
+  const rain = today.find((s) =>
+    isHardPrecip(s.snapshot.weatherCode, s.snapshot.precipMm ?? 0),
   );
   const rainHour = rain?.hour ?? null;
   const startFloor = fromHour ?? DAY_START;
