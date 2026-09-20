@@ -27,11 +27,8 @@ export function HomeMapBoard({ board }: { board: MapBoard }) {
 
   return (
     <>
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
-        <div className="min-w-0 flex-1">
-          <ZipSearch size="hero" />
-        </div>
-        <div className="flex flex-wrap items-center justify-end gap-0.5">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-wrap items-center gap-0.5">
           <button
             type="button"
             className="rounded-md px-2 py-1 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-30"
@@ -49,7 +46,7 @@ export function HomeMapBoard({ board }: { board: MapBoard }) {
           >
             <ChevronLeft className="size-5" />
           </button>
-          <p className="whitespace-nowrap text-right text-sm font-medium tabular-nums leading-5">
+          <p className="whitespace-nowrap text-sm font-medium tabular-nums leading-5">
             {label}
           </p>
           <button
@@ -62,8 +59,11 @@ export function HomeMapBoard({ board }: { board: MapBoard }) {
             <ChevronRight className="size-5" />
           </button>
         </div>
+        <div className="min-w-0 sm:max-w-md sm:flex-1">
+          <ZipSearch size="hero" />
+        </div>
       </div>
-      <div className="mt-6">
+      <div className="mt-4">
         <PaintDayMap points={points} />
       </div>
     </>
