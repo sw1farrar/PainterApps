@@ -3,38 +3,116 @@
 import { useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
+import { useTranslations } from "next-intl";
 import "maplibre-gl/dist/maplibre-gl.css";
-import type { MapScorePoint } from "@/lib/paintday/map-scores";
+import { formatClock } from "@/lib/paintday/crew-plan";
+import { windowLine } from "@/lib/paintday/format";
+import {
+  mapDotColors,
+  scoreColorHex,
+  type MapScorePoint,
+} from "@/lib/paintday/map-scores";
 import states from "@/data/geo/us-states.json";
 
-function colorFor(score: number) {
-  if (score >= 85) return "#10b981";
-  if (score >= 70) return "#14b8a6";
-  if (score >= 50) return "#eab308";
-  if (score >= 30) return "#f97316";
-  return "#ef4444";
+function esc(value: unknown) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+function iconId(left: string, right: string) {
+  return `dot-${left.slice(1)}-${right.slice(1)}`;
+}
+
+function drawDot(left: string, right: string, stroke: string) {
+  const s = 64;
+  const canvas = document.createElement("canvas");
+  canvas.width = s;
+  canvas.height = s;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return null;
+  const cx = 32;
+  const cy = 32;
+  const r = 26;
+  ctx.beginPath();
+  ctx.moveTo(cx, cy);
+  ctx.arc(cx, cy, r, Math.PI / 2, (3 * Math.PI) / 2, false);
+  ctx.closePath();
+  ctx.fillStyle = left;
+  ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(cx, cy);
+  ctx.arc(cx, cy, r, (3 * Math.PI) / 2, Math.PI / 2, false);
+  ctx.closePath();
+  ctx.fillStyle = right;
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, 0, Math.PI * 2);
+  ctx.strokeStyle = stroke;
+  ctx.lineWidth = 5;
+  ctx.stroke();
+  return ctx.getImageData(0, 0, s, s);
 }
 
 function scoreCollection(points: MapScorePoint[]) {
   return {
     type: "FeatureCollection" as const,
-    features: points.map((p) => ({
-      type: "Feature" as const,
-      properties: {
-        zip: p.zip,
-        city: p.city,
-        state: p.state,
-        score: p.score,
-        color: colorFor(p.score),
-        highF: p.highF,
-        precipChance: p.precipChance,
-      },
-      geometry: {
-        type: "Point" as const,
-        coordinates: [p.lng, p.lat] as [number, number],
-      },
-    })),
+    features: points.map((p) => {
+      const dots = mapDotColors(p);
+      return {
+        type: "Feature" as const,
+        properties: {
+          zip: p.zip,
+          city: p.city,
+          state: p.state,
+          score: p.amWet ? 15 : p.score,
+          color: dots.left,
+          colorRight: dots.right,
+          split: dots.split ? 1 : 0,
+          icon: iconId(dots.left, dots.right),
+          highF: p.highF,
+          precipChance: p.precipChance,
+          summaryKey: p.amWet ? "do-not-paint-rain" : (p.summaryKey ?? ""),
+          startHour: p.startHour ?? "",
+          wrapHour: p.wrapHour ?? "",
+          rainHour: p.rainHour ?? "",
+          hoursOpen: p.hoursOpen ?? 0,
+          amWet: p.amWet ? 1 : 0,
+          pmWet: p.pmWet ? 1 : 0,
+        },
+        geometry: {
+          type: "Point" as const,
+          coordinates: [p.lng, p.lat] as [number, number],
+        },
+      };
+    }),
   };
+}
+
+function ensureIcons(
+  map: import("maplibre-gl").Map,
+  points: MapScorePoint[],
+  stroke: string,
+) {
+  const needed = new Set<string>();
+  for (const p of points) {
+    const { left, right } = mapDotColors(p);
+    needed.add(`${left}|${right}`);
+  }
+  for (const key of needed) {
+    const [left, right] = key.split("|");
+    const id = iconId(left, right);
+    if (map.hasImage(id)) continue;
+    const img = drawDot(left, right, stroke);
+    if (!img) continue;
+    map.addImage(id, {
+      width: img.width,
+      height: img.height,
+      data: Uint8Array.from(img.data),
+    });
+  }
 }
 
 export function PaintDayMap({ points }: { points: MapScorePoint[] }) {
@@ -42,16 +120,25 @@ export function PaintDayMap({ points }: { points: MapScorePoint[] }) {
   const mapRef = useRef<import("maplibre-gl").Map | undefined>(undefined);
   const pointsRef = useRef(points);
   pointsRef.current = points;
+  const reasonRef = useRef<(key: string) => string>(() => "");
+  const t = useTranslations("paintday");
+  reasonRef.current = (key: string) => {
+    if (!key) return "";
+    const path = `summaries.${key}`;
+    return t.has(path) ? t(path) : "";
+  };
   const router = useRouter();
   const { resolvedTheme } = useTheme();
   const dark = resolvedTheme !== "light";
 
   useEffect(() => {
-    const src = mapRef.current?.getSource("scores") as
+    const map = mapRef.current;
+    const src = map?.getSource("scores") as
       | { setData: (data: GeoJSON.GeoJSON) => void }
       | undefined;
+    if (map) ensureIcons(map, points, dark ? "#0e141c" : "#fff");
     src?.setData(scoreCollection(points));
-  }, [points]);
+  }, [points, dark]);
 
   useEffect(() => {
     const node = el.current;
@@ -115,7 +202,19 @@ export function PaintDayMap({ points }: { points: MapScorePoint[] }) {
               paint: {
                 "circle-radius": 13,
                 "circle-color": ["get", "color"],
-                "circle-opacity": 0.22,
+                "circle-opacity": 0.2,
+              },
+            },
+            {
+              id: "scores-icons",
+              type: "symbol",
+              source: "scores",
+              filter: ["==", ["get", "split"], 1],
+              layout: {
+                "icon-image": ["get", "icon"],
+                "icon-size": 0.42,
+                "icon-allow-overlap": true,
+                "icon-ignore-placement": true,
               },
             },
             {
@@ -123,10 +222,16 @@ export function PaintDayMap({ points }: { points: MapScorePoint[] }) {
               type: "circle",
               source: "scores",
               paint: {
-                "circle-radius": 5.5,
+                "circle-radius": 6,
                 "circle-color": ["get", "color"],
                 "circle-stroke-width": 1.4,
                 "circle-stroke-color": dark ? "#0e141c" : "#fff",
+                "circle-opacity": [
+                  "case",
+                  ["==", ["get", "split"], 1],
+                  0,
+                  1,
+                ],
               },
             },
           ],
@@ -152,6 +257,7 @@ export function PaintDayMap({ points }: { points: MapScorePoint[] }) {
 
       map.on("load", () => {
         mapRef.current = map;
+        if (map) ensureIcons(map, pointsRef.current, dark ? "#0e141c" : "#fff");
         map?.resize();
         map?.fitBounds(
           [
@@ -171,18 +277,67 @@ export function PaintDayMap({ points }: { points: MapScorePoint[] }) {
           zip: string;
           score: number;
           color: string;
+          colorRight: string;
+          split: number;
           highF: number;
           precipChance: number;
+          summaryKey: string;
+          startHour: number | string;
+          wrapHour: number | string;
+          rainHour: number | string;
+          amWet: number;
+          pmWet: number;
         };
+        const score = Number(props.score);
+        const start =
+          props.startHour === "" || props.startHour == null
+            ? null
+            : Number(props.startHour);
+        const wrap =
+          props.wrapHour === "" || props.wrapHour == null
+            ? null
+            : Number(props.wrapHour);
+        const rain =
+          props.rainHour === "" || props.rainHour == null
+            ? null
+            : Number(props.rainHour);
+        const amWet = Number(props.amWet) === 1;
+        const pmWet = Number(props.pmWet) === 1;
+        const window = !amWet ? windowLine(start, wrap, rain) : "";
+        const reason = amWet
+          ? reasonRef.current("do-not-paint-rain")
+          : score < 70
+            ? reasonRef.current(String(props.summaryKey ?? ""))
+            : "";
+        const rainBit =
+          rain != null
+            ? `Rain ${formatClock(rain)}`
+            : `Window rain ${Math.round(Number(props.precipChance))}%`;
+        const headline = amWet
+          ? `<span style="color:${esc(props.color)};font-size:15px">Morning rain · day closed</span>`
+          : pmWet
+            ? `<span style="color:${esc(props.color)};font-size:20px;letter-spacing:-0.04em">${esc(score)}</span>
+              <div style="margin-top:2px;font:500 11px Geist,system-ui,sans-serif;color:var(--muted-foreground)">AM open · PM rain</div>`
+            : `<span style="color:${esc(props.color)};font-size:20px;letter-spacing:-0.04em">${esc(score)}</span>`;
         popup
           .setLngLat(e.lngLat)
           .setHTML(
             `<div style="font:600 12px Geist,system-ui,sans-serif;padding:2px 2px 0;color:var(--foreground)">
-              ${props.city}, ${props.state} ${props.zip}<br/>
-              <span style="color:${props.color};font-size:20px;letter-spacing:-0.04em">${props.score}</span>
+              ${esc(props.city)}, ${esc(props.state)} ${esc(props.zip)}<br/>
+              ${headline}
+              ${
+                window
+                  ? `<div style="margin-top:4px;font:500 11px Geist,system-ui,sans-serif;color:var(--foreground)">Paint ${esc(window)}</div>`
+                  : ""
+              }
               <div style="margin-top:4px;font:500 11px Geist,system-ui,sans-serif;color:var(--muted-foreground)">
-                High ${Math.round(Number(props.highF))}°F · Rain ${Math.round(Number(props.precipChance))}%
+                High ${Math.round(Number(props.highF))}°F · ${esc(rainBit)}
               </div>
+              ${
+                reason
+                  ? `<div style="margin-top:4px;max-width:14rem;font:500 11px Geist,system-ui,sans-serif;color:${esc(props.color)}">${esc(reason)}</div>`
+                  : ""
+              }
             </div>`,
           )
           .addTo(map);
@@ -225,12 +380,27 @@ export function PaintDayMap({ points }: { points: MapScorePoint[] }) {
             <span key={s} className="flex items-center gap-1">
               <i
                 className="inline-block size-2 rounded-full"
-                style={{ background: colorFor(s) }}
+                style={{ background: scoreColorHex(s) }}
               />
               {s}
             </span>
           ))}
         </div>
+        <p className="mt-1.5 flex items-center gap-2 text-[11px] text-muted-foreground">
+          <i
+            className="inline-block size-3 overflow-hidden rounded-full"
+            style={{
+              background:
+                "linear-gradient(90deg, #14b8a6 0 50%, #ef4444 50% 100%)",
+            }}
+          />
+          AM | PM rain
+          <i
+            className="inline-block size-3 rounded-full"
+            style={{ background: "#ef4444" }}
+          />
+          AM rain = day off
+        </p>
       </div>
     </div>
   );

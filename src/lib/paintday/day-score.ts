@@ -1,9 +1,12 @@
 import {
+  AM_END,
   DAY_END,
   DAY_START,
+  PM_START,
   RECOAT_HOURS,
   buildCrewPlan,
   slotIsOpen,
+  slotIsWet,
   type CrewPlan,
   type HourSlot,
 } from "./crew-plan";
@@ -24,7 +27,9 @@ function bottleneck(block: HourSlot[]) {
 }
 
 function pickRepresentative(block: HourSlot[]): HourSlot {
-  return block.find((h) => h.hour === 10) ?? block[Math.floor((block.length - 1) / 2)];
+  const min = bottleneck(block);
+  const worst = block.filter((h) => h.score.total === min);
+  return worst.find((h) => h.hour === 10) ?? worst[0];
 }
 
 function betterBlock(a: HourSlot[], b: HourSlot[]) {
@@ -53,7 +58,10 @@ export function scoreDayFromHours(
     .filter((h) => h.hour >= DAY_START && h.hour <= DAY_END)
     .slice()
     .sort((a, b) => a.hour - b.hour);
-  const crewPlan = buildCrewPlan(appHours);
+  const crewPlan = buildCrewPlan(appHours, DAY_START, window);
+  const lastPaint = crewPlan.rainHour == null
+    ? DAY_END
+    : crewPlan.wrapHour ?? DAY_END;
 
   if (!appHours.length) {
     return {
@@ -69,16 +77,23 @@ export function scoreDayFromHours(
   for (let i = 0; i + RECOAT_HOURS <= appHours.length; i++) {
     const block = appHours.slice(i, i + RECOAT_HOURS);
     const consecutive = block.every((h, j) => j === 0 || h.hour === block[j - 1].hour + 1);
-    if (!consecutive || !block.every(slotIsOpen)) continue;
+    if (
+      !consecutive ||
+      !block.every((h) => slotIsOpen(h) && h.hour <= lastPaint)
+    ) {
+      continue;
+    }
     if (!best4 || betterBlock(block, best4)) best4 = block;
   }
 
   const block =
     best4 ??
     [
-      (appHours.filter(slotIsOpen).length
-        ? appHours.filter(slotIsOpen)
-        : appHours
+      (appHours.filter((h) => slotIsOpen(h) && h.hour <= lastPaint).length
+        ? appHours.filter((h) => slotIsOpen(h) && h.hour <= lastPaint)
+        : appHours.filter(slotIsOpen).length
+          ? appHours.filter(slotIsOpen)
+          : appHours
       ).reduce((best, h) => (h.score.total > best.score.total ? h : best)),
     ];
 
@@ -90,4 +105,30 @@ export function scoreDayFromHours(
     block,
     representativeHour: representative.hour,
   };
+}
+
+export type DayHalf = {
+  wet: boolean;
+  score: number;
+};
+
+export function scoreDayHalf(
+  hours: HourSlot[],
+  lo: number,
+  hi: number,
+  window: ProductWindow = LATEX_WINDOW,
+): DayHalf {
+  const slots = hours.filter((h) => h.hour >= lo && h.hour <= hi);
+  const wet = slots.some(slotIsWet);
+  if (!slots.length) return { wet: false, score: 0 };
+  const scored = scoreDayFromHours(slots, window);
+  return { wet, score: scored.score.total };
+}
+
+export function morningHalf(hours: HourSlot[], window?: ProductWindow) {
+  return scoreDayHalf(hours, DAY_START, AM_END, window);
+}
+
+export function afternoonHalf(hours: HourSlot[], window?: ProductWindow) {
+  return scoreDayHalf(hours, PM_START, DAY_END, window);
 }

@@ -2,6 +2,8 @@
  * PaintDay Score
  * -------------
  * Exterior-first 0–100 score for “is today a smart day to paint?”
+ * Red / do-not-paint is rain (or snow/storm) only. Wind, humidity, dew,
+ * and freeze make WAIT, never NO.
  *
  * Weights (must sum to 1):
  *   precipitation  0.25  — rain ruins film and wash-off
@@ -15,7 +17,7 @@
  * Weather fetching lives in `lib/weather`.
  */
 
-import { isHardPrecip, precipKind } from "./codes";
+import { precipKind } from "./codes";
 import type { ProductWindow } from "./product-window";
 import { LATEX_WINDOW } from "./product-window";
 
@@ -137,13 +139,19 @@ export function scoreTemperature(
   return clamp(lerp(t, hi + 8, hi + 20, 10, 0));
 }
 
-/** Dew-point spread: TDS min is 5°F above dew; 10°F is comfortable. */
-export function scoreDewPoint(tempF: number, dewPointF: number): number {
+/** Dew-point spread: TDS min is typically 5°F above dew; 10°F is comfortable. */
+export function scoreDewPoint(
+  tempF: number,
+  dewPointF: number,
+  minSpreadF = 5,
+): number {
   const spread = tempF - dewPointF;
-  if (spread >= 10) return 100;
-  if (spread >= 5) return lerp(spread, 5, 10, 50, 100);
-  if (spread >= 3) return lerp(spread, 3, 5, 18, 50);
-  if (spread >= 0) return lerp(spread, 0, 3, 0, 18);
+  const legal = minSpreadF;
+  const comfortable = Math.max(legal + 5, 10);
+  if (spread >= comfortable) return 100;
+  if (spread >= legal) return lerp(spread, legal, comfortable, 50, 100);
+  if (spread >= legal - 2) return lerp(spread, legal - 2, legal, 18, 50);
+  if (spread >= 0) return lerp(spread, 0, Math.max(legal - 2, 0.1), 0, 18);
   return 0;
 }
 
@@ -199,8 +207,7 @@ export function summaryKeyFor(
   const worst = worstFactor(factors);
   if (total < 30) {
     if (worst === "precip") return "do-not-paint-rain";
-    if (worst === "freeze") return "do-not-paint-freeze";
-    return "do-not-paint";
+    return "do-not-paint-rain";
   }
   switch (worst) {
     case "precip":
@@ -231,7 +238,11 @@ export function scorePaintDay(
     ),
     humidity: scoreHumidity(input.humidity, window),
     temperature: scoreTemperature(input.tempF, window),
-    dewPoint: scoreDewPoint(input.tempF, input.dewPointF),
+    dewPoint: scoreDewPoint(
+      input.tempF,
+      input.dewPointF,
+      window.minDewSpreadF ?? 5,
+    ),
     wind: scoreWind(input.windMph, input.gustMph),
     freeze: scoreFreeze(input.minTempNext48hF, window),
   };
@@ -249,18 +260,23 @@ export function scorePaintDay(
 
   const mm = input.precipMm ?? 0;
   const spread = input.tempF - input.dewPointF;
-  if (isHardPrecip(input.weatherCode, mm) && (precipKind(input.weatherCode) === "storm" || precipKind(input.weatherCode) === "snow" || mm >= 0.2)) {
+  const kind = precipKind(input.weatherCode);
+  const raining = kind === "storm" || kind === "snow" || mm >= 0.2;
+
+  // Red / do-not-paint is precipitation only. Humidity, dew, wind, and
+  // freeze make the hour WAIT, never NO.
+  if (raining) {
     total = Math.min(total, 22);
-  } else if (mm >= 0.05 && mm < 0.2) {
+  } else if (mm >= 0.05) {
     total = Math.min(total, 48);
   }
-  if (input.humidity > window.maxHumidityPct + 5 || spread < 3) {
-    total = Math.min(total, 28);
-  } else if (input.humidity > window.maxHumidityPct || spread < 5) {
+  const dewFloor = window.minDewSpreadF ?? 5;
+  if (input.humidity > window.maxHumidityPct || spread < dewFloor) {
     total = Math.min(total, 48);
   }
-  if (input.minTempNext48hF < 32) total = Math.min(total, 28);
+  if (input.minTempNext48hF < 32) total = Math.min(total, 48);
   if (input.tempF < window.minTempF - 2) total = Math.min(total, 35);
+  if (!raining) total = Math.max(total, 30);
 
   total = Math.round(total);
 

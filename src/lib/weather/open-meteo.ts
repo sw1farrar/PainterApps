@@ -1,5 +1,9 @@
 import { DAY_END, DAY_START, buildCrewPlan, type HourSlot } from "@/lib/paintday/crew-plan";
-import { scoreDayFromHours } from "@/lib/paintday/day-score";
+import {
+  afternoonHalf,
+  morningHalf,
+  scoreDayFromHours,
+} from "@/lib/paintday/day-score";
 import type { ProductWindow } from "@/lib/paintday/product-window";
 import { LATEX_WINDOW } from "@/lib/paintday/product-window";
 import { scorePaintDay } from "@/lib/paintday/score";
@@ -71,44 +75,73 @@ function snapshotAt(
   };
 }
 
-export class OpenMeteoProvider implements WeatherProvider {
-  async getForecast(
-    lat: number,
-    lng: number,
-    window: ProductWindow = LATEX_WINDOW,
-  ): Promise<Forecast> {
-    const params = new URLSearchParams({
-      latitude: String(lat),
-      longitude: String(lng),
-      hourly: [
-        "temperature_2m",
-        "relative_humidity_2m",
-        "precipitation_probability",
-        "precipitation",
-        "dew_point_2m",
-        "wind_speed_10m",
-        "wind_gusts_10m",
-        "weather_code",
-      ].join(","),
-      daily:
-        "temperature_2m_max,temperature_2m_min,precipitation_probability_max,wind_speed_10m_max",
-      temperature_unit: "fahrenheit",
-      wind_speed_unit: "mph",
-      precipitation_unit: "mm",
-      forecast_days: "14",
-      timezone: "auto",
-    });
-    const res = await fetch(
-      `https://api.open-meteo.com/v1/forecast?${params.toString()}`,
-      { next: { revalidate: 900 } },
+const FORECAST_QUERY = {
+  hourly: [
+    "temperature_2m",
+    "relative_humidity_2m",
+    "precipitation_probability",
+    "precipitation",
+    "dew_point_2m",
+    "wind_speed_10m",
+    "wind_gusts_10m",
+    "weather_code",
+  ].join(","),
+  daily:
+    "temperature_2m_max,temperature_2m_min,precipitation_probability_max,wind_speed_10m_max",
+  temperature_unit: "fahrenheit",
+  wind_speed_unit: "mph",
+  precipitation_unit: "mm",
+  forecast_days: "14",
+  timezone: "auto",
+} as const;
+
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+let coolUntil = 0;
+
+export function openMeteoAvailable() {
+  return Date.now() >= coolUntil;
+}
+
+function coolOff(ms: number) {
+  coolUntil = Math.max(coolUntil, Date.now() + ms);
+}
+
+function openMeteoOrigin() {
+  const custom = process.env.OPENMETEO_API_URL?.replace(/\/$/, "");
+  if (custom) return custom;
+  if (process.env.OPENMETEO_API_KEY) return "https://customer-api.open-meteo.com";
+  return "https://api.open-meteo.com";
+}
+
+async function fetchOpenMeteo(params: URLSearchParams): Promise<unknown | null> {
+  if (!openMeteoAvailable()) return null;
+  const key = process.env.OPENMETEO_API_KEY;
+  if (key) params.set("apikey", key);
+  const url = `${openMeteoOrigin()}/v1/forecast?${params.toString()}`;
+  const res = await fetch(url, { cache: "no-store" });
+  if (res.status === 429) {
+    const retryAfter = Number(res.headers.get("retry-after"));
+    coolOff(
+      Number.isFinite(retryAfter) && retryAfter > 0
+        ? retryAfter * 1000
+        : 10 * 60 * 1000,
     );
-    if (!res.ok) {
-      throw new Error(`Open-Meteo ${res.status}`);
-    }
-    const json = (await res.json()) as OpenMeteoResponse;
-    if (!json.hourly || !json.daily) {
-      throw new Error("Open-Meteo missing hourly/daily");
-    }
+    return null;
+  }
+  if (!res.ok) return null;
+  return res.json();
+}
+
+function forecastFromJson(
+  json: OpenMeteoResponse,
+  window: ProductWindow,
+): Forecast {
+  if (!json.hourly || !json.daily) {
+    throw new Error("Open-Meteo missing hourly/daily");
+  }
 
     const tz = json.timezone ?? "UTC";
     const now = clockInTz(tz);
@@ -139,19 +172,37 @@ export class OpenMeteoProvider implements WeatherProvider {
     const todayHours = hours.filter(
       (h) => h.date === now.date && h.hour >= DAY_START && h.hour <= DAY_END,
     );
-    const crewPlan = buildCrewPlan(todayHours, now.hour);
+    const crewPlan = buildCrewPlan(todayHours, now.hour, window);
 
     const days: DailyWindow[] = json.daily.time.map((date, i) => {
       const dayHours = hours.filter(
         (h) => h.date === date && h.hour >= DAY_START && h.hour <= DAY_END,
       );
       const day = scoreDayFromHours(dayHours, window);
+      const am = morningHalf(dayHours, window);
+      const pm = afternoonHalf(dayHours, window);
+      const blockPoP = day.block.length
+        ? Math.round(
+            Math.max(
+              ...day.block.map((h) => h.snapshot.precipProbability ?? 0),
+            ),
+          )
+        : Math.round(json.daily!.precipitation_probability_max[i] ?? 0);
       return {
         date,
         snapshot: day.snapshot,
         score: day.score,
         highF: json.daily!.temperature_2m_max[i],
-        precipChance: json.daily!.precipitation_probability_max[i],
+        precipChance: blockPoP,
+        startHour: day.crewPlan.startHour,
+        wrapHour: day.crewPlan.wrapHour,
+        rainHour: day.crewPlan.rainHour,
+        hoursOpen: day.crewPlan.hoursOpen,
+        windowPrecipChance: blockPoP,
+        amScore: am.score,
+        pmScore: pm.score,
+        amWet: am.wet,
+        pmWet: pm.wet,
       };
     });
 
@@ -166,5 +217,56 @@ export class OpenMeteoProvider implements WeatherProvider {
       crewPlan,
       days,
     };
+}
+
+export class OpenMeteoProvider implements WeatherProvider {
+  async getForecast(
+    lat: number,
+    lng: number,
+    window: ProductWindow = LATEX_WINDOW,
+  ): Promise<Forecast | null> {
+    const params = new URLSearchParams({
+      latitude: String(lat),
+      longitude: String(lng),
+      ...FORECAST_QUERY,
+    });
+    const json = (await fetchOpenMeteo(params)) as OpenMeteoResponse | null;
+    if (!json) return null;
+    return forecastFromJson(json, window);
+  }
+
+  async getForecastMany(
+    points: Array<{ lat: number; lng: number }>,
+    window: ProductWindow = LATEX_WINDOW,
+    chunkSize = 20,
+  ): Promise<Array<Forecast | null>> {
+    const out: Array<Forecast | null> = Array(points.length).fill(null);
+    if (!openMeteoAvailable()) return out;
+    for (let i = 0; i < points.length; i += chunkSize) {
+      const chunk = points.slice(i, i + chunkSize);
+      const params = new URLSearchParams({
+        latitude: chunk.map((p) => p.lat).join(","),
+        longitude: chunk.map((p) => p.lng).join(","),
+        ...FORECAST_QUERY,
+      });
+      try {
+        const json = await fetchOpenMeteo(params);
+        if (!json) break;
+        const rows = Array.isArray(json)
+          ? (json as OpenMeteoResponse[])
+          : [json as OpenMeteoResponse];
+        rows.forEach((row, j) => {
+          try {
+            out[i + j] = forecastFromJson(row, window);
+          } catch {
+            out[i + j] = null;
+          }
+        });
+      } catch {
+        break;
+      }
+      if (i + chunkSize < points.length) await sleep(200);
+    }
+    return out;
   }
 }

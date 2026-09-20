@@ -68,7 +68,7 @@ export function ScoreRing({
           "text-xs uppercase tracking-[0.18em] text-muted-foreground",
         )}
       >
-        {band.replace("-", " ")}
+        {band.replaceAll("-", " ")}
       </p>
     </div>
   );

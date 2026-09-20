@@ -1,3 +1,4 @@
+import { formatClock } from "./crew-plan";
 import type { ScoreBand, ScoreFactorId, WeatherSnapshot } from "./score";
 import { fToC, type UnitSystem } from "@/lib/units";
 
@@ -16,6 +17,25 @@ export function fitCall(total: number): "GO" | "WAIT" | "NO" {
   if (total >= 70) return "GO";
   if (total >= 30) return "WAIT";
   return "NO";
+}
+
+/** Factor chips: wind/humidity/dew/freeze never print NO. */
+export function factorFitCall(id: ScoreFactorId, score: number): "GO" | "WAIT" {
+  if (id === "precip") return score >= 70 ? "GO" : "WAIT";
+  return score >= 70 ? "GO" : "WAIT";
+}
+
+export function windowLine(
+  startHour: number | null | undefined,
+  wrapHour: number | null | undefined,
+  rainHour: number | null | undefined,
+): string {
+  if (startHour == null || wrapHour == null) {
+    return rainHour != null ? `Rain ${formatClock(rainHour)}` : "";
+  }
+  const paint = `${formatClock(startHour)}–${formatClock(wrapHour)}`;
+  if (rainHour != null) return `${paint} · rain ${formatClock(rainHour)}`;
+  return paint;
 }
 
 export function rainLabel(snap: WeatherSnapshot) {

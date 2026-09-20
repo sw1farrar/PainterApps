@@ -14,16 +14,23 @@ import { currentUserId } from "@/lib/auth/current-user";
 import { getLocale } from "next-intl/server";
 import { listMyJobs } from "@/lib/jobs/list";
 import { productWindowForZip } from "@/lib/jobs/product-window";
-import { formatClock } from "@/lib/paintday/crew-plan";
+import { CoatProfile } from "@/components/paintday/CoatProfile";
+import { formatClock, hourCall } from "@/lib/paintday/crew-plan";
 import { isHardPrecip } from "@/lib/paintday/codes";
 import {
+  factorFitCall,
   fitCall,
   formatFactorValue,
   formatWeekday,
   precipVerdict,
+  windowLine,
 } from "@/lib/paintday/format";
 import { getZipPaintDay } from "@/lib/paintday/get-zip";
-import { LATEX_WINDOW } from "@/lib/paintday/product-window";
+import { weatherBugRadarUrl } from "@/lib/paintday/radar";
+import {
+  LATEX_WINDOW,
+  windowFromCoat,
+} from "@/lib/paintday/product-window";
 import { isUsZip } from "@/lib/utils";
 import type { ScoreFactorId } from "@/lib/paintday/score";
 import { scoreColor } from "@/lib/paintday/score";
@@ -42,12 +49,24 @@ export async function generateMetadata({
 
 export default async function ZipPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ zip: string }>;
+  searchParams: Promise<{ coat?: string }>;
 }) {
   const { zip } = await params;
+  const { coat } = await searchParams;
   if (!isUsZip(zip)) notFound();
-  const productWindow = await productWindowForZip(zip);
+  const coatWindow = windowFromCoat(coat);
+  const jobWindow = await productWindowForZip(zip);
+  const productWindow = coatWindow ?? jobWindow;
+  const coatId = coatWindow
+    ? coat
+    : productWindow?.name?.toLowerCase().includes("latitude")
+      ? "latitude"
+      : productWindow?.name?.toLowerCase().includes("duration")
+        ? "duration"
+        : "latex";
   const [data, userId, jobs, units, locale] = await Promise.all([
     getZipPaintDay(zip, productWindow),
     currentUserId(),
@@ -59,13 +78,40 @@ export default async function ZipPage({
 
   const t = await getTranslations("paintday");
   const { place, forecast } = data;
-  const score = forecast.currentScore;
-  const snap = forecast.current;
-  const summary = t(`summaries.${score.summaryKey}` as never);
-  const verdict = precipVerdict(
-    isHardPrecip(snap.weatherCode, snap.precipMm ?? 0),
-    score.band,
+  const todayIso = new Intl.DateTimeFormat("en-CA", {
+    timeZone: forecast.timezone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date());
+  const day =
+    forecast.days.find((d) => d.date === todayIso) ?? forecast.days[0];
+  const score = day?.score ?? forecast.currentScore;
+  const snap = day?.snapshot ?? forecast.current;
+  const nowHour = Number(
+    new Intl.DateTimeFormat("en-US", {
+      timeZone: forecast.timezone,
+      hour: "2-digit",
+      hourCycle: "h23",
+    }).format(new Date()),
   );
+  const nowSlot =
+    forecast.todayHours?.find((h) => h.hour === nowHour) ??
+    forecast.hours.find((h) => h.date === todayIso && h.hour === nowHour);
+  const nowCall = nowSlot ? hourCall(nowSlot) : null;
+  const summary = t(`summaries.${score.summaryKey}` as never);
+  const closed = Boolean(day?.amWet);
+  const wetNow = isHardPrecip(forecast.current.weatherCode, forecast.current.precipMm ?? 0);
+  const verdict = closed
+    ? "no"
+    : precipVerdict(false, score.band);
+  const windowText = day?.amWet
+    ? ""
+    : windowLine(
+        day?.startHour ?? forecast.crewPlan.startHour,
+        day?.wrapHour ?? forecast.crewPlan.wrapHour,
+        day?.rainHour ?? forecast.crewPlan.rainHour,
+      );
   const verdictLabel =
     verdict === "go"
       ? t("verdictGo")
@@ -88,11 +134,14 @@ export default async function ZipPage({
           <p className="mt-1 text-xs text-muted-foreground">
             {forecast.source === "open-meteo"
               ? t("sourceOpenMeteo")
-              : t("sourceDemo")}
+              : forecast.source === "nws"
+                ? t("sourceNws")
+                : t("sourceDemo")}
             {" · "}
             {t("windowHint")}
           </p>
-          {forecast.source !== "open-meteo" ? (
+          <CoatProfile zip={zip} active={coatId ?? "latex"} />
+          {forecast.source === "demo" ? (
             <p className="mt-2 rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
               {t("demoBanner")}
             </p>
@@ -100,7 +149,20 @@ export default async function ZipPage({
           <p className="mt-4 text-3xl font-semibold tracking-tight">
             {verdictLabel}
           </p>
+          {windowText ? (
+            <p className="mt-1 text-lg font-medium">
+              {t("paintWindow", { window: windowText })}
+            </p>
+          ) : (
+            <p className="mt-2 text-sm text-muted-foreground">{t("noWindow")}</p>
+          )}
           <p className="text-muted-foreground">{summary}</p>
+          {nowCall ? (
+            <p className="mt-1 text-sm text-muted-foreground">
+              {t("nowCall", { call: nowCall })}
+              {wetNow ? ` · ${t("nowWet")}` : ""}
+            </p>
+          ) : null}
           {forecast.crewPlan?.startHour != null &&
           forecast.crewPlan.wrapHour != null ? (
             <p className="mt-2 text-sm">
@@ -111,9 +173,7 @@ export default async function ZipPage({
                 ? ` · ${t("rainAfter", { time: formatClock(forecast.crewPlan.rainHour) })}`
                 : ""}
             </p>
-          ) : (
-            <p className="mt-2 text-sm text-muted-foreground">{t("noWindow")}</p>
-          )}
+          ) : null}
           {(forecast.crewPlan?.hoursOpen ?? 0) > 0 ? (
             <p className="text-sm text-muted-foreground">
               {forecast.crewPlan.secondCoat ? t("secondCoat") : t("oneCoat")}
@@ -156,6 +216,14 @@ export default async function ZipPage({
             jobs={jobs}
           />
           <ShareButton zip={zip} />
+          <a
+            href={weatherBugRadarUrl(place.city, place.state, zip)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex h-9 items-center rounded-md border border-border px-3 text-sm hover:bg-muted"
+          >
+            {t("radar")}
+          </a>
         </div>
       </div>
 
@@ -184,7 +252,7 @@ export default async function ZipPage({
                   className="mt-2 text-sm font-medium"
                   style={{ color: scoreColor(f.score) }}
                 >
-                  {t("fitOf", { n: f.score })} {fitCall(f.score)}
+                  {t("fitOf", { n: f.score })} {factorFitCall(f.id, f.score)}
                 </p>
                 <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
                   {t(`factorHelp.${f.id as ScoreFactorId}`)}

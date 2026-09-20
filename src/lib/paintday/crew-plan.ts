@@ -1,4 +1,6 @@
 import { isHardPrecip } from "./codes";
+import type { ProductWindow } from "./product-window";
+import { LATEX_WINDOW } from "./product-window";
 import type { PaintDayScore, WeatherSnapshot } from "./score";
 
 export type HourSlot = {
@@ -19,6 +21,8 @@ export type CrewPlan = {
 
 export const DAY_START = 7;
 export const DAY_END = 18;
+export const AM_END = 12;
+export const PM_START = 13;
 export const RECOAT_HOURS = 4;
 
 export function slotIsWet(slot: HourSlot) {
@@ -37,15 +41,30 @@ export function hourCall(slot: HourSlot): "GO" | "WAIT" | "NO" {
   return "WAIT";
 }
 
-export function buildCrewPlan(slots: HourSlot[], fromHour?: number): CrewPlan {
+export function rainBufferHours(window: ProductWindow = LATEX_WINDOW) {
+  const mins = window.rainReadyMinutes ?? 240;
+  return Math.max(1, Math.ceil(mins / 60));
+}
+
+export function buildCrewPlan(
+  slots: HourSlot[],
+  fromHour?: number,
+  window: ProductWindow = LATEX_WINDOW,
+): CrewPlan {
   const today = slots.filter((s) => s.hour >= DAY_START && s.hour <= DAY_END);
   const rain = today.find((s) =>
     isHardPrecip(s.snapshot.weatherCode, s.snapshot.precipMm ?? 0),
   );
   const rainHour = rain?.hour ?? null;
   const startFloor = fromHour ?? DAY_START;
+  const lastPaint =
+    rainHour == null ? DAY_END : rainHour - rainBufferHours(window);
   const open = today.filter(
-    (s) => s.hour >= startFloor && slotIsOpen(s) && (rainHour == null || s.hour < rainHour),
+    (s) =>
+      s.hour >= startFloor &&
+      s.hour <= lastPaint &&
+      slotIsOpen(s) &&
+      (rainHour == null || s.hour < rainHour),
   );
   if (!open.length) {
     return {

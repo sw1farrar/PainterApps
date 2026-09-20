@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { buildCrewPlan, formatClock, slotIsOpen, type HourSlot } from "./crew-plan";
+import { LATITUDE_WINDOW } from "./product-window";
 import { scorePaintDay } from "./score";
 
 function slot(hour: number, precipMm = 0, precipProbability = 5): HourSlot {
@@ -34,6 +35,22 @@ describe("crew plan", () => {
     ];
     const plan = buildCrewPlan(slots, 8);
     expect(plan.startHour).toBe(8);
+    expect(plan.wrapHour).toBe(9);
+    expect(plan.hoursOpen).toBe(2);
+    expect(plan.secondCoat).toBe(false);
+    expect(plan.rainHour).toBe(13);
+  });
+
+  it("lets Latitude paint closer to afternoon rain", () => {
+    const slots = [
+      slot(8, 0, 5),
+      slot(9, 0, 5),
+      slot(10, 0, 5),
+      slot(11, 0, 5),
+      slot(12, 0, 5),
+      slot(13, 2, 80),
+    ];
+    const plan = buildCrewPlan(slots, 8, LATITUDE_WINDOW);
     expect(plan.wrapHour).toBe(12);
     expect(plan.hoursOpen).toBe(5);
     expect(plan.secondCoat).toBe(true);

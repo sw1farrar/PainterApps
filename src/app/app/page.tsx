@@ -56,7 +56,10 @@ export default async function PortalPage() {
   const scored = await Promise.all(
     locations.map(async (loc) => {
       const day = await getZipPaintDay(loc.zip);
-      return { ...loc, score: day?.forecast.currentScore.total ?? null };
+      return {
+        ...loc,
+        score: day?.forecast.days[0]?.score.total ?? day?.forecast.currentScore.total ?? null,
+      };
     }),
   );
 

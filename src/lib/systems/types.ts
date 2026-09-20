@@ -42,6 +42,9 @@ export type TdsProduct = {
   minTempF: number;
   maxTempF: number;
   maxHumidityPct: number;
+  minDewSpreadF?: number;
+  rainReadyMinutes?: number;
+  recoatHours?: number;
   tdsUrl: string;
   tdsRevision: string;
   tdsDate: string;

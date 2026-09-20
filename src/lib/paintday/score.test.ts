@@ -95,6 +95,37 @@ describe("scorePaintDay", () => {
     expect(result.total).toBeGreaterThan(70);
   });
 
+  it("does not paint a dry marine-layer hour red (Eureka-style)", () => {
+    const result = scorePaintDay({
+      precipProbability: 15,
+      precipMm: 0,
+      weatherCode: 3,
+      humidity: 94,
+      tempF: 58,
+      dewPointF: 56,
+      windMph: 12,
+      gustMph: 18,
+      minTempNext48hF: 52,
+    });
+    expect(result.band).not.toBe("do-not-paint");
+    expect(result.total).toBeGreaterThanOrEqual(30);
+    expect(result.summaryKey).toMatch(/^risky-/);
+  });
+
+  it("does not paint a dry freeze-risk night red", () => {
+    const result = scorePaintDay({
+      precipProbability: 5,
+      precipMm: 0,
+      humidity: 48,
+      tempF: 52,
+      dewPointF: 38,
+      windMph: 6,
+      minTempNext48hF: 28,
+    });
+    expect(result.band).not.toBe("do-not-paint");
+    expect(result.total).toBeGreaterThanOrEqual(30);
+  });
+
   it("keeps spray-fit low on 20 mph gusts without painting the day red", () => {
     const result = scorePaintDay({
       precipProbability: 5,

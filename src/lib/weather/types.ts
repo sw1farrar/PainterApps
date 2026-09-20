@@ -7,10 +7,19 @@ export type DailyWindow = {
   score: PaintDayScore;
   highF?: number;
   precipChance?: number;
+  startHour?: number | null;
+  wrapHour?: number | null;
+  rainHour?: number | null;
+  hoursOpen?: number;
+  windowPrecipChance?: number;
+  amScore?: number;
+  pmScore?: number;
+  amWet?: boolean;
+  pmWet?: boolean;
 };
 
 export type Forecast = {
-  source: "open-meteo" | "demo";
+  source: "open-meteo" | "nws" | "demo";
   fetchedAt: string;
   timezone: string;
   current: WeatherSnapshot;
@@ -35,5 +44,5 @@ export interface WeatherProvider {
     lat: number,
     lng: number,
     window?: import("@/lib/paintday/product-window").ProductWindow,
-  ): Promise<Forecast>;
+  ): Promise<Forecast | null>;
 }

@@ -12,3 +12,7 @@ export function mapboxEnabled() {
 export function appUrl() {
   return process.env.NEXT_PUBLIC_APP_URL ?? "https://painterapps.com";
 }
+
+export function openMeteoPaid() {
+  return Boolean(process.env.OPENMETEO_API_KEY || process.env.OPENMETEO_API_URL);
+}

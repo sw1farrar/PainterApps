@@ -26,7 +26,11 @@ function demoSnapshot(seed: number, dayOffset = 0): WeatherSnapshot {
 }
 
 export class DemoWeatherProvider implements WeatherProvider {
-  async getForecast(lat: number, lng: number, _window?: unknown): Promise<Forecast> {
+  async getForecast(
+    lat: number,
+    lng: number,
+    window?: import("@/lib/paintday/product-window").ProductWindow,
+  ): Promise<Forecast> {
     const seed = Math.abs(Math.round(lat * 100 + lng * 10));
     const current = demoSnapshot(seed, 0);
     const start = new Date();
@@ -34,27 +38,39 @@ export class DemoWeatherProvider implements WeatherProvider {
       const date = new Date(start);
       date.setDate(start.getDate() + i);
       const snapshot = demoSnapshot(seed, i);
+      const score = scorePaintDay(snapshot, window);
+      const open = score.total >= 70 ? 8 : score.total >= 30 ? 4 : 0;
       return {
         date: date.toISOString().slice(0, 10),
         snapshot,
-        score: scorePaintDay(snapshot),
+        score,
         highF: snapshot.tempF,
         precipChance: snapshot.precipProbability,
+        startHour: open ? 8 : null,
+        wrapHour: open ? 8 + open - 1 : null,
+        rainHour: null,
+        hoursOpen: open,
+        windowPrecipChance: snapshot.precipProbability,
+        amScore: score.total,
+        pmScore: score.total,
+        amWet: false,
+        pmWet: false,
       };
     });
+    const today = days[0];
     return {
       source: "demo",
       fetchedAt: new Date().toISOString(),
-      timezone: "America/New_York",
+      timezone: "America/Denver",
       current,
-      currentScore: scorePaintDay(current),
+      currentScore: today?.score ?? scorePaintDay(current, window),
       hours: [],
       todayHours: [],
       crewPlan: {
-        startHour: null,
-        wrapHour: null,
-        hoursOpen: 0,
-        secondCoat: false,
+        startHour: today?.startHour ?? 8,
+        wrapHour: today?.wrapHour ?? 15,
+        hoursOpen: today?.hoursOpen ?? 8,
+        secondCoat: (today?.hoursOpen ?? 0) >= 4,
         rainHour: null,
       },
       days,
