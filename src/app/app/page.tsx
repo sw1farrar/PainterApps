@@ -142,7 +142,7 @@ export default async function PortalPage() {
             >
               {t("openPaintDay")}
             </Link>
-            <ul className="mt-5 grid grid-cols-5 gap-2 sm:grid-cols-10">
+            <ul className="mt-5 grid min-w-0 grid-cols-5 gap-2 sm:grid-cols-10">
               {outlook.map((d) => (
                 <li
                   key={d.date}

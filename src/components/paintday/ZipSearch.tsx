@@ -40,18 +40,28 @@ export function ZipSearch({
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(0);
   const seq = useRef(0);
+  const committed = useRef(formatZip(initial));
+  const suppressOpen = useRef(Boolean(initial));
 
   function go(zip: string) {
     if (!isUsZip(zip)) return;
     setError(null);
     setOpen(false);
     setMatches([]);
+    committed.current = zip;
+    suppressOpen.current = true;
+    setValue(zip);
     router.push(`/paintday/${zip}`);
   }
 
   useEffect(() => {
     const q = value.trim();
     if (q.length < 1) {
+      setMatches([]);
+      setOpen(false);
+      return;
+    }
+    if (suppressOpen.current && formatZip(q) === committed.current) {
       setMatches([]);
       setOpen(false);
       return;
@@ -121,11 +131,16 @@ export function ZipSearch({
           placeholder={t("searchPlaceholder")}
           value={value}
           onChange={(e) => {
+            suppressOpen.current = false;
             setValue(e.target.value);
             setError(null);
           }}
           onFocus={() => {
+            if (suppressOpen.current) return;
             if (matches.length) setOpen(true);
+          }}
+          onBlur={() => {
+            window.setTimeout(() => setOpen(false), 160);
           }}
           onKeyDown={(e) => {
             if (!open || !matches.length) return;

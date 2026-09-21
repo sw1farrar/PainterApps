@@ -18,7 +18,7 @@ export default async function SystemsPage() {
     listMyJobs(),
   ]);
   return (
-    <div className="mx-auto max-w-5xl px-4 py-8">
+    <div className="mx-auto w-full min-w-0 max-w-5xl px-4 py-8">
       <h1 className="text-3xl font-semibold tracking-tight">{t("title")}</h1>
       <div className="mt-8">
         <SystemWizard signedIn={signedIn} units={units} jobs={jobs} />

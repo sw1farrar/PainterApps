@@ -4,10 +4,14 @@ import { createClient } from "@/lib/supabase/server";
 export const currentUser = cache(async () => {
   const supabase = await createClient();
   if (!supabase) return null;
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  return user;
+  try {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    return user;
+  } catch {
+    return null;
+  }
 });
 
 export async function currentUserId(): Promise<string | null> {

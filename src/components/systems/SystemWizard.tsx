@@ -206,7 +206,7 @@ export function SystemWizard({
 
   return (
     <div className="space-y-8">
-      <div className="sticky top-14 z-20 -mx-4 max-h-[40vh] space-y-4 overflow-y-auto border-b border-border/80 bg-background/90 px-4 py-3 backdrop-blur md:max-h-none">
+      <div className="-mx-4 space-y-4 border-b border-border/80 bg-background/90 px-4 py-3 md:sticky md:top-14 md:z-20 md:backdrop-blur">
         <FilterRow label={t("coat")}>
           <Chip
             selected={role === "all"}

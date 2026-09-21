@@ -5,7 +5,7 @@ export const metadata = { title: "Terms of Use" };
 export default async function TermsPage() {
   const t = await getTranslations();
   return (
-    <article className="mx-auto max-w-2xl px-4 py-16">
+    <article className="mx-auto w-full min-w-0 max-w-2xl px-4 py-16">
       <h1 className="text-3xl font-semibold tracking-tight">
         {t("legal.termsTitle")}
       </h1>

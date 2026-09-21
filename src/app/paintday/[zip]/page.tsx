@@ -41,6 +41,9 @@ import { isUsZip } from "@/lib/utils";
 import type { ScoreFactorId } from "@/lib/paintday/score";
 import { scoreColor } from "@/lib/paintday/score";
 
+export const dynamic = "force-dynamic";
+export const fetchCache = "default-no-store";
+
 export async function generateMetadata({
   params,
 }: {
@@ -140,7 +143,7 @@ export default async function ZipPage({
     .slice(0, 3);
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-10">
+    <div className="mx-auto w-full min-w-0 max-w-6xl overflow-x-hidden px-4 py-10">
       <ZipSearch initial={zip} />
       <div className="mt-8 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
         <div>
@@ -271,7 +274,7 @@ export default async function ZipPage({
         </div>
       </div>
 
-      <div className="mt-10 grid gap-8 lg:grid-cols-[240px_1fr]">
+      <div className="mt-10 grid min-w-0 gap-8 lg:grid-cols-[240px_1fr]">
         <ScoreRing
           score={score.total}
           label={t("scoreLabel")}
@@ -307,9 +310,9 @@ export default async function ZipPage({
         </div>
       </div>
 
-      <section className="mt-10">
+      <section className="mt-10 w-full min-w-0">
         <h2 className="text-xl font-semibold">{t("hourlyTitle")}</h2>
-        <div className="mt-3">
+        <div className="mt-3 w-full min-w-0">
           <HourlyStrip
             hours={forecast.todayHours ?? []}
             nowHour={Number(
@@ -323,7 +326,7 @@ export default async function ZipPage({
         </div>
       </section>
 
-      <section className="mt-12">
+      <section className="mt-12 w-full min-w-0">
         <h2 className="text-xl font-semibold">{t("fourteen")}</h2>
         <p className="mt-1 text-sm text-muted-foreground">{t("bestDays")}</p>
         <div className="mt-3 flex flex-wrap gap-2">
@@ -337,7 +340,7 @@ export default async function ZipPage({
             </span>
           ))}
         </div>
-        <div className="mt-6 rounded-2xl border border-border bg-card p-4">
+        <div className="mt-6 w-full min-w-0 overflow-x-auto contain-inline-size rounded-2xl border border-border bg-card p-4">
           <ForecastChart days={forecast.days} />
         </div>
       </section>

@@ -4,6 +4,11 @@ import { useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { ProductEditor } from "@/components/catalog/ProductEditor";
 import { patchCatalogFlags } from "@/app/app/catalog/actions";
 import {
@@ -134,7 +139,7 @@ export function CatalogBoard({
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap items-end justify-between gap-3">
-        <div className="min-w-[16rem] flex-1">
+        <div className="min-w-0 flex-1 sm:min-w-[16rem]">
           <Input
             value={q}
             onChange={(e) => setQ(e.target.value)}
@@ -194,73 +199,110 @@ export function CatalogBoard({
         {rows.length} product{rows.length === 1 ? "" : "s"}
       </p>
 
-      <div className="overflow-x-auto rounded-xl border border-border">
-        <table className="w-full min-w-[52rem] text-left text-sm">
-          <thead className="border-b border-border bg-muted/40 text-xs uppercase tracking-[0.12em] text-muted-foreground">
-            <tr>
-              <th className="px-3 py-2 font-medium">Brand</th>
-              <th className="px-3 py-2 font-medium">Product</th>
-              <th className="px-3 py-2 font-medium">Kind</th>
-              <th className="px-3 py-2 font-medium">Interior</th>
-              <th className="px-3 py-2 font-medium">Exterior</th>
-              <th className="px-3 py-2 font-medium">Substrates</th>
-              <th className="px-3 py-2 font-medium">Sheens</th>
-              <th className="px-3 py-2 font-medium">VOC</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((p) => (
-              <tr
-                key={String(p.id)}
-                className="cursor-pointer border-b border-border last:border-0 hover:bg-muted/40"
+      <ul className="space-y-3 md:hidden">
+        {rows.map((p) => {
+          const brand =
+            mfrName.get(String(p.manufacturer_id ?? "")) ??
+            String(p.manufacturer_id ?? "");
+          const substrates = asList(p.substrates).join(", ");
+          const sheenList = asList(p.sheens).join(", ");
+          return (
+            <li key={String(p.id)}>
+              <button
+                type="button"
                 onClick={() => setOpen(p)}
+                className="w-full rounded-xl border border-border p-4 text-left hover:bg-muted/40"
               >
-                <td className="px-3 py-2 text-muted-foreground">
-                  {mfrName.get(String(p.manufacturer_id ?? "")) ??
-                    String(p.manufacturer_id ?? "")}
-                </td>
-                <td className="px-3 py-2">
-                  <span className="font-medium">{String(p.name ?? "")}</span>
-                  {p.sku ? (
-                    <span className="ml-2 text-xs text-muted-foreground">
-                      {String(p.sku)}
-                    </span>
-                  ) : null}
-                </td>
-                <td className="px-3 py-2">{String(p.kind ?? "")}</td>
-                <td className="px-3 py-2" onClick={(e) => e.stopPropagation()}>
-                  <input
-                    type="checkbox"
-                    checked={Boolean(p.interior)}
-                    onChange={(e) =>
-                      void flipFlag(String(p.id), "interior", e.target.checked)
-                    }
-                    aria-label="Interior"
-                  />
-                </td>
-                <td className="px-3 py-2" onClick={(e) => e.stopPropagation()}>
-                  <input
-                    type="checkbox"
-                    checked={Boolean(p.exterior)}
-                    onChange={(e) =>
-                      void flipFlag(String(p.id), "exterior", e.target.checked)
-                    }
-                    aria-label="Exterior"
-                  />
-                </td>
-                <td className="max-w-[12rem] truncate px-3 py-2 text-xs text-muted-foreground">
-                  {asList(p.substrates).join(", ")}
-                </td>
-                <td className="max-w-[10rem] truncate px-3 py-2 text-xs text-muted-foreground">
-                  {asList(p.sheens).join(", ")}
-                </td>
-                <td className="px-3 py-2 tabular-nums text-muted-foreground">
-                  {p.voc_g_l == null || p.voc_g_l === "" ? "—" : String(p.voc_g_l)}
-                </td>
+                <p className="text-xs text-muted-foreground">{brand}</p>
+                <p className="mt-0.5 font-medium">{String(p.name ?? "")}</p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {String(p.kind ?? "")}
+                  {p.sku ? ` · ${String(p.sku)}` : ""}
+                </p>
+                <p className="mt-2 text-xs text-muted-foreground">
+                  {[
+                    p.interior ? "Interior" : null,
+                    p.exterior ? "Exterior" : null,
+                    substrates || null,
+                    sheenList || null,
+                    p.voc_g_l == null || p.voc_g_l === ""
+                      ? null
+                      : `VOC ${String(p.voc_g_l)}`,
+                  ]
+                    .filter(Boolean)
+                    .join(" · ")}
+                </p>
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+
+      <div className="hidden min-w-0 md:block">
+        <div className="overflow-x-auto rounded-xl border border-border">
+          <table className="w-full min-w-[52rem] text-left text-sm">
+            <thead className="border-b border-border bg-muted/40 text-xs uppercase tracking-[0.12em] text-muted-foreground">
+              <tr>
+                <th className="px-3 py-2 font-medium">Brand</th>
+                <th className="px-3 py-2 font-medium">Product</th>
+                <th className="px-3 py-2 font-medium">Kind</th>
+                <th className="px-3 py-2 font-medium">Interior</th>
+                <th className="px-3 py-2 font-medium">Exterior</th>
+                <th className="px-3 py-2 font-medium">Substrates</th>
+                <th className="px-3 py-2 font-medium">Sheens</th>
+                <th className="px-3 py-2 font-medium">VOC</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {rows.map((p) => (
+                <tr
+                  key={String(p.id)}
+                  className="cursor-pointer border-b border-border last:border-0 hover:bg-muted/40"
+                  onClick={() => setOpen(p)}
+                >
+                  <td className="px-3 py-2 text-muted-foreground">
+                    {mfrName.get(String(p.manufacturer_id ?? "")) ??
+                      String(p.manufacturer_id ?? "")}
+                  </td>
+                  <td className="px-3 py-2">
+                    <span className="font-medium">{String(p.name ?? "")}</span>
+                    {p.sku ? (
+                      <span className="ml-2 text-xs text-muted-foreground">
+                        {String(p.sku)}
+                      </span>
+                    ) : null}
+                  </td>
+                  <td className="px-3 py-2">{String(p.kind ?? "")}</td>
+                  <td className="px-3 py-2" onClick={(e) => e.stopPropagation()}>
+                    <input
+                      type="checkbox"
+                      checked={Boolean(p.interior)}
+                      onChange={(e) =>
+                        void flipFlag(String(p.id), "interior", e.target.checked)
+                      }
+                      aria-label="Interior"
+                    />
+                  </td>
+                  <td className="px-3 py-2" onClick={(e) => e.stopPropagation()}>
+                    <input
+                      type="checkbox"
+                      checked={Boolean(p.exterior)}
+                      onChange={(e) =>
+                        void flipFlag(String(p.id), "exterior", e.target.checked)
+                      }
+                      aria-label="Exterior"
+                    />
+                  </td>
+                  <WrappedCell value={asList(p.substrates).join(", ")} />
+                  <WrappedCell value={asList(p.sheens).join(", ")} />
+                  <td className="px-3 py-2 tabular-nums text-muted-foreground">
+                    {p.voc_g_l == null || p.voc_g_l === "" ? "—" : String(p.voc_g_l)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {editing ? (
@@ -272,6 +314,24 @@ export function CatalogBoard({
         />
       ) : null}
     </div>
+  );
+}
+
+function WrappedCell({ value }: { value: string }) {
+  if (!value) {
+    return <td className="px-3 py-2 text-xs text-muted-foreground">—</td>;
+  }
+  return (
+    <td className="max-w-[16rem] px-3 py-2 text-xs text-muted-foreground">
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span className="block whitespace-normal break-words" title={value}>
+            {value}
+          </span>
+        </TooltipTrigger>
+        <TooltipContent className="max-w-xs text-left">{value}</TooltipContent>
+      </Tooltip>
+    </td>
   );
 }
 

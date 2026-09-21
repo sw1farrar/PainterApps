@@ -7,7 +7,7 @@ function isProtected(pathname: string) {
   return pathname === "/app" || pathname.startsWith("/app/");
 }
 
-function withLocaleCookie(request: NextRequest, response: NextResponse) {
+function applyLocaleCookie(request: NextRequest, response: NextResponse) {
   if (!request.cookies.get(LOCALE_COOKIE)) {
     const locale = localeFromAcceptLanguage(
       request.headers.get("accept-language"),
@@ -28,6 +28,11 @@ function copyCookies(from: NextResponse, to: NextResponse) {
   return to;
 }
 
+function withPrivateCache(response: NextResponse) {
+  response.headers.set("Cache-Control", "private, no-store");
+  return response;
+}
+
 export async function middleware(request: NextRequest) {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -38,9 +43,9 @@ export async function middleware(request: NextRequest) {
       dest.pathname = "/login";
       dest.search = "";
       dest.searchParams.set("next", request.nextUrl.pathname);
-      return withLocaleCookie(request, NextResponse.redirect(dest));
+      return applyLocaleCookie(request, NextResponse.redirect(dest));
     }
-    return withLocaleCookie(request, NextResponse.next());
+    return applyLocaleCookie(request, NextResponse.next());
   }
 
   let response = NextResponse.next({ request });
@@ -62,7 +67,10 @@ export async function middleware(request: NextRequest) {
         );
         response = NextResponse.next({ request });
         cookiesToSet.forEach(({ name, value, options }) =>
-          response.cookies.set(name, value, options),
+          response.cookies.set(name, value, {
+            ...options,
+            path: options?.path ?? "/",
+          }),
         );
       },
     },
@@ -72,6 +80,10 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
+  if (user) {
+    withPrivateCache(response);
+  }
+
   if (!user && isProtected(request.nextUrl.pathname)) {
     const dest = request.nextUrl.clone();
     const nextPath = `${request.nextUrl.pathname}${request.nextUrl.search}`;
@@ -79,7 +91,7 @@ export async function middleware(request: NextRequest) {
     dest.search = "";
     dest.searchParams.set("next", nextPath);
     const redirect = NextResponse.redirect(dest);
-    return withLocaleCookie(request, copyCookies(response, redirect));
+    return applyLocaleCookie(request, copyCookies(response, redirect));
   }
 
   if (user) {
@@ -96,12 +108,15 @@ export async function middleware(request: NextRequest) {
         dest.search = "";
         dest.searchParams.set("error", "disabled");
         const redirect = NextResponse.redirect(dest);
-        return withLocaleCookie(request, copyCookies(response, redirect));
+        return applyLocaleCookie(
+          request,
+          withPrivateCache(copyCookies(response, redirect)),
+        );
       }
     }
   }
 
-  return withLocaleCookie(request, response);
+  return applyLocaleCookie(request, response);
 }
 
 export const config = {
