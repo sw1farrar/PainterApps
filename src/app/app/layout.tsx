@@ -40,11 +40,11 @@ export default async function AppLayout({
     ...(editor ? [{ href: "/app/news", label: t("write") }] : []),
   ];
   return (
-    <div className="mx-auto flex h-[calc(100dvh-3.5rem)] w-full max-w-6xl flex-col overflow-hidden md:flex-row">
-      <aside className="shrink-0 overflow-x-auto border-b border-border bg-background px-3 py-2 md:h-full md:w-48 md:overflow-y-auto md:overflow-x-hidden md:border-b-0 md:border-r md:py-6">
+    <div className="mx-auto flex w-full min-w-0 max-w-6xl flex-1 flex-col md:flex-row">
+      <aside className="shrink-0 border-b border-border bg-background px-3 py-2 md:sticky md:top-14 md:h-[calc(100dvh-3.5rem)] md:w-48 md:overflow-y-auto md:border-b-0 md:border-r md:py-6">
         <AppNav links={links} />
       </aside>
-      <div className="min-h-0 min-w-0 flex-1 overflow-y-auto px-4 py-6">
+      <div className="min-w-0 flex-1 px-4 py-6">
         {children}
       </div>
     </div>

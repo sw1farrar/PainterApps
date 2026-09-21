@@ -41,6 +41,9 @@ import { isUsZip } from "@/lib/utils";
 import type { ScoreFactorId } from "@/lib/paintday/score";
 import { scoreColor } from "@/lib/paintday/score";
 
+export const dynamic = "force-dynamic";
+export const fetchCache = "default-no-store";
+
 export async function generateMetadata({
   params,
 }: {
@@ -140,7 +143,7 @@ export default async function ZipPage({
     .slice(0, 3);
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-10">
+    <div className="mx-auto w-full min-w-0 max-w-6xl px-4 py-10">
       <ZipSearch initial={zip} />
       <div className="mt-8 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
         <div>
@@ -271,7 +274,7 @@ export default async function ZipPage({
         </div>
       </div>
 
-      <div className="mt-10 grid gap-8 lg:grid-cols-[240px_1fr]">
+      <div className="mt-10 grid min-w-0 gap-8 lg:grid-cols-[240px_1fr]">
         <ScoreRing
           score={score.total}
           label={t("scoreLabel")}
@@ -337,7 +340,7 @@ export default async function ZipPage({
             </span>
           ))}
         </div>
-        <div className="mt-6 rounded-2xl border border-border bg-card p-4">
+        <div className="mt-6 min-w-0 overflow-x-auto rounded-2xl border border-border bg-card p-4">
           <ForecastChart days={forecast.days} />
         </div>
       </section>

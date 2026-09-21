@@ -63,7 +63,7 @@ export default async function RootLayout({
       suppressHydrationWarning
       className={`${geistSans.variable} ${geistMono.variable}`}
     >
-      <body className="min-h-dvh bg-background font-sans text-foreground antialiased">
+      <body className="min-h-dvh max-w-full overflow-x-clip bg-background font-sans text-foreground antialiased">
         <Providers locale={locale} messages={messages}>
           <PasswordManagerGuard enabled={Boolean(userId)} />
           <SiteChrome

@@ -6,7 +6,7 @@ export default async function HomePage() {
 
   return (
     <section className="bg-card/40 py-6">
-      <div className="mx-auto max-w-6xl px-4">
+      <div className="mx-auto w-full min-w-0 max-w-6xl px-4">
         <HomeMapBoard board={board} />
       </div>
     </section>

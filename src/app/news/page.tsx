@@ -19,7 +19,7 @@ export default async function NewsPage() {
   const editor = await isNewsEditor(await currentUserId());
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-12">
+    <div className="mx-auto w-full min-w-0 max-w-6xl px-4 py-12">
       <p className="text-xs font-medium uppercase tracking-[0.22em] text-primary">
         {t("kicker")}
       </p>

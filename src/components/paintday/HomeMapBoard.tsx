@@ -33,7 +33,7 @@ export function HomeMapBoard({ board }: { board: MapBoard }) {
   return (
     <>
       <div className="flex flex-col gap-3 sm:grid sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] sm:items-center sm:gap-4">
-        <div className="flex shrink-0 flex-nowrap items-center gap-0.5">
+        <div className="flex min-w-0 flex-wrap items-center gap-0.5">
           <button
             type="button"
             className="shrink-0 rounded-md px-2 py-1 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-30"
@@ -82,7 +82,7 @@ export function HomeMapBoard({ board }: { board: MapBoard }) {
           aria-label={t("mapHeading")}
           className="justify-self-center text-center sm:px-2"
         >
-          <span className="block whitespace-nowrap text-[1.35rem] font-semibold leading-none tracking-[-0.05em] text-foreground sm:text-[1.85rem] lg:text-[2.15rem]">
+          <span className="block text-[1.35rem] font-semibold leading-none tracking-[-0.05em] text-foreground sm:whitespace-nowrap sm:text-[1.85rem] lg:text-[2.15rem]">
             Paint{" "}
             <span className="bg-gradient-to-r from-[oklch(0.62_0.16_175)] to-[oklch(0.58_0.16_155)] bg-clip-text text-transparent dark:from-[oklch(0.78_0.13_170)] dark:to-[oklch(0.7_0.14_155)]">
               Weather

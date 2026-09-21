@@ -10,7 +10,7 @@ export function HourlyStrip({
 }) {
   if (!hours.length) return null;
   return (
-    <div className="flex gap-1 overflow-x-auto pb-1">
+    <div className="flex max-w-full gap-1 overflow-x-auto pb-1">
       {hours.map((slot) => {
         const call = hourCall(slot);
         const now = slot.hour === nowHour;

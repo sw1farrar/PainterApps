@@ -46,7 +46,7 @@ export default async function NewsArticlePage({
     .slice(0, 2);
 
   return (
-    <article className="mx-auto max-w-2xl px-4 py-12">
+    <article className="mx-auto w-full min-w-0 max-w-2xl px-4 py-12">
       <p className="text-xs font-medium uppercase tracking-[0.18em] text-primary">
         {t(`categories.${post.category}`)}
       </p>

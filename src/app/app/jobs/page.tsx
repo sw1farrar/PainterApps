@@ -34,7 +34,7 @@ export default async function JobsPage() {
         <Input name="title" placeholder={t("jobTitle")} required />
         <Input name="zip" placeholder={t("zip")} />
         <Textarea name="notes" placeholder={t("notes")} rows={3} />
-        <Button type="submit">{t("jobTitle")}</Button>
+        <Button type="submit">{t("newJob")}</Button>
       </form>
       {!data?.length ? (
         <div className="mt-10 text-center">

@@ -190,13 +190,13 @@ export function ProductEnvelope({
       }}
     >
       <div
-        className="envelope-panel flex max-h-[calc(100dvh-1.5rem)] w-full max-w-4xl flex-col"
+        className="envelope-panel flex max-h-[calc(100dvh-1.5rem)] w-full min-w-0 max-w-4xl flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="envelope-flap mx-auto w-[min(100%,42rem)] shrink-0" />
-        <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-b-2xl rounded-t-md border border-border bg-background shadow-2xl">
-          <div className="sticky top-0 z-10 flex shrink-0 items-center justify-between gap-4 border-b border-border bg-background px-5 py-4 sm:px-8">
-            <div className="flex min-w-0 items-center gap-4">
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-b-2xl rounded-t-md border border-border bg-background shadow-2xl">
+          <div className="sticky top-0 z-10 flex shrink-0 flex-col gap-3 border-b border-border bg-background px-5 py-4 sm:flex-row sm:items-start sm:justify-between sm:px-8">
+            <div className="flex min-w-0 items-start gap-4">
               <CanImage src={product.canImageUrl} alt={product.name} size="lg" />
               <div className="min-w-0">
                 <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
@@ -210,7 +210,7 @@ export function ProductEnvelope({
                 </h2>
               </div>
             </div>
-            <div className="flex shrink-0 items-center gap-2">
+            <div className="flex shrink-0 flex-wrap items-center gap-2 sm:pt-1">
               {pdf ? (
                 <Button
                   className="paint-gradient border-0 text-white"
