@@ -3,10 +3,16 @@ import { buildCrewPlan, formatClock, slotIsOpen, type HourSlot } from "./crew-pl
 import { LATITUDE_WINDOW } from "./product-window";
 import { scorePaintDay } from "./score";
 
-function slot(hour: number, precipMm = 0, precipProbability = 5): HourSlot {
+function slot(
+  hour: number,
+  precipMm = 0,
+  precipProbability = 5,
+  weatherCode?: number,
+): HourSlot {
   const snapshot = {
     precipProbability,
     precipMm,
+    weatherCode,
     humidity: 50,
     tempF: 72,
     dewPointF: 50,
@@ -65,5 +71,40 @@ describe("crew plan", () => {
     expect(formatClock(9)).toBe("9am");
     expect(formatClock(12)).toBe("12pm");
     expect(formatClock(14)).toBe("2pm");
+  });
+
+  it("resumes in the afternoon after morning drizzle", () => {
+    const slots = [
+      slot(7),
+      slot(8),
+      slot(9, 0.4, 2, 51),
+      slot(10),
+      slot(11),
+      slot(12),
+      slot(13),
+      slot(14),
+      slot(15),
+      slot(16),
+      slot(17),
+      slot(18),
+    ];
+    const plan = buildCrewPlan(slots);
+    expect(plan.rainHour).toBe(9);
+    expect(plan.startHour).toBe(13);
+    expect(plan.wrapHour).toBe(18);
+    expect(plan.hoursOpen).toBe(6);
+    expect(plan.secondCoat).toBe(true);
+  });
+
+  it("keeps soaking morning rain closed even if afternoon dries", () => {
+    const slots = [
+      slot(8, 1.2, 80, 61),
+      slot(9, 0.8, 70, 61),
+      ...[13, 14, 15, 16, 17, 18].map((h) => slot(h)),
+    ];
+    const plan = buildCrewPlan(slots);
+    expect(plan.rainHour).toBe(8);
+    expect(plan.hoursOpen).toBe(0);
+    expect(plan.startHour).toBeNull();
   });
 });

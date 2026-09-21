@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useTranslations } from "next-intl";
 import { Menu } from "lucide-react";
 import { Logo } from "@/components/brand/Logo";
 import { LanguageSwitcher } from "@/components/i18n/LanguageSwitcher";
@@ -17,6 +16,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import type { Locale } from "@/i18n/config";
+import type { NavCopy } from "@/lib/paintday/copy-types";
 import { cn } from "@/lib/utils";
 import { AuthButtons } from "./AuthButtons";
 
@@ -31,18 +31,19 @@ export function Header({
   locale,
   authEnabled,
   signedIn,
+  labels,
 }: {
   locale: Locale;
   authEnabled: boolean;
   signedIn: boolean;
+  labels: NavCopy;
 }) {
-  const t = useTranslations("nav");
   const pathname = usePathname();
 
   const navLinks = (close: boolean) => {
     const items = [
-      ...LINKS.map((link) => ({ href: link.href, label: t(link.key) })),
-      ...(signedIn ? [{ href: "/app", label: t("app") }] : []),
+      ...LINKS.map((link) => ({ href: link.href, label: labels[link.key] })),
+      ...(signedIn ? [{ href: "/app", label: labels.app }] : []),
     ];
     return items.map((link) => {
       const active =
@@ -76,21 +77,30 @@ export function Header({
   return (
     <header className="sticky top-0 z-40 w-full min-w-0 max-w-full overflow-x-clip border-b border-border/80 bg-background/80 backdrop-blur-md">
       <div className="mx-auto flex h-14 w-full min-w-0 max-w-6xl items-center justify-between gap-2 px-4">
-        <Link href="/" className="min-w-0 shrink" aria-label={t("home")}>
+        <Link href="/" className="min-w-0 shrink" aria-label={labels.home}>
           <Logo />
         </Link>
-        <nav className="hidden items-center gap-6 md:flex" aria-label={t("primary")}>
+        <nav
+          className="hidden items-center gap-6 md:flex"
+          aria-label={labels.primary}
+        >
           {navLinks(false)}
         </nav>
         <div className="flex shrink-0 items-center gap-1">
           <div className="hidden items-center gap-2 md:flex">
             <LanguageSwitcher locale={locale} />
             <ThemeToggle />
-            <AuthButtons authEnabled={authEnabled} signedIn={signedIn} />
+            <AuthButtons
+              authEnabled={authEnabled}
+              signedIn={signedIn}
+              loginLabel={labels.login}
+              signupLabel={labels.signup}
+              signOutLabel={labels.signOut}
+            />
           </div>
           {authEnabled && !signedIn ? (
             <Button asChild variant="ghost" size="sm" className="md:hidden">
-              <Link href="/login">{t("login")}</Link>
+              <Link href="/login">{labels.login}</Link>
             </Button>
           ) : null}
           <Sheet>
@@ -99,12 +109,15 @@ export function Header({
                 variant="ghost"
                 size="icon"
                 className="md:hidden"
-                aria-label={t("menu")}
+                aria-label={labels.menu}
               >
                 <Menu className="size-4" />
               </Button>
             </SheetTrigger>
-            <SheetContent side="right" className="w-[min(18rem,calc(100vw-1.5rem))]">
+            <SheetContent
+              side="right"
+              className="w-[min(18rem,calc(100vw-1.5rem))]"
+            >
               <SheetHeader>
                 <SheetTitle>
                   <Logo />
@@ -113,14 +126,24 @@ export function Header({
               <nav className="mt-6 flex flex-col gap-4 px-4">{navLinks(true)}</nav>
               <div className="mt-8 flex flex-col gap-4 px-4">
                 <div className="flex flex-wrap items-center justify-between gap-3">
-                  <span className="text-sm text-muted-foreground">{t("language")}</span>
+                  <span className="text-sm text-muted-foreground">
+                    {labels.language}
+                  </span>
                   <LanguageSwitcher locale={locale} />
                 </div>
                 <div className="flex flex-wrap items-center justify-between gap-3">
-                  <span className="text-sm text-muted-foreground">{t("theme")}</span>
+                  <span className="text-sm text-muted-foreground">
+                    {labels.theme}
+                  </span>
                   <ThemeToggle />
                 </div>
-                <AuthButtons authEnabled={authEnabled} signedIn={signedIn} />
+                <AuthButtons
+                  authEnabled={authEnabled}
+                  signedIn={signedIn}
+                  loginLabel={labels.login}
+                  signupLabel={labels.signup}
+                  signOutLabel={labels.signOut}
+                />
               </div>
             </SheetContent>
           </Sheet>

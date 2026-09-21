@@ -15,7 +15,7 @@ export function SaveLocationButton({
   const t = useTranslations();
   if (!signedIn) {
     return (
-      <Button asChild variant="outline">
+      <Button asChild variant="outline" size="sm">
         <Link href={`/sign-up?next=/paintday/${zip}`}>
           <Bookmark className="size-4" />
           {t("cta.signInToSave")}
@@ -24,7 +24,7 @@ export function SaveLocationButton({
     );
   }
   return (
-    <Button asChild variant="outline">
+    <Button asChild variant="outline" size="sm">
       <Link href={`/app/settings?zip=${zip}#locations`}>
         <Bookmark className="size-4" />
         {t("paintday.save")}

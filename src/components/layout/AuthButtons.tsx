@@ -1,25 +1,29 @@
 "use client";
 
 import Link from "next/link";
-import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { signOut } from "@/app/auth/actions";
 
 export function AuthButtons({
   authEnabled,
   signedIn,
+  loginLabel,
+  signupLabel,
+  signOutLabel,
 }: {
   authEnabled: boolean;
   signedIn: boolean;
+  loginLabel: string;
+  signupLabel: string;
+  signOutLabel: string;
 }) {
-  const t = useTranslations("nav");
   const links = (
     <div className="flex items-center gap-2">
       <Button asChild variant="ghost" size="sm">
-        <Link href="/login">{t("login")}</Link>
+        <Link href="/login">{loginLabel}</Link>
       </Button>
       <Button asChild size="sm" className="paint-gradient border-0 text-white">
-        <Link href="/sign-up">{t("signup")}</Link>
+        <Link href="/sign-up">{signupLabel}</Link>
       </Button>
     </div>
   );
@@ -29,7 +33,7 @@ export function AuthButtons({
   return (
     <form action={signOut}>
       <Button type="submit" variant="ghost" size="sm">
-        {t("signOut")}
+        {signOutLabel}
       </Button>
     </form>
   );

@@ -6,11 +6,13 @@ export function ScoreRing({
   size = 180,
   label,
   summary,
+  compact = false,
 }: {
   score: number;
   size?: number;
   label?: string;
   summary?: string;
+  compact?: boolean;
 }) {
   const r = 54;
   const c = 2 * Math.PI * r;
@@ -60,16 +62,18 @@ export function ScoreRing({
           {score}
         </text>
       </svg>
-      {summary ? (
+      {compact ? null : summary ? (
         <p className="text-center text-sm font-medium">{summary}</p>
       ) : null}
-      <p
-        className={cn(
-          "text-xs uppercase tracking-[0.18em] text-muted-foreground",
-        )}
-      >
-        {band.replaceAll("-", " ")}
-      </p>
+      {compact ? null : (
+        <p
+          className={cn(
+            "text-xs uppercase tracking-[0.18em] text-muted-foreground",
+          )}
+        >
+          {band.replaceAll("-", " ")}
+        </p>
+      )}
     </div>
   );
 }

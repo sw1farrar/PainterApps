@@ -3,7 +3,6 @@
 import { useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
-import { useTranslations } from "next-intl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { formatClock } from "@/lib/paintday/crew-plan";
 import { windowLine } from "@/lib/paintday/format";
@@ -67,14 +66,17 @@ function scoreCollection(points: MapScorePoint[]) {
           zip: p.zip,
           city: p.city,
           state: p.state,
-          score: p.amWet ? 15 : p.score,
+          score: dots.split || !p.amWet ? p.score : 15,
           color: dots.left,
           colorRight: dots.right,
           split: dots.split ? 1 : 0,
           icon: iconId(dots.left, dots.right),
           highF: p.highF,
           precipChance: p.precipChance,
-          summaryKey: p.amWet ? "do-not-paint-rain" : (p.summaryKey ?? ""),
+          summaryKey:
+            p.amWet && (p.hoursOpen ?? 0) === 0
+              ? "do-not-paint-rain"
+              : (p.summaryKey ?? ""),
           startHour: p.startHour ?? "",
           wrapHour: p.wrapHour ?? "",
           rainHour: p.rainHour ?? "",
@@ -115,18 +117,19 @@ function ensureIcons(
   }
 }
 
-export function PaintDayMap({ points }: { points: MapScorePoint[] }) {
+export function PaintDayMap({
+  points,
+  summaries,
+}: {
+  points: MapScorePoint[];
+  summaries: Record<string, string>;
+}) {
   const el = useRef<HTMLDivElement>(null);
   const mapRef = useRef<import("maplibre-gl").Map | undefined>(undefined);
   const pointsRef = useRef(points);
   pointsRef.current = points;
   const reasonRef = useRef<(key: string) => string>(() => "");
-  const t = useTranslations("paintday");
-  reasonRef.current = (key: string) => {
-    if (!key) return "";
-    const path = `summaries.${key}`;
-    return t.has(path) ? t(path) : "";
-  };
+  reasonRef.current = (key: string) => (key ? (summaries[key] ?? "") : "");
   const router = useRouter();
   const { resolvedTheme } = useTheme();
   const dark = resolvedTheme !== "light";
@@ -285,6 +288,7 @@ export function PaintDayMap({ points }: { points: MapScorePoint[] }) {
           startHour: number | string;
           wrapHour: number | string;
           rainHour: number | string;
+          hoursOpen: number;
           amWet: number;
           pmWet: number;
         };
@@ -303,18 +307,26 @@ export function PaintDayMap({ points }: { points: MapScorePoint[] }) {
             : Number(props.rainHour);
         const amWet = Number(props.amWet) === 1;
         const pmWet = Number(props.pmWet) === 1;
-        const window = !amWet ? windowLine(start, wrap, rain) : "";
-        const reason = amWet
+        const hoursOpen = Number(props.hoursOpen) || 0;
+        const closed = amWet && hoursOpen === 0;
+        const drizzlePm = amWet && !pmWet && hoursOpen > 0;
+        const window = !closed ? windowLine(start, wrap, rain) : "";
+        const reason = closed
           ? reasonRef.current("do-not-paint-rain")
           : score < 70
             ? reasonRef.current(String(props.summaryKey ?? ""))
             : "";
-        const rainBit =
-          rain != null
+        const pop = Math.round(Number(props.precipChance));
+        const rainBit = drizzlePm && rain != null
+          ? `Drizzle ${formatClock(rain)} · window ${pop}%`
+          : rain != null
             ? `Rain ${formatClock(rain)}`
-            : `Window rain ${Math.round(Number(props.precipChance))}%`;
-        const headline = amWet
+            : `Window rain ${pop}%`;
+        const headline = closed
           ? `<span style="color:${esc(props.color)};font-size:15px">Morning rain · day closed</span>`
+          : drizzlePm
+            ? `<span style="color:${esc(props.color)};font-size:20px;letter-spacing:-0.04em">${esc(score)}</span>
+              <div style="margin-top:2px;font:500 11px Geist,system-ui,sans-serif;color:var(--muted-foreground)">AM drizzle · PM open</div>`
           : pmWet
             ? `<span style="color:${esc(props.color)};font-size:20px;letter-spacing:-0.04em">${esc(score)}</span>
               <div style="margin-top:2px;font:500 11px Geist,system-ui,sans-serif;color:var(--muted-foreground)">AM open · PM rain</div>`
@@ -386,20 +398,34 @@ export function PaintDayMap({ points }: { points: MapScorePoint[] }) {
             </span>
           ))}
         </div>
-        <p className="mt-1.5 flex items-center gap-2 text-[11px] text-muted-foreground">
-          <i
-            className="inline-block size-3 overflow-hidden rounded-full"
-            style={{
-              background:
-                "linear-gradient(90deg, #14b8a6 0 50%, #ef4444 50% 100%)",
-            }}
-          />
-          AM | PM rain
-          <i
-            className="inline-block size-3 rounded-full"
-            style={{ background: "#ef4444" }}
-          />
-          AM rain = day off
+        <p className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-muted-foreground">
+          <span className="inline-flex items-center gap-1">
+            <i
+              className="inline-block size-3 overflow-hidden rounded-full"
+              style={{
+                background:
+                  "linear-gradient(90deg, #14b8a6 0 50%, #ef4444 50% 100%)",
+              }}
+            />
+            AM | PM rain
+          </span>
+          <span className="inline-flex items-center gap-1">
+            <i
+              className="inline-block size-3 overflow-hidden rounded-full"
+              style={{
+                background:
+                  "linear-gradient(90deg, #ef4444 0 50%, #14b8a6 50% 100%)",
+              }}
+            />
+            AM drizzle | PM
+          </span>
+          <span className="inline-flex items-center gap-1">
+            <i
+              className="inline-block size-3 rounded-full"
+              style={{ background: "#ef4444" }}
+            />
+            AM rain = day off
+          </span>
         </p>
       </div>
     </div>

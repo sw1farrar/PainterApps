@@ -108,9 +108,12 @@
     "hourlyDetails": "Detalle por hora",
     "tenDay": "10 días",
     "amRainDay": "Lluvia en la mañana — el día está cerrado",
+    "amDrizzlePmOpen": "Llovizna en la mañana — tarde abierta",
     "pmRainSplit": "Mañana abierta · lluvia por la tarde",
     "chartHigh": "Máx. {n}°F",
     "chartRain": "Lluvia {n}%",
+    "chartRainAt": "Lluvia {hour}",
+    "chartDrizzleAt": "Llovizna {hour} · ventana {n}%",
     "copied": "Enlace copiado",
     "invalidZip": "Escriba un ZIP de EE. UU. o una ciudad (pruebe Denver o 80202).",
     "notFound": "No localizamos ese ZIP. Pruebe otro código de EE. UU.",
@@ -155,6 +158,7 @@
       "excellent-exterior": "Día excelente para exterior",
       "good-exterior": "Día apto para exterior",
       "risky-rain": "Chubascos más tarde — la mañana puede seguir abierta",
+      "risky-drizzle": "Llovizna en la mañana — la tarde puede seguir abierta",
       "risky-humidity": "Riesgo — humedad alta",
       "risky-temp": "Riesgo — temperatura fuera de la ventana típica",
       "risky-dew": "Riesgo — el punto de rocío está muy cerca",
@@ -173,11 +177,11 @@
       "freeze": "Helada nocturna"
     },
     "factorHint": {
-      "precip": "esta hora",
-      "humidity": "aire ahora · busque 40–70%",
-      "temperature": "ahora · el látex quiere 50–90 °F",
-      "dewPoint": "mínimo 5 °F, mejor 10 °F+",
-      "wind": "el spray no aguanta 15+ mph",
+      "precip": "a las {hour} en la ventana de pintura",
+      "humidity": "a las {hour} · busque 40–70%",
+      "temperature": "a las {hour} · el látex quiere 50–90 °F",
+      "dewPoint": "a las {hour} · mínimo 5 °F, mejor 10 °F+",
+      "wind": "a las {hour} · el spray no aguanta 15+ mph",
       "freeze": "próximas 2 noches"
     },
     "factorHelp": {

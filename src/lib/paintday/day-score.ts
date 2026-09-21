@@ -59,9 +59,8 @@ export function scoreDayFromHours(
     .slice()
     .sort((a, b) => a.hour - b.hour);
   const crewPlan = buildCrewPlan(appHours, DAY_START, window);
-  const lastPaint = crewPlan.rainHour == null
-    ? DAY_END
-    : crewPlan.wrapHour ?? DAY_END;
+  const firstPaint = crewPlan.startHour ?? DAY_START;
+  const lastPaint = crewPlan.wrapHour ?? DAY_END;
 
   if (!appHours.length) {
     return {
@@ -73,13 +72,26 @@ export function scoreDayFromHours(
     };
   }
 
+  if (crewPlan.hoursOpen === 0) {
+    const wet = appHours.find(slotIsWet) ?? appHours[0];
+    return {
+      snapshot: wet.snapshot,
+      score: wet.score,
+      crewPlan,
+      block: [wet],
+      representativeHour: wet.hour,
+    };
+  }
+
   let best4: HourSlot[] | null = null;
   for (let i = 0; i + RECOAT_HOURS <= appHours.length; i++) {
     const block = appHours.slice(i, i + RECOAT_HOURS);
     const consecutive = block.every((h, j) => j === 0 || h.hour === block[j - 1].hour + 1);
     if (
       !consecutive ||
-      !block.every((h) => slotIsOpen(h) && h.hour <= lastPaint)
+      !block.every(
+        (h) => slotIsOpen(h) && h.hour >= firstPaint && h.hour <= lastPaint,
+      )
     ) {
       continue;
     }
@@ -89,8 +101,12 @@ export function scoreDayFromHours(
   const block =
     best4 ??
     [
-      (appHours.filter((h) => slotIsOpen(h) && h.hour <= lastPaint).length
-        ? appHours.filter((h) => slotIsOpen(h) && h.hour <= lastPaint)
+      (appHours.filter(
+        (h) => slotIsOpen(h) && h.hour >= firstPaint && h.hour <= lastPaint,
+      ).length
+        ? appHours.filter(
+            (h) => slotIsOpen(h) && h.hour >= firstPaint && h.hour <= lastPaint,
+          )
         : appHours.filter(slotIsOpen).length
           ? appHours.filter(slotIsOpen)
           : appHours

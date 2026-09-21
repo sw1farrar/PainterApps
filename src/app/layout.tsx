@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Analytics } from "@vercel/analytics/react";
+import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
 import { PasswordManagerGuard } from "@/components/auth/PasswordManagerGuard";
 import { Header } from "@/components/layout/Header";
@@ -10,6 +11,7 @@ import { Providers } from "@/components/providers";
 import { currentUserId } from "@/lib/auth/current-user";
 import { supabaseEnabled } from "@/lib/env";
 import type { Locale } from "@/i18n/config";
+import { navCopy } from "@/lib/paintday/ui-copy";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -54,8 +56,12 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const locale = (await getLocale()) as Locale;
-  const messages = await getMessages();
-  const [authEnabled, userId] = [supabaseEnabled(), await currentUserId()];
+  const [messages, labels, userId] = await Promise.all([
+    getMessages(),
+    navCopy(),
+    currentUserId(),
+  ]);
+  const authEnabled = supabaseEnabled();
 
   return (
     <html
@@ -64,21 +70,29 @@ export default async function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable}`}
     >
       <body className="min-h-dvh max-w-full overflow-x-hidden bg-background font-sans text-foreground antialiased">
-        <Providers locale={locale} messages={messages}>
-          <PasswordManagerGuard enabled={Boolean(userId)} />
-          <SiteChrome
-            header={
-              <Header
-                locale={locale}
-                authEnabled={authEnabled}
-                signedIn={Boolean(userId)}
-              />
-            }
-            footer={<LegalStrip />}
-          >
-            {children}
-          </SiteChrome>
-        </Providers>
+        <NextIntlClientProvider
+          locale={locale}
+          messages={messages}
+          timeZone="America/Chicago"
+        >
+          <Providers>
+            <PasswordManagerGuard enabled={Boolean(userId)} />
+            <SiteChrome
+              skipLabel={labels.skip}
+              header={
+                <Header
+                  locale={locale}
+                  authEnabled={authEnabled}
+                  signedIn={Boolean(userId)}
+                  labels={labels}
+                />
+              }
+              footer={<LegalStrip />}
+            >
+              {children}
+            </SiteChrome>
+          </Providers>
+        </NextIntlClientProvider>
         <Analytics />
       </body>
     </html>

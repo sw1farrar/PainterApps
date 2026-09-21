@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
+import { EnvelopeSheet } from "@/components/systems/EnvelopeSheet";
 import { formatTempRange, type UnitSystem } from "@/lib/units";
 import type { TdsProduct } from "@/lib/systems/types";
 
@@ -47,39 +48,36 @@ export function PdfPreviewModal({
 }) {
   const t = useTranslations("systems");
   return (
-    <div
-      className="fixed inset-0 z-[60] bg-background"
-      role="dialog"
-      aria-modal="true"
-      aria-label={t("pdfPreview")}
-    >
-      <div className="flex h-dvh flex-col">
-        <div className="flex shrink-0 items-center justify-between gap-3 border-b border-border px-4 py-3">
-          <p className="truncate text-sm font-medium">{title}</p>
-          <div className="flex shrink-0 gap-2">
-            <Button asChild size="sm" variant="outline">
-              <a href={url} download>
-                {t("downloadPdf")}
-              </a>
-            </Button>
-            <Button asChild size="sm" variant="outline">
-              <a href={url} target="_blank" rel="noreferrer">
-                {t("printSheet")}
-              </a>
-            </Button>
-            <Button size="sm" variant="outline" onClick={onClose}>
-              {t("close")}
-            </Button>
+    <EnvelopeSheet onClose={onClose} ariaLabel={t("pdfPreview")} layer={60}>
+      {(close) => (
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-t-md border border-b-0 border-border bg-background shadow-2xl">
+          <div className="flex shrink-0 items-center justify-between gap-3 border-b border-border px-4 py-3">
+            <p className="truncate text-sm font-medium">{title}</p>
+            <div className="flex shrink-0 gap-2">
+              <Button asChild size="sm" variant="outline">
+                <a href={url} download>
+                  {t("downloadPdf")}
+                </a>
+              </Button>
+              <Button asChild size="sm" variant="outline">
+                <a href={url} target="_blank" rel="noreferrer">
+                  {t("printSheet")}
+                </a>
+              </Button>
+              <Button size="sm" variant="outline" onClick={close}>
+                {t("close")}
+              </Button>
+            </div>
           </div>
+          <iframe
+            title={t("pdfPreview")}
+            src={url}
+            className="w-full flex-1 bg-white"
+            style={{ minHeight: 0 }}
+          />
         </div>
-        <iframe
-          title={t("pdfPreview")}
-          src={url}
-          className="w-full flex-1 bg-white"
-          style={{ minHeight: 0 }}
-        />
-      </div>
-    </div>
+      )}
+    </EnvelopeSheet>
   );
 }
 

@@ -11,6 +11,8 @@ import type { WeatherSnapshot } from "@/lib/paintday/score";
 import type { DailyWindow, Forecast, WeatherProvider } from "./types";
 
 type OpenMeteoResponse = {
+  latitude?: number;
+  longitude?: number;
   timezone?: string;
   hourly?: {
     time: string[];
@@ -203,6 +205,7 @@ function forecastFromJson(
         pmScore: pm.score,
         amWet: am.wet,
         pmWet: pm.wet,
+        windowHour: day.representativeHour,
       };
     });
 
@@ -255,15 +258,42 @@ export class OpenMeteoProvider implements WeatherProvider {
         const rows = Array.isArray(json)
           ? (json as OpenMeteoResponse[])
           : [json as OpenMeteoResponse];
-        rows.forEach((row, j) => {
-          try {
-            out[i + j] = forecastFromJson(row, window);
-          } catch {
-            out[i + j] = null;
-          }
-        });
+        if (rows.length === chunk.length) {
+          rows.forEach((row, j) => {
+            try {
+              out[i + j] = forecastFromJson(row, window);
+            } catch {
+              out[i + j] = null;
+            }
+          });
+        } else {
+          const used = new Set<number>();
+          chunk.forEach((point, j) => {
+            let best = -1;
+            let bestD = Infinity;
+            rows.forEach((row, ri) => {
+              if (used.has(ri)) return;
+              if (row.latitude == null || row.longitude == null) return;
+              const d = Math.hypot(
+                row.latitude - point.lat,
+                row.longitude - point.lng,
+              );
+              if (d < bestD) {
+                bestD = d;
+                best = ri;
+              }
+            });
+            if (best < 0 || bestD > 1) return;
+            used.add(best);
+            try {
+              out[i + j] = forecastFromJson(rows[best], window);
+            } catch {
+              out[i + j] = null;
+            }
+          });
+        }
       } catch {
-        break;
+        continue;
       }
       if (i + chunkSize < points.length) await sleep(200);
     }

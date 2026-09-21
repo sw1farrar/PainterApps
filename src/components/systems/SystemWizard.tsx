@@ -168,12 +168,6 @@ export function SystemWizard({
   const narrowed =
     apps.length + subs.length + sheens.length + mfrs.length > 0 || voc;
   const listCount = results.length;
-  const countLabel =
-    role === "primer"
-      ? t("primerCount", { n: listCount })
-      : role === "topcoat"
-        ? t("topcoatCount", { n: listCount })
-        : t("productCount", { n: listCount });
 
   useEffect(() => {
     if (!openCoat) return;
@@ -205,8 +199,8 @@ export function SystemWizard({
   }
 
   return (
-    <div className="space-y-8">
-      <div className="-mx-4 space-y-4 border-b border-border/80 bg-background/90 px-4 py-3 md:sticky md:top-14 md:z-20 md:backdrop-blur">
+    <div className="space-y-3">
+      <div className="-mx-4 space-y-1.5 border-b border-border/80 bg-background/90 px-4 py-2 md:sticky md:top-14 md:z-20 md:backdrop-blur">
         <FilterRow label={t("coat")}>
           <Chip
             selected={role === "all"}
@@ -343,18 +337,16 @@ export function SystemWizard({
             </Chip>
           ))}
         </FilterRow>
-      </div>
-
-      <div className="flex items-baseline justify-between gap-3">
-        <p className="text-sm text-muted-foreground">{countLabel}</p>
         {narrowed ? (
-          <button
-            type="button"
-            onClick={reset}
-            className="text-sm text-muted-foreground underline underline-offset-4 hover:text-foreground"
-          >
-            {t("clearFilters")}
-          </button>
+          <div className="flex justify-end">
+            <button
+              type="button"
+              onClick={reset}
+              className="text-[11px] text-muted-foreground underline underline-offset-2 hover:text-foreground"
+            >
+              {t("clearFilters")}
+            </button>
+          </div>
         ) : null}
       </div>
 
@@ -404,15 +396,15 @@ function ProductRow({
     <button
       type="button"
       onClick={onOpen}
-      className="flex w-full items-center gap-4 px-4 py-3.5 text-left transition hover:bg-muted/50"
+      className="flex w-full items-center gap-3 px-3 py-2 text-left transition hover:bg-muted/50"
     >
-      <CanImage src={product.canImageUrl} alt={product.name} size="md" />
+      <CanImage src={product.canImageUrl} alt={product.name} size="sm" />
       <span className="min-w-0 flex-1">
         <span className="block text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
           {manufacturer.name}
         </span>
-        <span className="mt-0.5 block text-base font-medium">{product.name}</span>
-        <span className="mt-1 block text-sm text-muted-foreground">
+        <span className="block text-sm font-medium leading-tight">{product.name}</span>
+        <span className="mt-0.5 block text-xs text-muted-foreground">
           {product.kind === "primer"
             ? t("primer")
             : product.kind === "topcoat"
@@ -437,11 +429,11 @@ function FilterRow({
   children: React.ReactNode;
 }) {
   return (
-    <div className="grid gap-2 sm:grid-cols-[9.5rem_1fr] sm:items-start">
-      <p className="pt-1.5 text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
+    <div className="flex items-start gap-2">
+      <p className="w-16 shrink-0 pt-1 text-[10px] font-medium uppercase leading-none tracking-wide text-muted-foreground">
         {label}
       </p>
-      <div className="flex flex-wrap gap-2">{children}</div>
+      <div className="flex min-w-0 flex-1 flex-wrap gap-1">{children}</div>
     </div>
   );
 }
@@ -463,7 +455,7 @@ function Chip({
       disabled={disabled}
       onClick={onClick}
       className={cn(
-        "h-9 rounded-full border px-3.5 text-sm transition",
+        "h-6 rounded-md border px-2 text-[11px] leading-none transition",
         selected
           ? "border-primary bg-primary text-primary-foreground"
           : "border-border bg-background hover:border-primary/45",

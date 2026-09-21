@@ -34,8 +34,11 @@ export function windowLine(
     return rainHour != null ? `Rain ${formatClock(rainHour)}` : "";
   }
   const paint = `${formatClock(startHour)}–${formatClock(wrapHour)}`;
-  if (rainHour != null) return `${paint} · rain ${formatClock(rainHour)}`;
-  return paint;
+  if (rainHour == null) return paint;
+  if (rainHour < startHour) {
+    return `${paint} · after ${formatClock(rainHour)} drizzle`;
+  }
+  return `${paint} · rain ${formatClock(rainHour)}`;
 }
 
 export function rainLabel(snap: WeatherSnapshot) {

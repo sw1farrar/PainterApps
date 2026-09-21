@@ -1,7 +1,6 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useTranslations } from "next-intl";
 import { useEffect, useId, useRef, useState } from "react";
 import { Search } from "lucide-react";
 import { searchPlacesAction } from "@/app/actions/places";
@@ -9,7 +8,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { matchMetros, mergePlaces } from "@/lib/geo/match-metros";
 import type { GeoPlace } from "@/lib/weather/types";
+import type { ZipSearchCopy } from "@/lib/paintday/copy-types";
 import { formatZip, isUsZip } from "@/lib/utils";
+
+export type { ZipSearchCopy };
 
 const PM_OFF = {
   autoComplete: "off" as const,
@@ -26,11 +28,12 @@ const PM_OFF = {
 export function ZipSearch({
   initial = "",
   size = "default",
+  copy,
 }: {
   initial?: string;
-  size?: "default" | "hero";
+  size?: "default" | "hero" | "compact";
+  copy: ZipSearchCopy;
 }) {
-  const t = useTranslations("paintday");
   const router = useRouter();
   const listId = useId();
   const [value, setValue] = useState(initial);
@@ -100,13 +103,13 @@ export function ZipSearch({
       go(pick.zip);
       return;
     }
-    setError(t("invalidZip"));
+    setError(copy.invalidZip);
   }
 
   return (
     <form
       onSubmit={submit}
-      className="relative w-full max-w-lg"
+      className={`relative w-full ${size === "compact" ? "max-w-none" : "max-w-lg"}`}
       autoComplete="off"
       data-block-password-manager="true"
       data-1p-ignore="true"
@@ -115,7 +118,7 @@ export function ZipSearch({
       data-form-type="other"
     >
       <label htmlFor="place-search" className="sr-only">
-        {t("searchLabel")}
+        {copy.searchLabel}
       </label>
       <div className="flex gap-2">
         <Input
@@ -128,7 +131,7 @@ export function ZipSearch({
           aria-activedescendant={open ? `${listId}-${active}` : undefined}
           inputMode="search"
           enterKeyHint="search"
-          placeholder={t("searchPlaceholder")}
+          placeholder={copy.searchPlaceholder}
           value={value}
           onChange={(e) => {
             suppressOpen.current = false;
@@ -154,7 +157,9 @@ export function ZipSearch({
               setOpen(false);
             }
           }}
-          className={size === "hero" ? "h-12 text-base" : "h-10"}
+          className={
+            size === "hero" ? "h-12 text-base" : size === "compact" ? "h-8 text-sm" : "h-10"
+          }
           aria-invalid={Boolean(error)}
           {...PM_OFF}
         />
@@ -164,11 +169,13 @@ export function ZipSearch({
           className={
             size === "hero"
               ? "h-12 paint-gradient border-0 px-5 text-white"
-              : "paint-gradient border-0 text-white"
+              : size === "compact"
+                ? "h-8 paint-gradient border-0 px-3 text-white"
+                : "paint-gradient border-0 text-white"
           }
         >
           <Search className="size-4" />
-          {t("searchCta")}
+          {copy.searchCta}
         </Button>
       </div>
       {open && matches.length > 0 ? (

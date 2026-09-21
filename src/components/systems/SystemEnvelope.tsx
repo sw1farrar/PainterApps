@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { SnapshotJobButton } from "@/components/jobs/SnapshotJobButton";
 import { Button } from "@/components/ui/button";
 import { CanImage } from "@/components/systems/CanImage";
+import { EnvelopeSheet } from "@/components/systems/EnvelopeSheet";
 import {
   PdfPreviewModal,
   ProductStory,
@@ -44,22 +45,10 @@ export function SystemEnvelope({
   const paperPdf = storedPdf(topcoat) ?? storedPdf(primer);
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-3 sm:p-6"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="envelope-title"
-      onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
-      }}
-    >
-      <div
-        className="envelope-panel flex max-h-[calc(100dvh-1.5rem)] w-full max-w-4xl flex-col"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="envelope-flap mx-auto w-[min(100%,42rem)] shrink-0" />
-        <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-b-2xl rounded-t-md border border-border bg-background shadow-2xl">
-          <div className="sticky top-0 z-10 flex shrink-0 items-start justify-between gap-3 border-b border-border bg-background px-5 py-4 sm:px-8">
+    <EnvelopeSheet onClose={onClose} labelledBy="envelope-title" layer={50}>
+      {(close) => (
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-t-md border border-b-0 border-border bg-background shadow-2xl">
+          <div className="flex shrink-0 items-start justify-between gap-3 border-b border-border bg-background px-5 py-4 sm:px-8">
             <div className="min-w-0">
               <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
                 {manufacturer.name}
@@ -73,7 +62,7 @@ export function SystemEnvelope({
             </div>
             <button
               type="button"
-              onClick={onClose}
+              onClick={close}
               className="shrink-0 rounded-md px-2 py-1 text-sm text-muted-foreground hover:bg-muted hover:text-foreground"
             >
               {t("close")}
@@ -151,8 +140,8 @@ export function SystemEnvelope({
             />
           </div>
         </div>
-      </div>
-    </div>
+      )}
+    </EnvelopeSheet>
   );
 }
 
@@ -180,75 +169,65 @@ export function ProductEnvelope({
     .filter(Boolean)
     .join(" · ");
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-3 sm:p-6"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="envelope-title"
-      onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
-      }}
-    >
-      <div
-        className="envelope-panel flex max-h-[calc(100dvh-1.5rem)] w-full min-w-0 max-w-4xl flex-col"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="envelope-flap mx-auto w-[min(100%,42rem)] shrink-0" />
-        <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-b-2xl rounded-t-md border border-border bg-background shadow-2xl">
-          <div className="sticky top-0 z-10 flex shrink-0 flex-col gap-3 border-b border-border bg-background px-5 py-4 sm:flex-row sm:items-start sm:justify-between sm:px-8">
-            <div className="flex min-w-0 items-start gap-4">
-              <CanImage src={product.canImageUrl} alt={product.name} size="lg" />
-              <div className="min-w-0">
-                <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
-                  {kicker}
-                </p>
-                <h2
-                  id="envelope-title"
-                  className="mt-1 text-2xl font-semibold tracking-tight"
+    <>
+      <EnvelopeSheet onClose={onClose} labelledBy="envelope-title" layer={50}>
+        {(close) => (
+          <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-t-md border border-b-0 border-border bg-background shadow-2xl">
+            <div className="flex shrink-0 flex-col gap-3 border-b border-border bg-background px-5 py-4 sm:flex-row sm:items-start sm:justify-between sm:px-8">
+              <div className="flex min-w-0 items-start gap-4">
+                <CanImage src={product.canImageUrl} alt={product.name} size="lg" />
+                <div className="min-w-0">
+                  <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
+                    {kicker}
+                  </p>
+                  <h2
+                    id="envelope-title"
+                    className="mt-1 text-2xl font-semibold tracking-tight"
+                  >
+                    {product.name}
+                  </h2>
+                </div>
+              </div>
+              <div className="flex shrink-0 flex-wrap items-center gap-2 sm:pt-1">
+                {pdf ? (
+                  <Button
+                    className="paint-gradient border-0 text-white"
+                    onClick={() => setPreview(true)}
+                  >
+                    {t("productDataSheet")}
+                  </Button>
+                ) : null}
+                <button
+                  type="button"
+                  onClick={close}
+                  className="rounded-md px-2 py-1 text-sm text-muted-foreground hover:bg-muted hover:text-foreground"
                 >
-                  {product.name}
-                </h2>
+                  {t("close")}
+                </button>
               </div>
             </div>
-            <div className="flex shrink-0 flex-wrap items-center gap-2 sm:pt-1">
-              {pdf ? (
-                <Button
-                  className="paint-gradient border-0 text-white"
-                  onClick={() => setPreview(true)}
-                >
-                  {t("productDataSheet")}
-                </Button>
+            <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5 sm:px-8">
+              <ProductStory
+                product={product}
+                manufacturer={manufacturer.name}
+                units={units}
+                hideTitle
+                hidePdf
+              />
+              {usedIn.length ? (
+                <div className="mt-6">
+                  <p className="text-sm font-medium">{t("usedIn")}</p>
+                  <ul className="mt-1 list-disc space-y-1 pl-5 text-sm text-muted-foreground">
+                    {usedIn.map((r) => (
+                      <li key={r.system.id}>{r.system.name}</li>
+                    ))}
+                  </ul>
+                </div>
               ) : null}
-              <button
-                type="button"
-                onClick={onClose}
-                className="rounded-md px-2 py-1 text-sm text-muted-foreground hover:bg-muted hover:text-foreground"
-              >
-                {t("close")}
-              </button>
             </div>
           </div>
-          <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5 sm:px-8">
-            <ProductStory
-              product={product}
-              manufacturer={manufacturer.name}
-              units={units}
-              hideTitle
-              hidePdf
-            />
-            {usedIn.length ? (
-              <div className="mt-6">
-                <p className="text-sm font-medium">{t("usedIn")}</p>
-                <ul className="mt-1 list-disc space-y-1 pl-5 text-sm text-muted-foreground">
-                  {usedIn.map((r) => (
-                    <li key={r.system.id}>{r.system.name}</li>
-                  ))}
-                </ul>
-              </div>
-            ) : null}
-          </div>
-        </div>
-      </div>
+        )}
+      </EnvelopeSheet>
       {preview && pdf ? (
         <PdfPreviewModal
           url={pdf}
@@ -256,7 +235,7 @@ export function ProductEnvelope({
           onClose={() => setPreview(false)}
         />
       ) : null}
-    </div>
+    </>
   );
 }
 

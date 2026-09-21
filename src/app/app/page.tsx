@@ -5,10 +5,12 @@ import { currentAccess, hasFeature } from "@/lib/auth/access";
 import { currentUserId } from "@/lib/auth/current-user";
 import { formatWeekday } from "@/lib/paintday/format";
 import { getZipPaintDay } from "@/lib/paintday/get-zip";
+import { dayFitTotal } from "@/lib/paintday/today";
 import { scoreColor } from "@/lib/paintday/score";
 import { createClient } from "@/lib/supabase/server";
 
 export const metadata = { title: "Dashboard" };
+export const revalidate = 900;
 
 function money(value: unknown) {
   const n = Number((value as { total?: number } | null)?.total);
@@ -80,10 +82,7 @@ export default async function PortalPage() {
   );
   const homeDay = home ? (byZip.get(home.zip) ?? null) : null;
   const outlook = homeDay?.forecast.days.slice(0, 10) ?? [];
-  const todayScore =
-    homeDay?.forecast.currentScore.total ??
-    homeDay?.forecast.days[0]?.score.total ??
-    null;
+  const todayScore = homeDay ? dayFitTotal(homeDay.forecast) : null;
 
   const scored = locations
     .filter((loc) => loc.id !== home?.id)
@@ -91,10 +90,7 @@ export default async function PortalPage() {
       const day = byZip.get(loc.zip);
       return {
         ...loc,
-        score:
-          day?.forecast.days[0]?.score.total ??
-          day?.forecast.currentScore.total ??
-          null,
+        score: day ? dayFitTotal(day.forecast) : null,
       };
     });
 

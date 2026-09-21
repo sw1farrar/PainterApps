@@ -2,6 +2,10 @@ import { unstable_cache } from "next/cache";
 import { METROS } from "@/data/geo/metros";
 import { DemoWeatherProvider } from "@/lib/weather/demo";
 import { fetchForecastMany } from "@/lib/weather";
+import {
+  WEATHER_REVALIDATE_SECONDS,
+  weatherCacheBucket,
+} from "@/lib/weather/cache";
 
 export const RAIN_RED = "#ef4444";
 
@@ -13,15 +17,28 @@ export function scoreColorHex(score: number) {
   return RAIN_RED;
 }
 
-/** Map glyph: AM rain makes the whole day red. AM dry + PM rain = split. */
+/** Map glyph: soaking AM rain = solid red. AM drizzle + dry PM = split. AM dry + PM rain = split. */
 export function mapDotColors(point: {
   amWet?: boolean;
   pmWet?: boolean;
   amScore?: number;
+  pmScore?: number;
   score: number;
+  hoursOpen?: number;
 }) {
-  if (point.amWet) {
+  const hoursOpen = point.hoursOpen ?? 0;
+  if (point.amWet && point.pmWet) {
     return { left: RAIN_RED, right: RAIN_RED, split: false };
+  }
+  if (point.amWet && hoursOpen === 0) {
+    return { left: RAIN_RED, right: RAIN_RED, split: false };
+  }
+  if (point.amWet) {
+    return {
+      left: RAIN_RED,
+      right: scoreColorHex(point.pmScore || point.score),
+      split: true,
+    };
   }
   if (point.pmWet) {
     return {
@@ -152,9 +169,15 @@ async function loadMapBoard(): Promise<MapBoard> {
   return { dates, metros: rows };
 }
 
-export const getMapBoard = unstable_cache(loadMapBoard, ["paintday-map-v3"], {
-  revalidate: 900,
-});
+const loadMapBoardCached = unstable_cache(
+  async (_bucket: number) => loadMapBoard(),
+  ["paintday-map-v5"],
+  { revalidate: WEATHER_REVALIDATE_SECONDS },
+);
+
+export async function getMapBoard() {
+  return loadMapBoardCached(weatherCacheBucket());
+}
 
 export async function getMapScores(): Promise<MapScorePoint[]> {
   const board = await getMapBoard();

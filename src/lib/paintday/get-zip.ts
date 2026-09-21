@@ -2,6 +2,10 @@ import { unstable_cache } from "next/cache";
 import { geocodeZip } from "@/lib/geo/geocode";
 import type { ProductWindow } from "@/lib/paintday/product-window";
 import { fetchForecast } from "@/lib/weather";
+import {
+  WEATHER_REVALIDATE_SECONDS,
+  weatherCacheBucket,
+} from "@/lib/weather/cache";
 import { DemoWeatherProvider } from "@/lib/weather/demo";
 import type { Forecast, GeoPlace } from "@/lib/weather/types";
 
@@ -22,9 +26,11 @@ async function loadLiveZip(zip: string): Promise<ZipPaintDay | null> {
   }
 }
 
-const getLiveZipCached = unstable_cache(loadLiveZip, ["paintday-zip-v10"], {
-  revalidate: 900,
-});
+const getLiveZipCached = unstable_cache(
+  async (zip: string, _bucket: number) => loadLiveZip(zip),
+  ["paintday-zip-v12"],
+  { revalidate: WEATHER_REVALIDATE_SECONDS },
+);
 
 export async function getZipPaintDay(
   zip: string,
@@ -37,7 +43,7 @@ export async function getZipPaintDay(
       const forecast = await fetchForecast(place.lat, place.lng, window);
       if (forecast.source !== "demo") return { place, forecast };
     } else {
-      const live = await getLiveZipCached(zip);
+      const live = await getLiveZipCached(zip, weatherCacheBucket());
       if (live) return live;
     }
   } catch (error) {

@@ -1,5 +1,6 @@
 import { scorePaintDay } from "@/lib/paintday/score";
 import type { WeatherSnapshot } from "@/lib/paintday/score";
+import { localIsoDate } from "@/lib/paintday/today";
 import type { DailyWindow, Forecast, WeatherProvider } from "./types";
 
 function hash(n: number) {
@@ -33,15 +34,13 @@ export class DemoWeatherProvider implements WeatherProvider {
   ): Promise<Forecast> {
     const seed = Math.abs(Math.round(lat * 100 + lng * 10));
     const current = demoSnapshot(seed, 0);
-    const start = new Date();
+    const tz = "America/Denver";
     const days: DailyWindow[] = Array.from({ length: 14 }, (_, i) => {
-      const date = new Date(start);
-      date.setDate(start.getDate() + i);
       const snapshot = demoSnapshot(seed, i);
       const score = scorePaintDay(snapshot, window);
       const open = score.total >= 70 ? 8 : score.total >= 30 ? 4 : 0;
       return {
-        date: date.toISOString().slice(0, 10),
+        date: localIsoDate(tz, new Date(Date.now() + i * 86400000)),
         snapshot,
         score,
         highF: snapshot.tempF,
@@ -55,13 +54,14 @@ export class DemoWeatherProvider implements WeatherProvider {
         pmScore: score.total,
         amWet: false,
         pmWet: false,
+        windowHour: 10,
       };
     });
     const today = days[0];
     return {
       source: "demo",
       fetchedAt: new Date().toISOString(),
-      timezone: "America/Denver",
+      timezone: tz,
       current,
       currentScore: today?.score ?? scorePaintDay(current, window),
       hours: [],

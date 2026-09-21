@@ -16,12 +16,29 @@ export function isWetCode(code?: number) {
   return kind === "rain" || kind === "storm" || kind === "snow";
 }
 
+function isIceCode(code?: number) {
+  return (
+    code != null &&
+    ((code >= 56 && code <= 57) || (code >= 66 && code <= 67))
+  );
+}
+
 /** Storm, snow, or ice — wet even at 0 mm. Rain/drizzle codes at 0 mm are not. */
 export function isHardPrecip(code?: number, precipMm = 0) {
   const kind = precipKind(code);
   if (kind === "storm" || kind === "snow") return true;
-  if (code != null && ((code >= 56 && code <= 57) || (code >= 66 && code <= 67))) {
-    return true;
-  }
+  if (isIceCode(code)) return true;
   return precipMm >= 0.2;
+}
+
+/**
+ * Enough water to soak the substrate and close the day.
+ * Light drizzle (WMO 51–55, under 1 mm) still wets the hour via isHardPrecip
+ * but leaves a dry afternoon paintable.
+ */
+export function isSoakingPrecip(code?: number, precipMm = 0) {
+  const kind = precipKind(code);
+  if (kind === "storm" || kind === "snow" || kind === "rain") return true;
+  if (isIceCode(code)) return true;
+  return precipMm >= 1;
 }

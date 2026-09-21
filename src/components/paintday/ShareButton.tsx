@@ -21,7 +21,7 @@ export function ShareButton({ zip }: { zip: string }) {
   }
 
   return (
-    <Button variant="ghost" onClick={copy}>
+    <Button variant="ghost" size="sm" onClick={copy}>
       <Link2 className="size-4" />
       {copied ? t("copied") : t("share")}
     </Button>

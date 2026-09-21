@@ -108,9 +108,12 @@
     "hourlyDetails": "Hourly details",
     "tenDay": "10-day",
     "amRainDay": "Morning rain — day closed for exterior",
+    "amDrizzlePmOpen": "Morning drizzle — afternoon open",
     "pmRainSplit": "Morning open · afternoon rain",
     "chartHigh": "High {n}°F",
     "chartRain": "Rain {n}%",
+    "chartRainAt": "Rain {hour}",
+    "chartDrizzleAt": "Drizzle {hour} · window {n}%",
     "copied": "Link copied",
     "invalidZip": "Enter a US ZIP or a city we can place (try Denver or 80202).",
     "notFound": "We could not place that ZIP. Try another US code.",
@@ -155,6 +158,7 @@
       "excellent-exterior": "Excellent exterior day",
       "good-exterior": "Good exterior day",
       "risky-rain": "Showers later — morning window may still be open",
+      "risky-drizzle": "Morning drizzle — afternoon window may still be open",
       "risky-humidity": "Risky — high humidity",
       "risky-temp": "Risky — temperature outside the typical window",
       "risky-dew": "Risky — condensation / dew-point spread is tight",
@@ -173,11 +177,11 @@
       "freeze": "Overnight freeze"
     },
     "factorHint": {
-      "precip": "this hour",
-      "humidity": "air now · aim 40–70%",
-      "temperature": "now · latex likes 50–90°F",
-      "dewPoint": "need 5°F+, best 10°F+",
-      "wind": "spray hates 15+ mph",
+      "precip": "at {hour} in the paint window",
+      "humidity": "at {hour} · aim 40–70%",
+      "temperature": "at {hour} · latex likes 50–90°F",
+      "dewPoint": "at {hour} · need 5°F+, best 10°F+",
+      "wind": "at {hour} · spray hates 15+ mph",
       "freeze": "next 2 nights"
     },
     "factorHelp": {

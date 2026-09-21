@@ -16,6 +16,8 @@ export type DailyWindow = {
   pmScore?: number;
   amWet?: boolean;
   pmWet?: boolean;
+  /** Clock hour of the snapshot that produced `score` (paint-window bottleneck). */
+  windowHour?: number;
 };
 
 export type Forecast = {

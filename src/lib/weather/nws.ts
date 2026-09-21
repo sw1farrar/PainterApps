@@ -174,6 +174,7 @@ export async function getNwsForecast(
       pmScore: pm.score,
       amWet: am.wet,
       pmWet: pm.wet,
+      windowHour: day.representativeHour,
     };
   });
 

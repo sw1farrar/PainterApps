@@ -1,10 +1,10 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useLocale, useTranslations } from "next-intl";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { ZipSearch } from "@/components/paintday/ZipSearch";
 import { PaintDayMap } from "@/components/paintday/PaintDayMap";
+import type { HomeMapCopy } from "@/lib/paintday/copy-types";
 import { formatWeekday } from "@/lib/paintday/format";
 import { cn } from "@/lib/utils";
 import {
@@ -12,21 +12,29 @@ import {
   type MapBoard,
 } from "@/lib/paintday/map-scores";
 
-export function HomeMapBoard({ board }: { board: MapBoard }) {
-  const t = useTranslations("landing");
-  const locale = useLocale();
+export type { HomeMapCopy };
+
+export function HomeMapBoard({
+  board,
+  locale,
+  copy,
+}: {
+  board: MapBoard;
+  locale: string;
+  copy: HomeMapCopy;
+}) {
   const [day, setDay] = useState(0);
-  const last = board.dates.length - 1;
+  const last = Math.max(0, board.dates.length - 1);
   const labels = useMemo(
     () =>
       board.dates.map((iso, i) =>
         i === 0
-          ? `${t("mapToday")} · ${formatWeekday(iso, locale)}`
+          ? `${copy.mapToday} · ${formatWeekday(iso, locale)}`
           : i === 1
-            ? `${t("mapTomorrow")} · ${formatWeekday(iso, locale)}`
+            ? `${copy.mapTomorrow} · ${formatWeekday(iso, locale)}`
             : formatWeekday(iso, locale),
       ),
-    [board.dates, locale, t],
+    [board.dates, copy.mapToday, copy.mapTomorrow, locale],
   );
   const points = useMemo(() => pointsForDay(board, day), [board, day]);
 
@@ -40,21 +48,18 @@ export function HomeMapBoard({ board }: { board: MapBoard }) {
             disabled={day === 0}
             onClick={() => setDay(0)}
           >
-            {t("mapToday")}
+            {copy.mapToday}
           </button>
           <button
             type="button"
             className="shrink-0 rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-30"
-            aria-label={t("mapPrevDay")}
+            aria-label={copy.mapPrevDay}
             disabled={day <= 0}
             onClick={() => setDay((d) => Math.max(0, d - 1))}
           >
             <ChevronLeft className="size-5" />
           </button>
-          <div
-            className="grid justify-items-center"
-            aria-live="polite"
-          >
+          <div className="grid justify-items-center" aria-live="polite">
             {labels.map((text, i) => (
               <p
                 key={board.dates[i] ?? i}
@@ -71,7 +76,7 @@ export function HomeMapBoard({ board }: { board: MapBoard }) {
           <button
             type="button"
             className="shrink-0 rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-30"
-            aria-label={t("mapNextDay")}
+            aria-label={copy.mapNextDay}
             disabled={day >= last}
             onClick={() => setDay((d) => Math.min(last, d + 1))}
           >
@@ -79,7 +84,7 @@ export function HomeMapBoard({ board }: { board: MapBoard }) {
           </button>
         </div>
         <h1
-          aria-label={t("mapHeading")}
+          aria-label={copy.mapHeading}
           className="justify-self-center text-center sm:px-2"
         >
           <span className="block text-[1.35rem] font-semibold leading-none tracking-[-0.05em] text-foreground sm:whitespace-nowrap sm:text-[1.85rem] lg:text-[2.15rem]">
@@ -95,11 +100,11 @@ export function HomeMapBoard({ board }: { board: MapBoard }) {
           />
         </h1>
         <div className="min-w-0 sm:max-w-md sm:justify-self-end">
-          <ZipSearch size="hero" />
+          <ZipSearch size="hero" copy={copy.zip} />
         </div>
       </div>
       <div className="mt-4">
-        <PaintDayMap points={points} />
+        <PaintDayMap points={points} summaries={copy.summaries} />
       </div>
     </>
   );
