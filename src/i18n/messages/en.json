@@ -344,7 +344,7 @@
     "editorHelp": "English is required. Spanish is strongly preferred so the switcher never shows a half-translated story.",
     "editorForbidden": "Only PainterApps editors can publish. Add your user id to NEWS_EDITOR_USER_IDS, or set profiles.is_editor in Supabase.",
     "editorNeedsDb": "Publishing from this screen needs Supabase. Apply supabase/migrations/003_news.sql, then set the service role key.",
-    "fileFallback": "You can always ship a story by adding it to src/data/news/posts.ts and deploying.",
+    "fileFallback": "News publishes from this editor once Supabase is configured.",
     "editorList": "Stories",
     "save": "Publish",
     "saved": "Saved. It is live on /news if you checked publish.",

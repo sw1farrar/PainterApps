@@ -344,7 +344,7 @@
     "editorHelp": "El inglés es obligatorio. El español conviene para que el cambiador de idioma nunca muestre una nota a medias.",
     "editorForbidden": "Solo los editores de PainterApps publican. Agregue su id de usuario a NEWS_EDITOR_USER_IDS, o ponga profiles.is_editor en Supabase.",
     "editorNeedsDb": "Para publicar desde esta pantalla hace falta Supabase. Aplique supabase/migrations/003_news.sql y ponga la service role key.",
-    "fileFallback": "Siempre puede sacar una nota agregándola a src/data/news/posts.ts y desplegando.",
+    "fileFallback": "Las noticias se publican desde este editor cuando Supabase está configurado.",
     "editorList": "Notas",
     "save": "Publicar",
     "saved": "Guardado. Está en /news si marcó publicar.",
