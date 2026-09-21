@@ -6,8 +6,8 @@ import type { NewsPost } from "./types";
 
 describe("slugify", () => {
   it("builds a URL-safe slug", () => {
-    expect(slugify("Always check the TDS revision date")).toBe(
-      "always-check-the-tds-revision-date",
+    expect(slugify("Builder confidence falls to 32")).toBe(
+      "builder-confidence-falls-to-32",
     );
   });
 });

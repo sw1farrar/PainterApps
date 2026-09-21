@@ -94,7 +94,7 @@ Public: `/news` and `/news/[slug]`. Landing page teases the latest three.
 **Two ways to publish (English + Spanish on every story):**
 
 1. **Editor UI** — `/app/news` after Supabase. Set `NEWS_EDITOR_USER_IDS` to your user id (or `profiles.is_editor = true`). Markdown subset: headings, lists, **bold**, `[links](https://…)`.
-2. **Files** — add an object to `src/data/news/posts.ts` and deploy. A database row with the same slug replaces the file post.
+2. **Files (optional)** — add an object to `src/data/news/posts.ts` and deploy. The public news page is database-only unless this array has entries. A database row with the same slug replaces the file post.
 
 Stories are independent desk copy. Do not co-brand them as a manufacturer.
 
