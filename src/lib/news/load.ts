@@ -1,4 +1,3 @@
-import { SEED_NEWS } from "@/data/news/posts";
 import { createClient, supabaseAdmin } from "@/lib/supabase/server";
 import type { NewsCategory, NewsPost } from "./types";
 import { NEWS_CATEGORIES } from "./types";
@@ -66,20 +65,10 @@ async function dbPosts(): Promise<NewsPost[]> {
   }
 }
 
-export function mergeNews(seed: NewsPost[], live: NewsPost[]) {
-  const map = new Map<string, NewsPost>();
-  for (const post of seed) map.set(post.slug, post);
-  for (const post of live) map.set(post.slug, post);
-  return [...map.values()].sort(
-    (a, b) =>
-      new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime(),
-  );
-}
-
 export async function listNews(opts?: { includeDrafts?: boolean }) {
-  const merged = mergeNews(SEED_NEWS, await dbPosts());
-  if (opts?.includeDrafts) return merged;
-  return merged.filter((p) => p.published);
+  const posts = await dbPosts();
+  if (opts?.includeDrafts) return posts;
+  return posts.filter((p) => p.published);
 }
 
 export async function getNewsBySlug(slug: string) {

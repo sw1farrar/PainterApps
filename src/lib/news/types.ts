@@ -18,7 +18,7 @@ export type NewsPost = {
   title: { en: string; es: string };
   excerpt: { en: string; es: string };
   body: { en: string; es: string };
-  origin: "seed" | "db";
+  origin: "db";
 };
 
 export type LocalizedPost = {
