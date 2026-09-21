@@ -18,14 +18,14 @@ export function forecastDayForNow(forecast: Forecast): DailyWindow | undefined {
 export function dayIsClosed(
   day?: { amWet?: boolean; hoursOpen?: number } | null,
 ) {
-  return Boolean(day?.amWet) && (day.hoursOpen ?? 0) === 0;
+  return Boolean(day?.amWet) && (day?.hoursOpen ?? 0) === 0;
 }
 
 /** Morning drizzle (wet AM hour) with a dry afternoon paint window. */
 export function afternoonOpenAfterDrizzle(
   day?: { amWet?: boolean; pmWet?: boolean; hoursOpen?: number } | null,
 ) {
-  return Boolean(day?.amWet) && !day?.pmWet && (day.hoursOpen ?? 0) > 0;
+  return Boolean(day?.amWet) && !day?.pmWet && (day?.hoursOpen ?? 0) > 0;
 }
 
 export const AM_RAIN_CLOSED_CAP = 22;
