@@ -89,7 +89,7 @@
     @apply border-border;
   }
   html {
-    @apply max-w-full scroll-smooth overflow-x-clip;
+    @apply max-w-full scroll-smooth overflow-x-hidden overflow-y-auto;
   }
   @media (prefers-reduced-motion: reduce) {
     html {
@@ -97,7 +97,7 @@
     }
   }
   body {
-    @apply max-w-full overflow-x-clip bg-background text-foreground antialiased;
+    @apply max-w-full overflow-x-hidden overflow-y-auto bg-background text-foreground antialiased;
   }
   :focus-visible {
     @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
