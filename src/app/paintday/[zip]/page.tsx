@@ -9,6 +9,7 @@ import { ScoreRing } from "@/components/paintday/ScoreRing";
 import { ShareButton } from "@/components/paintday/ShareButton";
 import { ZipSearch } from "@/components/paintday/ZipSearch";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { currentAccess, hasFeature } from "@/lib/auth/access";
 import { currentUnits } from "@/lib/auth/current-units";
 import { currentUserId } from "@/lib/auth/current-user";
 import { getLocale } from "next-intl/server";
@@ -64,7 +65,7 @@ export default async function ZipPage({
   if (!isUsZip(zip)) notFound();
   const coatWindow = windowFromCoat(coat);
   const jobWindow = await productWindowForZip(zip);
-  const productWindow = coatWindow ?? jobWindow;
+  const productWindow = coat === "latex" ? coatWindow : (coatWindow ?? jobWindow);
   const coatId = coatWindow
     ? coat
     : productWindow?.name?.toLowerCase().includes("latitude")
@@ -72,12 +73,13 @@ export default async function ZipPage({
       : productWindow?.name?.toLowerCase().includes("duration")
         ? "duration"
         : "latex";
-  const [data, userId, jobs, units, locale] = await Promise.all([
+  const [data, userId, jobs, units, locale, access] = await Promise.all([
     getZipPaintDay(zip, productWindow),
     currentUserId(),
     listMyJobs(),
     currentUnits(),
     getLocale(),
+    currentAccess(),
   ]);
   if (!data) notFound();
 
@@ -91,7 +93,16 @@ export default async function ZipPage({
   }).format(new Date());
   const day =
     forecast.days.find((d) => d.date === todayIso) ?? forecast.days[0];
-  const score = day?.score ?? forecast.currentScore;
+  const closedDay = Boolean(day?.amWet);
+  const rawScore = day?.score ?? forecast.currentScore;
+  const score = closedDay
+    ? {
+        ...rawScore,
+        total: Math.min(rawScore.total, 22),
+        band: "do-not-paint" as const,
+        summaryKey: "do-not-paint-rain",
+      }
+    : rawScore;
   const snap = day?.snapshot ?? forecast.current;
   const nowHour = Number(
     new Intl.DateTimeFormat("en-US", {
@@ -124,6 +135,7 @@ export default async function ZipPage({
         ? t("verdictNo")
         : t("verdictCaution");
   const best = [...forecast.days]
+    .filter((d) => !d.amWet)
     .sort((a, b) => b.score.total - a.score.total)
     .slice(0, 3);
 
@@ -205,6 +217,7 @@ export default async function ZipPage({
           <SaveLocationButton zip={zip} signedIn={Boolean(userId)} />
           <SnapshotJobButton
             signedIn={Boolean(userId)}
+            canSnapshot={hasFeature(access, "estimate_pro")}
             loginNext={`/paintday/${zip}`}
             kind="weather"
             title={`PaintDay ${place.label}`}

@@ -109,7 +109,7 @@ export function LetterDocument({
         @page { size: letter; margin: 0.65in; }
         @media print {
           body { background: white !important; }
-          header, footer, aside, nav, .no-print { display: none !important; }
+          .no-print, body > header, body > footer, aside, nav { display: none !important; }
           .letter-sheet { padding: 0; width: auto; min-height: auto; box-shadow: none; }
         }
       `}</style>

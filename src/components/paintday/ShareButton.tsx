@@ -10,8 +10,12 @@ export function ShareButton({ zip }: { zip: string }) {
   const [copied, setCopied] = useState(false);
 
   async function copy() {
-    const url = `${window.location.origin}/paintday/${zip}`;
-    await navigator.clipboard.writeText(url);
+    const url = window.location.href;
+    try {
+      await navigator.clipboard.writeText(url);
+    } catch {
+      return;
+    }
     setCopied(true);
     setTimeout(() => setCopied(false), 1800);
   }

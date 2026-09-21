@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { matchSystems } from "./match";
+import { CORPUS_CATALOG } from "./corpus-catalog";
+import {
+  applicationTypesFor,
+  matchProducts,
+  matchSystems,
+} from "./match";
 
 describe("matchSystems", () => {
   it("returns interior drywall systems and cites manufacturers", () => {
@@ -133,5 +138,97 @@ describe("matchSystems", () => {
       results[0].topcoat.vocGL,
     );
     expect(topVoc).toBeLessThanOrEqual(50);
+  });
+});
+
+describe("matchProducts", () => {
+  const productsOnly = {
+    ...CORPUS_CATALOG,
+    systems: [],
+  };
+
+  it("lists products when the catalog has no systems", () => {
+    const results = matchProducts(
+      { interior: false, exterior: true },
+      productsOnly,
+    );
+    expect(results.length).toBeGreaterThan(0);
+    expect(results.every((r) => r.product.exterior)).toBe(true);
+  });
+
+  it("filters primers and topcoats by coat role", () => {
+    const primers = matchProducts(
+      { interior: false, exterior: true },
+      productsOnly,
+      "primer",
+    );
+    const topcoats = matchProducts(
+      { interior: false, exterior: true },
+      productsOnly,
+      "topcoat",
+    );
+    expect(primers.length).toBeGreaterThan(0);
+    expect(topcoats.length).toBeGreaterThan(0);
+    expect(primers.every((r) => r.product.kind === "primer")).toBe(true);
+    expect(topcoats.every((r) => r.product.kind === "topcoat")).toBe(true);
+  });
+
+  it("filters by manufacturer", () => {
+    const results = matchProducts(
+      { interior: false, exterior: true, manufacturerId: "sw" },
+      productsOnly,
+    );
+    expect(results.length).toBeGreaterThan(0);
+    expect(results.every((r) => r.manufacturer.id === "sw")).toBe(true);
+  });
+
+  it("filters exterior walls from architectural coatings", () => {
+    const results = matchProducts(
+      {
+        interior: false,
+        exterior: true,
+        applicationType: "walls",
+      },
+      productsOnly,
+    );
+    expect(results.length).toBeGreaterThan(0);
+    expect(
+      results.every((r) => applicationTypesFor(r.product).includes("walls")),
+    ).toBe(true);
+  });
+
+  it("finds no parking-deck products in the latex corpus", () => {
+    const results = matchProducts(
+      {
+        interior: false,
+        exterior: true,
+        applicationType: "parking-deck",
+      },
+      productsOnly,
+    );
+    expect(results).toHaveLength(0);
+  });
+
+  it("tags porch and patio products as floors and wood-deck, not walls", () => {
+    const porch = CORPUS_CATALOG.products.find((p) =>
+      p.name.toLowerCase().includes("porch"),
+    );
+    expect(porch).toBeTruthy();
+    const tags = applicationTypesFor(porch!);
+    expect(tags).toEqual(expect.arrayContaining(["floors", "wood-deck"]));
+    expect(tags).not.toContain("walls");
+  });
+
+  it("ORs interior and exterior when both are on", () => {
+    const results = matchProducts(
+      { interior: true, exterior: true },
+      productsOnly,
+    );
+    expect(results.some((r) => r.product.interior && !r.product.exterior)).toBe(
+      true,
+    );
+    expect(results.some((r) => r.product.exterior && !r.product.interior)).toBe(
+      true,
+    );
   });
 });

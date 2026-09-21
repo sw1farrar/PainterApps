@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { currentAccess } from "@/lib/auth/access";
+import { currentAccess, hasFeature } from "@/lib/auth/access";
 import { supabaseAdmin } from "@/lib/supabase/server";
 
 export async function setAccountAccess(formData: FormData) {
@@ -15,6 +15,14 @@ export async function setAccountAccess(formData: FormData) {
   if (!userId || userId === access.userId) return;
   await db.from("profiles").update({ access_enabled: enabled }).eq("user_id", userId);
   revalidatePath("/app/admin");
+  const { data: profile } = await db
+    .from("profiles")
+    .select("company_id")
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (profile?.company_id) {
+    revalidatePath(`/app/admin/${profile.company_id}`);
+  }
 }
 
 export async function inviteCompanyUser(formData: FormData) {
@@ -22,6 +30,7 @@ export async function inviteCompanyUser(formData: FormData) {
   if (!access?.isOwner || !access.companyId || !access.accessEnabled) {
     redirect("/app/team?error=config");
   }
+  if (!hasFeature(access, "estimate_pro")) redirect("/app");
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
   if (!email || !email.includes("@")) redirect("/app/team?error=config");
   const db = supabaseAdmin();
@@ -77,6 +86,7 @@ export async function inviteCompanyUser(formData: FormData) {
 export async function removeCompanyMember(formData: FormData) {
   const access = await currentAccess();
   if (!access?.isOwner || !access.companyId || !access.accessEnabled) return;
+  if (!hasFeature(access, "estimate_pro")) return;
   const userId = String(formData.get("user_id") ?? "");
   if (!userId || userId === access.userId) return;
   const db = supabaseAdmin();

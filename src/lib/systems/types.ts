@@ -71,6 +71,8 @@ export const APPLICATION_TYPES: ApplicationType[] = [
   "metal",
 ];
 
+export type CoatRole = "all" | "primer" | "topcoat";
+
 export type ProductKind = "prep" | "primer" | "topcoat" | "other";
 
 export const PRODUCT_KINDS: ProductKind[] = [

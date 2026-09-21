@@ -22,22 +22,19 @@ import { AuthButtons } from "./AuthButtons";
 
 const LINKS = [
   { href: "/", key: "home" as const },
-  { href: "/news", key: "news" as const },
   { href: "/systems", key: "systems" as const },
+  { href: "/news", key: "news" as const },
   { href: "/calc", key: "calc" as const },
-  { href: "/about", key: "about" as const },
 ];
 
 export function Header({
   locale,
   authEnabled,
   signedIn,
-  isEditor = false,
 }: {
   locale: Locale;
   authEnabled: boolean;
   signedIn: boolean;
-  isEditor?: boolean;
 }) {
   const t = useTranslations("nav");
   const pathname = usePathname();
@@ -45,16 +42,17 @@ export function Header({
   const navLinks = (close: boolean) => {
     const items = [
       ...LINKS.map((link) => ({ href: link.href, label: t(link.key) })),
-      ...(isEditor ? [{ href: "/app/news", label: t("write") }] : []),
+      ...(signedIn ? [{ href: "/app", label: t("app") }] : []),
     ];
     return items.map((link) => {
       const active =
         link.href === "/"
-          ? pathname === "/"
+          ? pathname === "/" || pathname.startsWith("/paintday")
           : pathname === link.href || pathname.startsWith(`${link.href}/`);
       const node = (
         <Link
           href={link.href}
+          aria-current={active ? "page" : undefined}
           className={cn(
             "text-sm transition-colors",
             active
@@ -78,10 +76,10 @@ export function Header({
   return (
     <header className="sticky top-0 z-40 border-b border-border/80 bg-background/80 backdrop-blur-md">
       <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-3 px-4">
-        <Link href="/" className="shrink-0" aria-label="PainterApps home">
+        <Link href="/" className="shrink-0" aria-label={t("home")}>
           <Logo />
         </Link>
-        <nav className="hidden items-center gap-6 md:flex" aria-label="Primary">
+        <nav className="hidden items-center gap-6 md:flex" aria-label={t("primary")}>
           {navLinks(false)}
         </nav>
         <div className="flex items-center gap-2">
@@ -90,11 +88,13 @@ export function Header({
           <div className="hidden md:block">
             <AuthButtons authEnabled={authEnabled} signedIn={signedIn} />
           </div>
-          {authEnabled ? (
+          {authEnabled && signedIn ? (
+            <div className="md:hidden">
+              <AuthButtons authEnabled={authEnabled} signedIn={signedIn} />
+            </div>
+          ) : authEnabled ? (
             <Button asChild variant="ghost" size="sm" className="md:hidden">
-              <Link href={signedIn ? "/app" : "/login"}>
-                {signedIn ? t("app") : t("login")}
-              </Link>
+              <Link href="/login">{t("login")}</Link>
             </Button>
           ) : null}
           <Sheet>
@@ -103,7 +103,7 @@ export function Header({
                 variant="ghost"
                 size="icon"
                 className="md:hidden"
-                aria-label="Menu"
+                aria-label={t("menu")}
               >
                 <Menu className="size-4" />
               </Button>

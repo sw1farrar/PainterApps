@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { EstimateLetter } from "@/components/estimates/EstimateLetter";
-import { currentAccess } from "@/lib/auth/access";
+import { currentAccess, requireFeature } from "@/lib/auth/access";
 import { currentUserId } from "@/lib/auth/current-user";
 import { isBrevoConfigured } from "@/lib/email/brevo";
 import { loadLetterCompany } from "@/lib/estimates/load-company";
@@ -17,6 +17,7 @@ export default async function EstimateBuilderPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+  await requireFeature("estimate_pro", "/app/estimates");
   await ensureCompany();
   const userId = await currentUserId();
   if (!userId) redirect("/login?next=/app/estimates");

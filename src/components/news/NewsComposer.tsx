@@ -151,7 +151,7 @@ export function NewsComposer({ post }: { post?: NewsPost }) {
         <input
           type="checkbox"
           name="published"
-          defaultChecked={post?.published ?? true}
+          defaultChecked={post?.published ?? false}
         />
         {t("fields.publish")}
       </label>

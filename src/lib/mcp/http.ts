@@ -50,11 +50,5 @@ export function readMcpAccessToken(request: Request): string | null {
   if (bearer) return bearer;
   const apiKey = request.headers.get("x-api-key")?.trim();
   if (apiKey) return apiKey;
-  try {
-    const token = new URL(request.url).searchParams.get("token")?.trim();
-    if (token) return token;
-  } catch {
-    /* ignore */
-  }
   return null;
 }

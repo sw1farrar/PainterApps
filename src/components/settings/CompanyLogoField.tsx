@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
+import { saveCompanyLogo } from "@/app/app/estimates/actions";
 import { createClient } from "@/lib/supabase/client";
 
 export function CompanyLogoField({
@@ -42,7 +43,11 @@ export function CompanyLogoField({
       return;
     }
     const { data } = supabase.storage.from("company-logos").getPublicUrl(path);
-    setUrl(`${data.publicUrl}?v=${Date.now()}`);
+    const publicUrl = `${data.publicUrl}?v=${Date.now()}`;
+    setUrl(publicUrl);
+    const form = new FormData();
+    form.set("logo_url", publicUrl);
+    await saveCompanyLogo(form);
   }
 
   return (
@@ -60,7 +65,17 @@ export function CompanyLogoField({
       />
       <p className="text-xs text-muted-foreground">{t("logoHelp")}</p>
       {url ? (
-        <Button type="button" variant="ghost" size="sm" onClick={() => setUrl("")}>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={() => {
+            setUrl("");
+            const form = new FormData();
+            form.set("logo_url", "");
+            void saveCompanyLogo(form);
+          }}
+        >
           {t("logoRemove")}
         </Button>
       ) : null}

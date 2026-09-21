@@ -23,5 +23,5 @@ export function isHardPrecip(code?: number, precipMm = 0) {
   if (code != null && ((code >= 56 && code <= 57) || (code >= 66 && code <= 67))) {
     return true;
   }
-  return precipMm >= 0.05;
+  return precipMm >= 0.2;
 }

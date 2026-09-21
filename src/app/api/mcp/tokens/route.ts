@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { currentUserId } from "@/lib/auth/current-user";
+import { currentAccess, hasFeature } from "@/lib/auth/access";
 import {
   McpAccessTokenError,
   createMcpAccessToken,
@@ -23,8 +23,11 @@ function tokenError(err: unknown) {
 }
 
 export async function GET() {
-  const userId = await currentUserId();
-  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const access = await currentAccess();
+  if (!access?.accessEnabled || !hasFeature(access, "estimate_pro")) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const userId = access.userId;
   try {
     const tokens = await listMcpAccessTokens(userId);
     return NextResponse.json({ ok: true, tokens });
@@ -34,8 +37,11 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
-  const userId = await currentUserId();
-  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const access = await currentAccess();
+  if (!access?.accessEnabled || !hasFeature(access, "estimate_pro")) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const userId = access.userId;
   let name: string | undefined;
   try {
     const body = (await request.json()) as { name?: string };

@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { currentAccess } from "@/lib/auth/access";
+import { currentAccess, hasFeature } from "@/lib/auth/access";
 import { supabaseAdmin } from "@/lib/supabase/server";
 import { inviteCompanyUser, removeCompanyMember } from "../access/actions";
 
@@ -15,7 +15,7 @@ export default async function TeamPage({
 }) {
   const access = await currentAccess();
   if (!access) redirect("/login");
-  if (!access.isOwner) redirect("/app");
+  if (!access.isOwner || !hasFeature(access, "estimate_pro")) redirect("/app");
   const { error, notice } = await searchParams;
   const t = await getTranslations("app");
   const db = supabaseAdmin();

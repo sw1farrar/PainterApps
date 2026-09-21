@@ -1,6 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { LOCALE_COOKIE } from "@/i18n/config";
+import { localeFromAcceptLanguage } from "@/i18n/locale";
 
 function isProtected(pathname: string) {
   return pathname === "/app" || pathname.startsWith("/app/");
@@ -8,8 +9,9 @@ function isProtected(pathname: string) {
 
 function withLocaleCookie(request: NextRequest, response: NextResponse) {
   if (!request.cookies.get(LOCALE_COOKIE)) {
-    const accept = request.headers.get("accept-language") ?? "";
-    const locale = accept.toLowerCase().startsWith("es") ? "es" : "en";
+    const locale = localeFromAcceptLanguage(
+      request.headers.get("accept-language"),
+    );
     response.cookies.set(LOCALE_COOKIE, locale, {
       path: "/",
       maxAge: 60 * 60 * 24 * 365,

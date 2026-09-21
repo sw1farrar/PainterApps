@@ -1,5 +1,8 @@
 import { CORPUS_CATALOG, type Catalog } from "@/lib/systems/corpus-catalog";
 import type {
+  ApplicationType,
+  CoatRole,
+  Manufacturer,
   MatchQuery,
   MatchedSystem,
   TdsProduct,
@@ -23,6 +26,125 @@ function overlap<T>(have: T[] | undefined, want: T[]) {
 function listOf<T>(many: T[] | undefined, one: T | undefined): T[] {
   if (many?.length) return many;
   return one != null ? [one] : [];
+}
+
+const FLOOR_RE = /porch|patio|floor/i;
+const DECK_RE = /deck/i;
+const PARKING_RE = /parking/i;
+const ROOF_RE = /\broof/i;
+const POOL_RE = /\bpool/i;
+const FOUNTAIN_RE = /fountain/i;
+const BELOW_GRADE_RE = /below[\s-]?grade/i;
+const PLAZA_RE = /plaza|balcon/i;
+const WATERPROOF_RE = /waterproof/i;
+const DTM_RE = /dtm|d\.t\.m|direct[\s-]?to[\s-]?metal/i;
+const TRIM_RE = /trim|enamel/i;
+const CEILING_RE = /ceiling/i;
+const SIDING_RE = /siding/i;
+
+/**
+ * Application tags for a product. Specialty uses (parking decks, roofs,
+ * pools, …) come from the name only — never invented from a generic
+ * substrate list.
+ */
+export function applicationTypesFor(product: TdsProduct): ApplicationType[] {
+  const name = product.name;
+  const subs = new Set(product.substrates);
+  const tags = new Set<ApplicationType>();
+  const namedFloor =
+    FLOOR_RE.test(name) || (DECK_RE.test(name) && !PARKING_RE.test(name));
+
+  if (subs.has("concrete-floor") || namedFloor) tags.add("floors");
+  if (namedFloor) tags.add("wood-deck");
+  if (PARKING_RE.test(name)) tags.add("parking-deck");
+  if (ROOF_RE.test(name)) tags.add("roof");
+  if (POOL_RE.test(name)) tags.add("pool");
+  if (FOUNTAIN_RE.test(name)) tags.add("fountain");
+  if (BELOW_GRADE_RE.test(name)) tags.add("below-grade");
+  if (PLAZA_RE.test(name)) tags.add("plaza-balcony");
+  if (WATERPROOF_RE.test(name)) tags.add("masonry-waterproofing");
+  if (DTM_RE.test(name)) tags.add("metal");
+
+  const skipArchitectural =
+    namedFloor ||
+    tags.has("parking-deck") ||
+    tags.has("roof") ||
+    tags.has("pool") ||
+    tags.has("fountain") ||
+    tags.has("masonry-waterproofing") ||
+    tags.has("below-grade") ||
+    tags.has("plaza-balcony");
+  if (skipArchitectural) return [...tags];
+
+  const namedTrim = TRIM_RE.test(name);
+  if (namedTrim || (product.exterior && subs.has("wood"))) {
+    tags.add("trim");
+  }
+  if (CEILING_RE.test(name) || (product.interior && subs.has("drywall"))) {
+    tags.add("ceilings");
+  }
+  if (SIDING_RE.test(name) || (product.exterior && subs.has("wood"))) {
+    tags.add("siding");
+  }
+  if (
+    !namedTrim &&
+    (subs.has("drywall") ||
+      subs.has("stucco") ||
+      subs.has("masonry") ||
+      (product.exterior &&
+        (subs.has("wood") || subs.has("previously-painted"))))
+  ) {
+    tags.add("walls");
+  }
+
+  return [...tags];
+}
+
+export type MatchedProduct = {
+  product: TdsProduct;
+  manufacturer: Manufacturer;
+};
+
+/**
+ * Filter catalog products (not primer+topcoat systems) by the Systems
+ * page facets. Empty facet lists mean any.
+ */
+export function matchProducts(
+  query: MatchQuery,
+  catalog?: Catalog,
+  role: CoatRole = "all",
+): MatchedProduct[] {
+  const source = catalog ?? CORPUS_CATALOG;
+  const results: MatchedProduct[] = [];
+  const wantInterior = query.interior === true;
+  const wantExterior = query.exterior === true;
+  const apps = listOf(query.applicationTypes, query.applicationType);
+  const subs = listOf(query.substrates, query.substrate);
+  const sheens = listOf(query.sheens, query.sheen);
+  const brands = listOf(query.manufacturerIds, query.manufacturerId);
+
+  for (const product of source.products) {
+    if (role === "primer" && product.kind !== "primer") continue;
+    if (role === "topcoat" && product.kind !== "topcoat") continue;
+    const manufacturer = manufacturerById(product.manufacturerId, source);
+    if (!manufacturer) continue;
+    if (brands.length && !brands.includes(product.manufacturerId)) continue;
+    if (wantInterior && wantExterior) {
+      if (!product.interior && !product.exterior) continue;
+    } else if (wantInterior && !product.interior) continue;
+    else if (wantExterior && !product.exterior) continue;
+    if (!overlap(product.substrates, subs)) continue;
+    if (!overlap(applicationTypesFor(product), apps)) continue;
+    if (!overlap(product.sheens, sheens)) continue;
+    if (query.vocSensitive && product.vocGL > 50) continue;
+    results.push({ product, manufacturer });
+  }
+
+  return results.sort((a, b) => {
+    const brand = a.manufacturer.name.localeCompare(b.manufacturer.name);
+    if (brand) return brand;
+    return a.product.name.localeCompare(b.product.name);
+  });
 }
 
 /**

@@ -144,7 +144,7 @@ const MCP_TOOLS: McpToolDefinition[] = [
       required: ["id"],
       additionalProperties: false,
     },
-    handler: (_userId, args) => getNewsPost(str(args, "id") ?? ""),
+    handler: (userId, args) => getNewsPost(str(args, "id") ?? "", userId),
   },
   {
     name: "create_news",

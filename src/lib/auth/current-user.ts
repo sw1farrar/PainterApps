@@ -1,10 +1,21 @@
+import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
 
-export async function currentUserId(): Promise<string | null> {
+export const currentUser = cache(async () => {
   const supabase = await createClient();
   if (!supabase) return null;
   const {
     data: { user },
   } = await supabase.auth.getUser();
+  return user;
+});
+
+export async function currentUserId(): Promise<string | null> {
+  const user = await currentUser();
   return user?.id ?? null;
+}
+
+export async function currentUserEmail(): Promise<string | null> {
+  const user = await currentUser();
+  return user?.email ?? null;
 }

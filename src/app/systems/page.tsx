@@ -5,9 +5,9 @@ import { currentUserId } from "@/lib/auth/current-user";
 import { listMyJobs } from "@/lib/jobs/list";
 
 export const metadata = {
-  title: "Systems",
+  title: "Products",
   description:
-    "Primer and topcoat systems by manufacturer. Independent — not affiliated with any brand.",
+    "Primer and topcoat products by manufacturer. Independent — not affiliated with any brand.",
 };
 
 export default async function SystemsPage() {

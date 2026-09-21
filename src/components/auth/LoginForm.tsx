@@ -129,7 +129,10 @@ export function LoginForm({ nextPath }: { nextPath: string }) {
           {forgot ? t("backToLogin") : t("forgot")}
         </button>
         {forgot ? null : (
-          <Link href="/sign-up" className="underline underline-offset-4">
+          <Link
+            href={next ? `/sign-up?next=${encodeURIComponent(next)}` : "/sign-up"}
+            className="underline underline-offset-4"
+          >
             {t("noAccount")}
           </Link>
         )}

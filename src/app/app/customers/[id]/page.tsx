@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { requireFeature } from "@/lib/auth/access";
 import { currentUserId } from "@/lib/auth/current-user";
 import { createClient } from "@/lib/supabase/server";
 import { deleteCustomer, saveCustomer } from "../../estimates/actions";
@@ -15,6 +16,7 @@ export default async function CustomerDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+  await requireFeature("estimate_pro", "/app/customers");
   const userId = await currentUserId();
   if (!userId) redirect("/login?next=/app/customers");
   const supabase = await createClient();

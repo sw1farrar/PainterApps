@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
+import { ConfirmDelete } from "@/components/ui/ConfirmDelete";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { requireFeature } from "@/lib/auth/access";
 import { currentUserId } from "@/lib/auth/current-user";
 import { createClient } from "@/lib/supabase/server";
 import { deleteCustomer, saveCustomer } from "../estimates/actions";
@@ -9,6 +11,7 @@ import { deleteCustomer, saveCustomer } from "../estimates/actions";
 export const metadata = { title: "Customers" };
 
 export default async function CustomersPage() {
+  await requireFeature("estimate_pro", "/app/customers");
   const t = await getTranslations("app");
   const userId = await currentUserId();
   const supabase = await createClient();
@@ -51,16 +54,14 @@ export default async function CustomersPage() {
                 {c.phone} {c.zip}
               </p>
             </div>
-            <form
+            <ConfirmDelete
+              label={t("delete")}
+              confirmLabel={t("confirmDelete")}
               action={async () => {
                 "use server";
                 await deleteCustomer(c.id);
               }}
-            >
-              <Button type="submit" variant="ghost" size="sm">
-                {t("delete")}
-              </Button>
-            </form>
+            />
           </li>
         ))}
       </ul>

@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { currentUserId } from "@/lib/auth/current-user";
 import { createClient, supabaseAdmin } from "@/lib/supabase/server";
 
@@ -8,7 +9,7 @@ export function editorIdsFromEnv() {
     .filter(Boolean);
 }
 
-export async function isNewsEditor(userId: string | null) {
+export const isNewsEditor = cache(async (userId: string | null) => {
   if (!userId) return false;
   const ids = editorIdsFromEnv();
   if (ids.includes(userId)) return true;
@@ -29,7 +30,7 @@ export async function isNewsEditor(userId: string | null) {
     .eq("user_id", userId)
     .maybeSingle();
   return Boolean(data?.is_editor);
-}
+});
 
 export async function requireNewsEditor() {
   const userId = await currentUserId();

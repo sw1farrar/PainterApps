@@ -27,15 +27,10 @@ export function AuthButtons({
   if (!authEnabled || !signedIn) return links;
 
   return (
-    <div className="flex items-center gap-2">
-      <Button asChild variant="ghost" size="sm">
-        <Link href="/app">{t("app")}</Link>
+    <form action={signOut}>
+      <Button type="submit" variant="ghost" size="sm">
+        {t("signOut")}
       </Button>
-      <form action={signOut}>
-        <Button type="submit" variant="ghost" size="sm">
-          {t("signOut")}
-        </Button>
-      </form>
-    </div>
+    </form>
   );
 }

@@ -182,12 +182,30 @@ export function SignUpForm({ nextPath }: { nextPath: string }) {
           onChange={(e) => setConfirm(e.target.value)}
         />
       </div>
-      {error ? <p className="text-sm text-destructive">{error}</p> : null}
+      {error ? (
+        <p role="alert" className="text-sm text-destructive">
+          {error}
+        </p>
+      ) : null}
       <Button type="submit" className="w-full" disabled={pending}>
         {t("createAccount")}
       </Button>
+      <p className="text-center text-xs text-muted-foreground">
+        {t("agreeSignup")}{" "}
+        <Link href="/terms" className="underline underline-offset-4">
+          {t("termsLink")}
+        </Link>{" "}
+        {t("and")}{" "}
+        <Link href="/privacy" className="underline underline-offset-4">
+          {t("privacyLink")}
+        </Link>
+        .
+      </p>
       <p className="text-center text-sm text-muted-foreground">
-        <Link href="/login" className="underline underline-offset-4">
+        <Link
+          href={nextPath ? `/login?next=${encodeURIComponent(nextPath)}` : "/login"}
+          className="underline underline-offset-4"
+        >
           {t("haveAccount")}
         </Link>
       </p>

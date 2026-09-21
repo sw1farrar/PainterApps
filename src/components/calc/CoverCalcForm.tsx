@@ -15,10 +15,12 @@ import {
 
 export function CoverCalcForm({
   signedIn,
+  canSnapshot = false,
   initialUnit = "sqft",
   jobs = [],
 }: {
   signedIn: boolean;
+  canSnapshot?: boolean;
   initialUnit?: AreaUnit;
   jobs?: { id: string; title: string; zip: string | null }[];
 }) {
@@ -52,12 +54,22 @@ export function CoverCalcForm({
               type="number"
               min={1}
               value={area}
-              onChange={(e) => setArea(Number(e.target.value))}
+              onChange={(e) => setArea(Number(e.target.value) || 0)}
             />
             <select
               className="h-9 rounded-md border border-input bg-background px-2 text-sm"
               value={unit}
-              onChange={(e) => setUnit(e.target.value as AreaUnit)}
+              onChange={(e) => {
+                const next = e.target.value as AreaUnit;
+                if (next !== unit) {
+                  setArea((a) =>
+                    next === "sqm"
+                      ? Math.round((a / 10.7639) * 10) / 10
+                      : Math.round(a * 10.7639),
+                  );
+                }
+                setUnit(next);
+              }}
               aria-label={t("area")}
             >
               <option value="sqft">{t("unitSqft")}</option>
@@ -123,6 +135,7 @@ export function CoverCalcForm({
         <div className="mt-6">
           <SnapshotJobButton
             signedIn={signedIn}
+            canSnapshot={canSnapshot}
             loginNext="/calc"
             kind="coverage"
             title={`CoverCalc ${result.gallonsRounded.toFixed(1)} gal`}

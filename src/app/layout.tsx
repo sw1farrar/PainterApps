@@ -4,9 +4,10 @@ import { Analytics } from "@vercel/analytics/react";
 import { getLocale, getMessages } from "next-intl/server";
 import { PasswordManagerGuard } from "@/components/auth/PasswordManagerGuard";
 import { Header } from "@/components/layout/Header";
+import { LegalStrip } from "@/components/layout/LegalStrip";
+import { SiteChrome } from "@/components/layout/SiteChrome";
 import { Providers } from "@/components/providers";
 import { currentUserId } from "@/lib/auth/current-user";
-import { isNewsEditor } from "@/lib/news/editors";
 import { supabaseEnabled } from "@/lib/env";
 import type { Locale } from "@/i18n/config";
 import "./globals.css";
@@ -55,7 +56,6 @@ export default async function RootLayout({
   const locale = (await getLocale()) as Locale;
   const messages = await getMessages();
   const [authEnabled, userId] = [supabaseEnabled(), await currentUserId()];
-  const isEditor = await isNewsEditor(userId);
 
   return (
     <html
@@ -66,15 +66,18 @@ export default async function RootLayout({
       <body className="min-h-dvh bg-background font-sans text-foreground antialiased">
         <Providers locale={locale} messages={messages}>
           <PasswordManagerGuard enabled={Boolean(userId)} />
-          <div className="flex min-h-dvh flex-col">
-            <Header
-              locale={locale}
-              authEnabled={authEnabled}
-              signedIn={Boolean(userId)}
-              isEditor={isEditor}
-            />
-            <main className="flex-1">{children}</main>
-          </div>
+          <SiteChrome
+            header={
+              <Header
+                locale={locale}
+                authEnabled={authEnabled}
+                signedIn={Boolean(userId)}
+              />
+            }
+            footer={<LegalStrip />}
+          >
+            {children}
+          </SiteChrome>
         </Providers>
         <Analytics />
       </body>

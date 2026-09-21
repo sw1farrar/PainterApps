@@ -4,7 +4,10 @@ import { LetterDocument, letterLabels } from "@/components/estimates/LetterDocum
 import { loadLetterCompanyAdmin } from "@/lib/estimates/load-company";
 import { supabaseAdmin } from "@/lib/supabase/server";
 
-export const metadata = { title: "Estimate" };
+export const metadata = {
+  title: "Estimate",
+  robots: { index: false, follow: false },
+};
 
 export default async function PublicEstimatePage({
   params,
@@ -22,6 +25,7 @@ export default async function PublicEstimatePage({
     .eq("view_token", token)
     .maybeSingle();
   if (!estimate) notFound();
+  if (estimate.status === "draft" || estimate.status === "declined") notFound();
   const [{ data: areas }, { data: customer }, letter, t] = await Promise.all([
     db
       .from("estimate_areas")

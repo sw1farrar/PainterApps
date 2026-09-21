@@ -3,9 +3,22 @@ export function safeNextPath(
   fallback = "/app",
 ) {
   if (!value) return fallback;
-  if (!value.startsWith("/") || value.startsWith("//")) return fallback;
-  if (value.startsWith("/login") || value.startsWith("/sign-up")) {
+  let next = value.trim();
+  try {
+    if (/^https?:\/\//i.test(next)) {
+      const url = new URL(next);
+      if (url.origin !== "https://painterapps.com" && url.hostname !== "localhost") {
+        return fallback;
+      }
+      next = `${url.pathname}${url.search}`;
+    }
+  } catch {
     return fallback;
   }
-  return value;
+  next = next.replace(/\\/g, "");
+  if (!next.startsWith("/") || next.startsWith("//")) return fallback;
+  if (next.startsWith("/login") || next.startsWith("/sign-up")) {
+    return fallback;
+  }
+  return next;
 }

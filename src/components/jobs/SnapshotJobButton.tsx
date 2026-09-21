@@ -5,6 +5,7 @@ import type { JobOption } from "@/lib/jobs/list";
 
 export function SnapshotJobButton({
   signedIn,
+  canSnapshot = false,
   loginNext,
   kind,
   title,
@@ -15,6 +16,7 @@ export function SnapshotJobButton({
   newJobLabel = "New job",
 }: {
   signedIn: boolean;
+  canSnapshot?: boolean;
   loginNext: string;
   kind: "weather" | "system" | "coverage";
   title: string;
@@ -33,6 +35,7 @@ export function SnapshotJobButton({
       </Button>
     );
   }
+  if (!canSnapshot) return null;
 
   return (
     <form action={snapshotJob} className="flex flex-wrap items-center gap-2">

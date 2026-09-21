@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { requireAccess } from "@/lib/auth/access";
+import { requireAccess, requireFeature } from "@/lib/auth/access";
 import { ensureProfile } from "@/lib/auth/ensure-profile";
 import { DEFAULT_HOURLY_RATE, DEFAULT_RATES } from "@/lib/estimates/defaults";
 import { rateIdsForTemplate } from "@/lib/estimates/templates";
@@ -16,8 +16,16 @@ import { isBrevoConfigured, sendEmail } from "@/lib/email/brevo";
 import { normalizeWebsite } from "@/lib/estimates/letter";
 import { createClient } from "@/lib/supabase/server";
 
-async function requireUser() {
-  const access = await requireAccess("/app/estimates");
+async function requireUser(nextPath = "/app") {
+  const access = await requireAccess(nextPath);
+  const supabase = await createClient();
+  if (!supabase) redirect(`/login?next=${nextPath}`);
+  await ensureProfile(access.userId);
+  return { userId: access.userId, supabase, companyId: access.companyId };
+}
+
+async function requireEstimate() {
+  const access = await requireFeature("estimate_pro", "/app/estimates");
   const supabase = await createClient();
   if (!supabase) redirect("/login?next=/app/estimates");
   await ensureProfile(access.userId);
@@ -25,7 +33,7 @@ async function requireUser() {
 }
 
 export async function ensureCompany() {
-  const { userId, supabase, companyId } = await requireUser();
+  const { userId, supabase, companyId } = await requireUser("/app/settings");
   await supabase.from("company_settings").upsert(
     { user_id: userId, hourly_rate: DEFAULT_HOURLY_RATE },
     { onConflict: "user_id", ignoreDuplicates: true },
@@ -54,16 +62,32 @@ export async function ensureCompany() {
   }
 }
 
-export async function saveCompanySettings(formData: FormData) {
-  const { userId, supabase, companyId } = await requireUser();
+export async function saveCompanyProfile(formData: FormData) {
+  const { userId, supabase, companyId } = await requireUser("/app/settings");
   await ensureCompany();
   const companyName = String(formData.get("company_name") ?? "").trim();
   const phone = String(formData.get("phone") ?? "").trim();
-  const hourlyRate = Number(formData.get("hourly_rate") ?? DEFAULT_HOURLY_RATE);
-  const showHours = formData.get("show_hours") === "on";
   const email = String(formData.get("email") ?? "").trim();
   const website = normalizeWebsite(String(formData.get("website") ?? ""));
   const address = String(formData.get("address") ?? "").trim();
+  await supabase.from("company_settings").upsert(
+    { user_id: userId, company_name: companyName, phone },
+    { onConflict: "user_id" },
+  );
+  if (companyId) {
+    await supabase
+      .from("companies")
+      .update({ name: companyName, phone, email, website, address })
+      .eq("id", companyId);
+  }
+  revalidatePath("/app/settings");
+}
+
+export async function saveCompanySettings(formData: FormData) {
+  const { userId, supabase, companyId } = await requireEstimate();
+  await ensureCompany();
+  const hourlyRate = Number(formData.get("hourly_rate") ?? DEFAULT_HOURLY_RATE);
+  const showHours = formData.get("show_hours") === "on";
   const legalName = String(formData.get("legal_name") ?? "").trim();
   const license = String(formData.get("license_number") ?? "").trim();
   const insurance = String(formData.get("insurance_line") ?? "").trim();
@@ -75,24 +99,19 @@ export async function saveCompanySettings(formData: FormData) {
   const payment = String(formData.get("payment_terms") ?? "").trim();
   const exclusions = String(formData.get("exclusions") ?? "").trim();
   const logoUrl = String(formData.get("logo_url") ?? "").trim();
-  await supabase.from("company_settings").upsert({
-    user_id: userId,
-    company_name: companyName,
-    phone,
-    hourly_rate: hourlyRate,
-    show_hours_on_proposal: showHours,
-  });
+  await supabase
+    .from("company_settings")
+    .update({
+      hourly_rate: hourlyRate,
+      show_hours_on_proposal: showHours,
+    })
+    .eq("user_id", userId);
   if (companyId) {
     await supabase
       .from("companies")
       .update({
-        name: companyName,
-        phone,
         hourly_rate: hourlyRate,
         show_hours_on_proposal: showHours,
-        email,
-        website,
-        address,
         legal_name: legalName,
         license_number: license,
         insurance_line: insurance,
@@ -109,7 +128,7 @@ export async function saveCompanySettings(formData: FormData) {
 }
 
 export async function saveCustomer(formData: FormData) {
-  const { userId, supabase, companyId } = await requireUser();
+  const { userId, supabase, companyId } = await requireEstimate();
   const id = String(formData.get("id") ?? "");
   const payload = {
     user_id: userId,
@@ -131,7 +150,7 @@ export async function saveCustomer(formData: FormData) {
 }
 
 export async function deleteCustomer(id: string) {
-  const { supabase } = await requireUser();
+  const { supabase } = await requireEstimate();
   await supabase.from("customers").delete().eq("id", id);
   revalidatePath("/app/customers");
 }
@@ -152,7 +171,7 @@ export async function createEstimate(
   formData: FormData,
   opts?: { redirectToLetter?: boolean },
 ) {
-  const { userId, supabase, companyId } = await requireUser();
+  const { userId, supabase, companyId } = await requireEstimate();
   await ensureCompany();
   let hourlyRate = DEFAULT_HOURLY_RATE;
   if (companyId) {
@@ -210,6 +229,42 @@ export async function createEstimate(
   redirect(`/app/estimates/${data.id}`);
 }
 
+export async function deleteEstimate(formData: FormData) {
+  const { supabase } = await requireEstimate();
+  const id = String(formData.get("id") ?? "");
+  if (!id) return;
+  await supabase.from("estimates").delete().eq("id", id);
+  revalidatePath("/app/estimates");
+  revalidatePath("/app");
+  redirect("/app/estimates");
+}
+
+export async function saveQuoteStyle(formData: FormData) {
+  const access = await requireFeature("estimate_pro", "/app/settings");
+  const supabase = await createClient();
+  if (!supabase || !access.companyId) return;
+  const style = String(formData.get("quote_style") ?? "time_based");
+  if (style !== "simple" && style !== "time_based") return;
+  await supabase
+    .from("companies")
+    .update({ quote_style: style })
+    .eq("id", access.companyId);
+  revalidatePath("/app/settings");
+}
+
+export async function saveCompanyLogo(formData: FormData) {
+  const access = await requireFeature("estimate_pro", "/app/settings");
+  if (!access.isOwner || !access.companyId) return;
+  const supabase = await createClient();
+  if (!supabase) return;
+  const url = String(formData.get("logo_url") ?? "").trim();
+  await supabase
+    .from("companies")
+    .update({ logo_url: url })
+    .eq("id", access.companyId);
+  revalidatePath("/app/settings");
+}
+
 async function retotal(
   estimateId: string,
   supabase: NonNullable<Awaited<ReturnType<typeof createClient>>>,
@@ -249,7 +304,7 @@ async function retotal(
 }
 
 export async function addArea(formData: FormData) {
-  const { userId, supabase, companyId } = await requireUser();
+  const { userId, supabase, companyId } = await requireEstimate();
   const estimateId = String(formData.get("estimate_id") ?? "");
   const { data: area } = await supabase
     .from("estimate_areas")
@@ -400,7 +455,7 @@ async function estimateHourly(supabase: Db, estimateId: string) {
 }
 
 export async function addSurface(formData: FormData) {
-  const { userId, supabase, companyId } = await requireUser();
+  const { userId, supabase, companyId } = await requireEstimate();
   const estimateId = String(formData.get("estimate_id") ?? "");
   await insertSurface({
     supabase,
@@ -418,7 +473,7 @@ export async function addSurface(formData: FormData) {
 }
 
 export async function deleteArea(formData: FormData) {
-  const { supabase } = await requireUser();
+  const { supabase } = await requireEstimate();
   const estimateId = String(formData.get("estimate_id") ?? "");
   const areaId = String(formData.get("area_id") ?? "");
   await supabase.from("estimate_areas").delete().eq("id", areaId);
@@ -427,7 +482,7 @@ export async function deleteArea(formData: FormData) {
 }
 
 export async function updateArea(formData: FormData) {
-  const { supabase } = await requireUser();
+  const { supabase } = await requireEstimate();
   const estimateId = String(formData.get("estimate_id") ?? "");
   const areaId = String(formData.get("area_id") ?? "");
   await supabase
@@ -446,7 +501,7 @@ export async function updateArea(formData: FormData) {
 }
 
 export async function updateSurface(formData: FormData) {
-  const { supabase } = await requireUser();
+  const { supabase } = await requireEstimate();
   const estimateId = String(formData.get("estimate_id") ?? "");
   const surfaceId = String(formData.get("surface_id") ?? "");
   const areaId = String(formData.get("area_id") ?? "");
@@ -481,7 +536,7 @@ export async function updateSurface(formData: FormData) {
 }
 
 export async function deleteSurface(formData: FormData) {
-  const { supabase } = await requireUser();
+  const { supabase } = await requireEstimate();
   const estimateId = String(formData.get("estimate_id") ?? "");
   const surfaceId = String(formData.get("surface_id") ?? "");
   await supabase.from("estimate_surfaces").delete().eq("id", surfaceId);
@@ -512,7 +567,13 @@ async function repriceArea(supabase: Db, estimateId: string, areaId: string) {
     const coats = (Number(s.coats) === 1 || Number(s.coats) === 3
       ? Number(s.coats)
       : 2) as 1 | 2 | 3;
-    const priced = priceFromRate(area, rate, coats, 0, Number(s.hours_prep ?? 0));
+    const priced = priceFromRate(
+      area,
+      rate,
+      coats,
+      Number(s.qty ?? 0),
+      Number(s.hours_prep ?? 0),
+    );
     const { material, ...row } = priced;
     await supabase
       .from("estimate_surfaces")
@@ -526,7 +587,7 @@ async function repriceArea(supabase: Db, estimateId: string, areaId: string) {
 }
 
 export async function updateEstimateMeta(formData: FormData) {
-  const { supabase } = await requireUser();
+  const { supabase } = await requireEstimate();
   const estimateId = String(formData.get("estimate_id") ?? "");
   const zip = String(formData.get("zip") ?? "").trim();
   const hourly = Number(formData.get("hourly_rate") ?? 0);
@@ -553,7 +614,7 @@ export async function updateEstimateMeta(formData: FormData) {
 }
 
 export async function setEstimateStatus(formData: FormData) {
-  const { supabase } = await requireUser();
+  const { supabase } = await requireEstimate();
   const estimateId = String(formData.get("estimate_id") ?? "");
   const status = String(formData.get("status") ?? "draft");
   if (!["draft", "sent", "accepted", "declined"].includes(status)) return;
@@ -564,7 +625,7 @@ export async function setEstimateStatus(formData: FormData) {
 }
 
 export async function saveEstimateCustomer(formData: FormData) {
-  const { userId, supabase, companyId } = await requireUser();
+  const { userId, supabase, companyId } = await requireEstimate();
   const estimateId = String(formData.get("estimate_id") ?? "");
   let customerId = String(formData.get("customer_id") ?? "");
   const name = String(formData.get("name") ?? "").trim();
@@ -603,6 +664,11 @@ export async function saveEstimateCustomer(formData: FormData) {
         ...(cust?.zip ? { zip: cust.zip } : {}),
       })
       .eq("id", estimateId);
+  } else {
+    await supabase
+      .from("estimates")
+      .update({ customer_id: null })
+      .eq("id", estimateId);
   }
   revalidatePath(`/app/estimates/${estimateId}`);
   revalidatePath("/app/customers");
@@ -610,7 +676,7 @@ export async function saveEstimateCustomer(formData: FormData) {
 }
 
 export async function saveProductionRates(formData: FormData) {
-  const { supabase } = await requireUser();
+  const { supabase } = await requireEstimate();
   const ids = formData.getAll("rate_id").map(String);
   for (const id of ids) {
     await supabase
@@ -635,7 +701,7 @@ export async function sendEstimateEmail(input: {
   subject: string;
   body: string;
 }): Promise<{ ok: true } | { ok: false; error: string }> {
-  const { supabase, companyId } = await requireUser();
+  const { supabase, companyId } = await requireEstimate();
   const to = input.to.trim().toLowerCase();
   if (!to.includes("@")) return { ok: false, error: "Enter a valid email." };
   if (!isBrevoConfigured()) {

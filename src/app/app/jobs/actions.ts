@@ -2,12 +2,12 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { requireAccess } from "@/lib/auth/access";
+import { requireFeature } from "@/lib/auth/access";
 import { ensureProfile } from "@/lib/auth/ensure-profile";
 import { createClient } from "@/lib/supabase/server";
 
 export async function saveJob(formData: FormData) {
-  const access = await requireAccess("/app/jobs");
+  const access = await requireFeature("estimate_pro", "/app/jobs");
   const supabase = await createClient();
   if (!supabase) return;
   await ensureProfile(access.userId);
@@ -43,7 +43,7 @@ function parsePayload(raw: string) {
 }
 
 export async function snapshotJob(formData: FormData) {
-  const access = await requireAccess("/app/jobs");
+  const access = await requireFeature("estimate_pro", "/app/jobs");
   const supabase = await createClient();
   if (!supabase) redirect("/login?next=/app/jobs");
   await ensureProfile(access.userId);
@@ -103,7 +103,7 @@ export async function snapshotJob(formData: FormData) {
 }
 
 export async function deleteJob(id: string) {
-  await requireAccess("/app/jobs");
+  await requireFeature("estimate_pro", "/app/jobs");
   const supabase = await createClient();
   if (!supabase) return;
   await supabase.from("jobs").delete().eq("id", id);

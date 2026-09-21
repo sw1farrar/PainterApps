@@ -6,6 +6,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { ZipSearch } from "@/components/paintday/ZipSearch";
 import { PaintDayMap } from "@/components/paintday/PaintDayMap";
 import { formatWeekday } from "@/lib/paintday/format";
+import { cn } from "@/lib/utils";
 import {
   pointsForDay,
   type MapBoard,
@@ -16,22 +17,26 @@ export function HomeMapBoard({ board }: { board: MapBoard }) {
   const locale = useLocale();
   const [day, setDay] = useState(0);
   const last = board.dates.length - 1;
-  const iso = board.dates[day] ?? board.dates[0];
-  const label =
-    day === 0
-      ? `${t("mapToday")} · ${formatWeekday(iso, locale)}`
-      : day === 1
-        ? `${t("mapTomorrow")} · ${formatWeekday(iso, locale)}`
-        : formatWeekday(iso, locale);
+  const labels = useMemo(
+    () =>
+      board.dates.map((iso, i) =>
+        i === 0
+          ? `${t("mapToday")} · ${formatWeekday(iso, locale)}`
+          : i === 1
+            ? `${t("mapTomorrow")} · ${formatWeekday(iso, locale)}`
+            : formatWeekday(iso, locale),
+      ),
+    [board.dates, locale, t],
+  );
   const points = useMemo(() => pointsForDay(board, day), [board, day]);
 
   return (
     <>
       <div className="flex flex-col gap-3 sm:grid sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] sm:items-center sm:gap-4">
-        <div className="flex flex-wrap items-center gap-0.5">
+        <div className="flex shrink-0 flex-nowrap items-center gap-0.5">
           <button
             type="button"
-            className="rounded-md px-2 py-1 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-30"
+            className="shrink-0 rounded-md px-2 py-1 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-30"
             disabled={day === 0}
             onClick={() => setDay(0)}
           >
@@ -39,19 +44,33 @@ export function HomeMapBoard({ board }: { board: MapBoard }) {
           </button>
           <button
             type="button"
-            className="rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-30"
+            className="shrink-0 rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-30"
             aria-label={t("mapPrevDay")}
             disabled={day <= 0}
             onClick={() => setDay((d) => Math.max(0, d - 1))}
           >
             <ChevronLeft className="size-5" />
           </button>
-          <p className="whitespace-nowrap text-sm font-medium tabular-nums leading-5">
-            {label}
-          </p>
+          <div
+            className="grid justify-items-center"
+            aria-live="polite"
+          >
+            {labels.map((text, i) => (
+              <p
+                key={board.dates[i] ?? i}
+                className={cn(
+                  "col-start-1 row-start-1 whitespace-nowrap text-center text-sm font-medium tabular-nums leading-5",
+                  i === day ? "visible" : "invisible",
+                )}
+                aria-hidden={i !== day}
+              >
+                {text}
+              </p>
+            ))}
+          </div>
           <button
             type="button"
-            className="rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-30"
+            className="shrink-0 rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-30"
             aria-label={t("mapNextDay")}
             disabled={day >= last}
             onClick={() => setDay((d) => Math.min(last, d + 1))}

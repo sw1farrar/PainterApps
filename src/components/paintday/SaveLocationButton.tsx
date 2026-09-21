@@ -16,7 +16,7 @@ export function SaveLocationButton({
   if (!signedIn) {
     return (
       <Button asChild variant="outline">
-        <Link href={`/login?next=/paintday/${zip}`}>
+        <Link href={`/sign-up?next=/paintday/${zip}`}>
           <Bookmark className="size-4" />
           {t("cta.signInToSave")}
         </Link>
@@ -25,7 +25,7 @@ export function SaveLocationButton({
   }
   return (
     <Button asChild variant="outline">
-      <Link href={`/app/locations?zip=${zip}`}>
+      <Link href={`/app/settings?zip=${zip}#locations`}>
         <Bookmark className="size-4" />
         {t("paintday.save")}
       </Link>

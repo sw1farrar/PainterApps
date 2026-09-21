@@ -48,7 +48,7 @@ export async function getWhoami(userId: string) {
   };
 }
 
-async function companyScope(userId: string) {
+async function companyScope(userId: string, needEstimatePro = false) {
   const { data: profile } = await admin()
     .from("profiles")
     .select("company_id, access_enabled")
@@ -56,6 +56,17 @@ async function companyScope(userId: string) {
     .maybeSingle();
   if (profile?.access_enabled !== true) {
     throw new McpToolError("This account is disabled.");
+  }
+  if (needEstimatePro && profile?.company_id) {
+    const { data: company } = await admin()
+      .from("companies")
+      .select("features")
+      .eq("id", profile.company_id)
+      .maybeSingle();
+    const features = company?.features as Record<string, unknown> | null;
+    if (features?.estimate_pro !== true) {
+      throw new McpToolError("Estimate Pro is not enabled for this company.");
+    }
   }
   return { companyId: profile?.company_id ?? null };
 }
@@ -87,7 +98,7 @@ export async function getPaintDay(zip: string) {
 }
 
 export async function listJobs(userId: string) {
-  const { companyId } = await companyScope(userId);
+  const { companyId } = await companyScope(userId, true);
   let q = admin()
     .from("jobs")
     .select("id,title,zip,notes,created_at")
@@ -100,7 +111,7 @@ export async function listJobs(userId: string) {
 }
 
 export async function listCustomers(userId: string) {
-  const { companyId } = await companyScope(userId);
+  const { companyId } = await companyScope(userId, true);
   let q = admin()
     .from("customers")
     .select("id,name,phone,email,address,zip")
@@ -113,7 +124,7 @@ export async function listCustomers(userId: string) {
 }
 
 export async function listEstimates(userId: string) {
-  const { companyId } = await companyScope(userId);
+  const { companyId } = await companyScope(userId, true);
   let q = admin()
     .from("estimates")
     .select("id,number,status,zip,totals,created_at")
@@ -140,15 +151,16 @@ export async function listNewsPosts(userId: string, includeDrafts = false) {
   return data ?? [];
 }
 
-export async function getNewsPost(slugOrId: string) {
+export async function getNewsPost(slugOrId: string, userId?: string) {
   const db = admin();
-  const bySlug = await db
-    .from("news_posts")
-    .select("*")
-    .eq("slug", slugOrId)
-    .maybeSingle();
+  const editor = userId ? await isNewsEditor(userId) : false;
+  let q = db.from("news_posts").select("*").eq("slug", slugOrId);
+  if (!editor) q = q.eq("published", true);
+  const bySlug = await q.maybeSingle();
   if (bySlug.data) return bySlug.data;
-  const byId = await db.from("news_posts").select("*").eq("id", slugOrId).maybeSingle();
+  let byIdQ = db.from("news_posts").select("*").eq("id", slugOrId);
+  if (!editor) byIdQ = byIdQ.eq("published", true);
+  const byId = await byIdQ.maybeSingle();
   if (byId.data) return byId.data;
   throw new McpToolError("News post not found.");
 }

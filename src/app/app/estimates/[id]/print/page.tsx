@@ -1,6 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { LetterDocument, letterLabels } from "@/components/estimates/LetterDocument";
+import { requireFeature } from "@/lib/auth/access";
 import { currentUserId } from "@/lib/auth/current-user";
 import { loadLetterCompany } from "@/lib/estimates/load-company";
 import { createClient } from "@/lib/supabase/server";
@@ -13,6 +14,7 @@ export default async function EstimatePrintPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+  await requireFeature("estimate_pro", "/app/estimates");
   const userId = await currentUserId();
   if (!userId) redirect("/login");
   const supabase = await createClient();

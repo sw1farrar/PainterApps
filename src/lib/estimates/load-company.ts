@@ -8,7 +8,7 @@ import {
 import { createClient, supabaseAdmin } from "@/lib/supabase/server";
 
 const COMPANY_SELECT =
-  "name,legal_name,phone,email,website,address,logo_url,license_number,insurance_line,accent_color,proposal_valid_days,payment_terms,exclusions,show_hours_on_proposal,hourly_rate";
+  "name,legal_name,phone,email,website,address,logo_url,license_number,insurance_line,accent_color,proposal_valid_days,payment_terms,exclusions,show_hours_on_proposal,hourly_rate,quote_style";
 
 export async function loadLetterCompany(): Promise<{
   company: LetterCompany;
@@ -26,7 +26,9 @@ export async function loadLetterCompany(): Promise<{
     if (data) {
       return {
         company: companyFromRow(data),
-        showHours: Boolean(data.show_hours_on_proposal),
+        showHours:
+          data.quote_style !== "simple" &&
+          Boolean(data.show_hours_on_proposal),
       };
     }
   }

@@ -1,9 +1,11 @@
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { EmptyBoxIllustration } from "@/components/illustrations";
+import { ConfirmDelete } from "@/components/ui/ConfirmDelete";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { requireFeature } from "@/lib/auth/access";
 import { currentUserId } from "@/lib/auth/current-user";
 import { createClient } from "@/lib/supabase/server";
 import { deleteJob, saveJob } from "./actions";
@@ -11,6 +13,7 @@ import { deleteJob, saveJob } from "./actions";
 export const metadata = { title: "Jobs" };
 
 export default async function JobsPage() {
+  await requireFeature("estimate_pro", "/app/jobs");
   const t = await getTranslations("app");
   const userId = await currentUserId();
   const supabase = await createClient();
@@ -65,16 +68,14 @@ export default async function JobsPage() {
                     coverageLabel={t("coverageSnap")}
                   />
                 </div>
-                <form
+                <ConfirmDelete
+                  label={t("delete")}
+                  confirmLabel={t("confirmDelete")}
                   action={async () => {
                     "use server";
                     await deleteJob(job.id);
                   }}
-                >
-                  <Button type="submit" variant="ghost" size="sm">
-                    {t("delete")}
-                  </Button>
-                </form>
+                />
               </div>
             </li>
           ))}

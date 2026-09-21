@@ -1,3 +1,5 @@
+import { safeNextPath } from "@/lib/auth/paths";
+
 type AuthLocale = "en" | "es";
 type EmailAction =
   | "signup"
@@ -109,7 +111,9 @@ export function confirmationUrl(input: {
   const url = new URL(`${site}/auth/callback`);
   url.searchParams.set("token_hash", input.tokenHash);
   url.searchParams.set("type", input.type);
-  if (input.redirectTo) url.searchParams.set("next", input.redirectTo);
+  if (input.redirectTo) {
+    url.searchParams.set("next", safeNextPath(input.redirectTo));
+  }
   return url.toString();
 }
 

@@ -118,6 +118,7 @@ export function SystemEnvelope({
               </Button>
               <SnapshotJobButton
                 signedIn={signedIn}
+                canSnapshot={signedIn}
                 loginNext="/systems"
                 kind="system"
                 title={`${manufacturer.name} · ${system.name}`}

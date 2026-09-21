@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { Button } from "@/components/ui/button";
+import { requireFeature } from "@/lib/auth/access";
 import { currentUserId } from "@/lib/auth/current-user";
 import { createClient } from "@/lib/supabase/server";
 import { deleteJob } from "../actions";
@@ -25,6 +26,7 @@ export default async function JobDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+  await requireFeature("estimate_pro", "/app/jobs");
   const userId = await currentUserId();
   if (!userId) redirect("/login?next=/app/jobs");
   const supabase = await createClient();

@@ -19,7 +19,7 @@ export function CoatProfile({
       {PROFILES.map((id) => (
         <Link
           key={id}
-          href={id === "latex" ? `/paintday/${zip}` : `/paintday/${zip}?coat=${id}`}
+          href={`/paintday/${zip}?coat=${id}`}
           className={cn(
             "rounded-full border px-3 py-1",
             active === id

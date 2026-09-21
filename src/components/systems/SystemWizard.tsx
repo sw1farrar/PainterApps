@@ -3,18 +3,22 @@
 import { useEffect, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { CanImage } from "@/components/systems/CanImage";
-import {
-  ProductEnvelope,
-  SystemEnvelope,
-} from "@/components/systems/SystemEnvelope";
+import { ProductEnvelope } from "@/components/systems/SystemEnvelope";
 import type { Catalog } from "@/lib/systems/corpus-catalog";
-import { allManufacturers, matchSystems } from "@/lib/systems/match";
+import {
+  allManufacturers,
+  matchProducts,
+  matchSystems,
+} from "@/lib/systems/match";
 import { formatTempRange, type UnitSystem } from "@/lib/units";
 import { cn } from "@/lib/utils";
 import type { JobOption } from "@/lib/jobs/list";
 import {
   APPLICATION_TYPES,
+  SHEENS,
+  SUBSTRATES,
   type ApplicationType,
+  type CoatRole,
   type MatchQuery,
   type Manufacturer,
   type MatchedSystem,
@@ -23,25 +27,10 @@ import {
   type TdsProduct,
 } from "@/lib/systems/types";
 
-type CoatRole = "all" | "primer" | "topcoat";
-
-const SUBSTRATES: Substrate[] = [
-  "drywall",
-  "wood",
-  "masonry",
-  "stucco",
-  "metal",
-  "previously-painted",
-  "concrete-floor",
-];
-const SHEENS: Sheen[] = ["flat", "eggshell", "satin", "semi-gloss", "gloss"];
-
 export function SystemWizard({
-  signedIn,
   units = "imperial",
-  jobs = [],
 }: {
-  signedIn: boolean;
+  signedIn?: boolean;
   units?: UnitSystem;
   jobs?: JobOption[];
 }) {
@@ -55,7 +44,6 @@ export function SystemWizard({
   const [voc, setVoc] = useState(false);
   const [mfrs, setMfrs] = useState<string[]>([]);
   const [catalog, setCatalog] = useState<Catalog | undefined>(undefined);
-  const [openId, setOpenId] = useState<string | null>(null);
   const [openCoat, setOpenCoat] = useState<{
     product: TdsProduct;
     manufacturer: Manufacturer;
@@ -82,13 +70,14 @@ export function SystemWizard({
   };
 
   const results = useMemo(
-    () => matchSystems(query, catalog),
+    () => matchProducts(query, catalog, role),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [interior, exterior, apps, subs, sheens, voc, mfrs, catalog],
+    [interior, exterior, apps, subs, sheens, voc, mfrs, catalog, role],
   );
 
   function hits(next: MatchQuery) {
-    return matchSystems(next, catalog).length > 0;
+    if (!catalog) return true;
+    return matchProducts(next, catalog, role).length > 0;
   }
 
   const rest: MatchQuery = {
@@ -146,6 +135,7 @@ export function SystemWizard({
   }
 
   useEffect(() => {
+    if (!catalog) return;
     const nextApps = apps.filter((id) => viableApp(id));
     const nextSubs = subs.filter((id) => viableSubstrate(id));
     const nextSheens = sheens.filter((id) => viableSheen(id));
@@ -159,72 +149,50 @@ export function SystemWizard({
     if (interior && !viableInterior()) setInterior(false);
     if (exterior && !viableExterior()) setExterior(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [interior, exterior, apps, subs, sheens, voc, mfrs, catalog]);
-
-  const coats = useMemo(() => {
-    if (role === "all") return [];
-    const seen = new Map<
-      string,
-      { product: TdsProduct; manufacturer: Manufacturer; usedIn: MatchedSystem[] }
-    >();
-    for (const r of results) {
-      const product = role === "primer" ? r.primer : r.topcoat;
-      const cur = seen.get(product.id);
-      if (cur) cur.usedIn.push(r);
-      else {
-        seen.set(product.id, {
-          product,
-          manufacturer: r.manufacturer,
-          usedIn: [r],
-        });
-      }
-    }
-    return [...seen.values()];
-  }, [role, results]);
-
-  const selected = results.find((r) => r.system.id === openId) ?? null;
+  }, [interior, exterior, apps, subs, sheens, voc, mfrs, catalog, role]);
 
   function showProduct(product: TdsProduct, manufacturer: Manufacturer) {
-    setOpenId(null);
     setOpenCoat({
       product,
       manufacturer,
-      usedIn: results.filter(
-        (r) =>
-          r.primer.id === product.id ||
-          r.topcoat.id === product.id ||
-          r.midcoat?.id === product.id,
-      ),
+      usedIn: catalog
+        ? matchSystems(query, catalog).filter(
+            (r) =>
+              r.primer.id === product.id ||
+              r.topcoat.id === product.id ||
+              r.midcoat?.id === product.id,
+          )
+        : [],
     });
   }
   const narrowed =
     apps.length + subs.length + sheens.length + mfrs.length > 0 || voc;
-  const listCount = role === "all" ? results.length : coats.length;
+  const listCount = results.length;
   const countLabel =
     role === "primer"
       ? t("primerCount", { n: listCount })
       : role === "topcoat"
         ? t("topcoatCount", { n: listCount })
-        : t("systemCount", { n: listCount });
+        : t("productCount", { n: listCount });
 
   useEffect(() => {
-    if (!openId && !openCoat) return;
+    if (!openCoat) return;
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape") {
-        setOpenId(null);
-        setOpenCoat(null);
-      }
+      if (e.key === "Escape") setOpenCoat(null);
     }
     window.addEventListener("keydown", onKey);
     return () => {
       document.body.style.overflow = prev;
       window.removeEventListener("keydown", onKey);
     };
-  }, [openId, openCoat]);
+  }, [openCoat]);
 
   function reset() {
+    setInterior(false);
+    setExterior(true);
+    setRole("all");
     setApps([]);
     setSubs([]);
     setSheens([]);
@@ -238,7 +206,7 @@ export function SystemWizard({
 
   return (
     <div className="space-y-8">
-      <div className="space-y-5">
+      <div className="sticky top-14 z-20 -mx-4 max-h-[40vh] space-y-4 overflow-y-auto border-b border-border/80 bg-background/90 px-4 py-3 backdrop-blur md:max-h-none">
         <FilterRow label={t("coat")}>
           <Chip
             selected={role === "all"}
@@ -253,7 +221,6 @@ export function SystemWizard({
             selected={role === "primer"}
             onClick={() => {
               setRole("primer");
-              setOpenId(null);
               setOpenCoat(null);
             }}
           >
@@ -263,7 +230,6 @@ export function SystemWizard({
             selected={role === "topcoat"}
             onClick={() => {
               setRole("topcoat");
-              setOpenId(null);
               setOpenCoat(null);
             }}
           >
@@ -275,14 +241,26 @@ export function SystemWizard({
           <Chip
             selected={interior}
             disabled={!interior && !viableInterior()}
-            onClick={() => setInterior((v) => !v)}
+            onClick={() => {
+              setInterior((v) => {
+                const next = !v;
+                if (!next && !exterior) setExterior(true);
+                return next;
+              });
+            }}
           >
             {t("interior")}
           </Chip>
           <Chip
             selected={exterior}
             disabled={!exterior && !viableExterior()}
-            onClick={() => setExterior((v) => !v)}
+            onClick={() => {
+              setExterior((v) => {
+                const next = !v;
+                if (!next && !interior) setInterior(true);
+                return next;
+              });
+            }}
           >
             {t("exterior")}
           </Chip>
@@ -292,11 +270,12 @@ export function SystemWizard({
           <Chip selected={apps.length === 0} onClick={() => setApps([])}>
             {t("any")}
           </Chip>
-          {APPLICATION_TYPES.map((id) => (
+          {APPLICATION_TYPES.filter(
+            (id) => apps.includes(id) || viableApp(id),
+          ).map((id) => (
             <Chip
               key={id}
               selected={apps.includes(id)}
-              disabled={!apps.includes(id) && !viableApp(id)}
               onClick={() => toggle(apps, id, setApps)}
             >
               {t(`applications.${id}`)}
@@ -381,25 +360,9 @@ export function SystemWizard({
 
       {listCount === 0 ? (
         <p className="text-sm text-muted-foreground">{t("noResults")}</p>
-      ) : role === "all" ? (
-        <ul className="divide-y divide-border rounded-xl border border-border">
-          {results.map((r) => (
-            <li key={r.system.id}>
-              <SystemRow
-                match={r}
-                units={units}
-                onOpen={() => {
-                  setOpenCoat(null);
-                  setOpenId(r.system.id);
-                }}
-                onOpenProduct={showProduct}
-              />
-            </li>
-          ))}
-        </ul>
       ) : (
         <ul className="divide-y divide-border rounded-xl border border-border">
-          {coats.map((c) => (
+          {results.map((c) => (
             <li key={c.product.id}>
               <ProductRow
                 product={c.product}
@@ -412,15 +375,6 @@ export function SystemWizard({
         </ul>
       )}
 
-      {selected ? (
-        <SystemEnvelope
-          match={selected}
-          units={units}
-          signedIn={signedIn}
-          jobs={jobs}
-          onClose={() => setOpenId(null)}
-        />
-      ) : null}
       {openCoat ? (
         <ProductEnvelope
           product={openCoat.product}
@@ -459,7 +413,11 @@ function ProductRow({
         </span>
         <span className="mt-0.5 block text-base font-medium">{product.name}</span>
         <span className="mt-1 block text-sm text-muted-foreground">
-          {product.kind === "primer" ? t("primer") : t("topcoat")}
+          {product.kind === "primer"
+            ? t("primer")
+            : product.kind === "topcoat"
+              ? t("topcoat")
+              : product.kind}
           {product.sku ? ` · ${product.sku}` : ""}
         </span>
       </span>
@@ -468,81 +426,6 @@ function ProductRow({
         <span className="ml-3 underline underline-offset-4">{t("open")}</span>
       </span>
     </button>
-  );
-}
-
-function SystemRow({
-  match,
-  units,
-  onOpen,
-  onOpenProduct,
-}: {
-  match: MatchedSystem;
-  units: UnitSystem;
-  onOpen: () => void;
-  onOpenProduct: (product: TdsProduct, manufacturer: Manufacturer) => void;
-}) {
-  const t = useTranslations("systems");
-  return (
-    <div className="flex items-center gap-4 px-4 py-3.5 transition hover:bg-muted/50">
-      <button
-        type="button"
-        className="shrink-0 rounded-sm"
-        onClick={() => onOpenProduct(match.topcoat, match.manufacturer)}
-        aria-label={match.topcoat.name}
-      >
-        <CanImage
-          src={match.topcoat.canImageUrl}
-          alt={match.topcoat.name}
-          size="md"
-        />
-      </button>
-      <button
-        type="button"
-        onClick={onOpen}
-        className="min-w-0 flex-1 text-left"
-      >
-        <span className="block text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
-          {match.manufacturer.name}
-        </span>
-        <span className="mt-0.5 block text-base font-medium">
-          {match.system.name}
-        </span>
-        <span className="mt-1 block text-sm text-muted-foreground">
-          <span
-            className="underline-offset-4 hover:underline"
-            onClick={(e) => {
-              e.stopPropagation();
-              onOpenProduct(match.primer, match.manufacturer);
-            }}
-          >
-            {match.primer.name}
-          </span>
-          {" · "}
-          <span
-            className="underline-offset-4 hover:underline"
-            onClick={(e) => {
-              e.stopPropagation();
-              onOpenProduct(match.topcoat, match.manufacturer);
-            }}
-          >
-            {match.topcoat.name}
-          </span>
-        </span>
-      </button>
-      <button
-        type="button"
-        onClick={onOpen}
-        className="shrink-0 text-xs text-muted-foreground"
-      >
-        {formatTempRange(
-          match.topcoat.minTempF,
-          match.topcoat.maxTempF,
-          units,
-        )}
-        <span className="ml-3 underline underline-offset-4">{t("open")}</span>
-      </button>
-    </div>
   );
 }
 
