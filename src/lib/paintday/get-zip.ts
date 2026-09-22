@@ -28,7 +28,7 @@ async function loadLiveZip(zip: string): Promise<ZipPaintDay | null> {
 
 const getLiveZipCached = unstable_cache(
   async (zip: string, _bucket: number) => loadLiveZip(zip),
-  ["paintday-zip-v12"],
+  ["paintday-zip-v13"],
   { revalidate: WEATHER_REVALIDATE_SECONDS },
 );
 

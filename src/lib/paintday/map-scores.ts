@@ -17,30 +17,43 @@ export function scoreColorHex(score: number) {
   return RAIN_RED;
 }
 
-/** Map glyph: soaking AM rain = solid red. AM drizzle + dry PM = split. AM dry + PM rain = split. */
+/**
+ * Map glyph. Red is a rain-out, not a single light hour.
+ * Soaking morning, or no hours left: solid red.
+ * Morning precip with an open afternoon: left red, right the afternoon score.
+ * Afternoon rained out: left the morning score, right red.
+ * Late light drizzle does not paint the afternoon red.
+ */
 export function mapDotColors(point: {
   amWet?: boolean;
   pmWet?: boolean;
+  amRainedOut?: boolean;
+  pmRainedOut?: boolean;
   amScore?: number;
   pmScore?: number;
   score: number;
   hoursOpen?: number;
 }) {
   const hoursOpen = point.hoursOpen ?? 0;
-  if (point.amWet && point.pmWet) {
+  const amOut = point.amRainedOut ?? Boolean(point.amWet && hoursOpen === 0);
+  const pmOut = point.pmRainedOut ?? Boolean(point.pmWet);
+  if (amOut && (pmOut || hoursOpen === 0)) {
     return { left: RAIN_RED, right: RAIN_RED, split: false };
   }
   if (point.amWet && hoursOpen === 0) {
     return { left: RAIN_RED, right: RAIN_RED, split: false };
   }
-  if (point.amWet) {
+  if (point.amWet && pmOut) {
+    return { left: RAIN_RED, right: RAIN_RED, split: false };
+  }
+  if (point.amWet && !pmOut) {
     return {
       left: RAIN_RED,
       right: scoreColorHex(point.pmScore || point.score),
       split: true,
     };
   }
-  if (point.pmWet) {
+  if (pmOut) {
     return {
       left: scoreColorHex(point.amScore || point.score),
       right: RAIN_RED,
@@ -67,10 +80,16 @@ export type MapScorePoint = {
   wrapHour: number | null;
   rainHour: number | null;
   hoursOpen: number;
+  date: string;
   amScore: number;
   pmScore: number;
   amWet: boolean;
   pmWet: boolean;
+  amRainedOut: boolean;
+  pmRainedOut: boolean;
+  rainMm: number | null;
+  pmRainHour: number | null;
+  pmRainMm: number | null;
 };
 
 export type MapMetro = {
@@ -94,6 +113,11 @@ export type MapMetro = {
   pmScores: number[];
   amWet: boolean[];
   pmWet: boolean[];
+  amRainedOut: boolean[];
+  pmRainedOut: boolean[];
+  rainMm: Array<number | null>;
+  pmRainHours: Array<number | null>;
+  pmRainMm: Array<number | null>;
 };
 
 export type MapBoard = {
@@ -163,6 +187,11 @@ async function loadMapBoard(): Promise<MapBoard> {
         pmScores: days.map((d) => d.pmScore ?? d.score.total),
         amWet: days.map((d) => Boolean(d.amWet)),
         pmWet: days.map((d) => Boolean(d.pmWet)),
+        amRainedOut: days.map((d) => Boolean(d.amRainedOut)),
+        pmRainedOut: days.map((d) => Boolean(d.pmRainedOut)),
+        rainMm: days.map((d) => d.rainMm ?? null),
+        pmRainHours: days.map((d) => d.pmRainHour ?? null),
+        pmRainMm: days.map((d) => d.pmRainMm ?? null),
       } satisfies MapMetro;
     }),
   );
@@ -171,7 +200,7 @@ async function loadMapBoard(): Promise<MapBoard> {
 
 const loadMapBoardCached = unstable_cache(
   async (_bucket: number) => loadMapBoard(),
-  ["paintday-map-v5"],
+  ["paintday-map-v6"],
   { revalidate: WEATHER_REVALIDATE_SECONDS },
 );
 
@@ -203,9 +232,15 @@ export function pointsForDay(board: MapBoard, day: number): MapScorePoint[] {
     wrapHour: pickDay(m.dates, m.wrapHours, date, null),
     rainHour: pickDay(m.dates, m.rainHours, date, null),
     hoursOpen: pickDay(m.dates, m.hoursOpen, date, 0),
+    date,
     amScore: pickDay(m.dates, m.amScores, date, 0),
     pmScore: pickDay(m.dates, m.pmScores, date, 0),
     amWet: pickDay(m.dates, m.amWet, date, false),
     pmWet: pickDay(m.dates, m.pmWet, date, false),
+    amRainedOut: pickDay(m.dates, m.amRainedOut, date, false),
+    pmRainedOut: pickDay(m.dates, m.pmRainedOut, date, false),
+    rainMm: pickDay(m.dates, m.rainMm, date, null),
+    pmRainHour: pickDay(m.dates, m.pmRainHours, date, null),
+    pmRainMm: pickDay(m.dates, m.pmRainMm, date, null),
   }));
 }

@@ -96,8 +96,51 @@ describe("scoreDayFromHours", () => {
       hour(14, { precipMm: 2, weatherCode: 80, precipProbability: 90 }),
       hour(15, { precipMm: 1, weatherCode: 61, precipProbability: 80 }),
     ];
+    const pm = afternoonHalf(hours);
     expect(morningHalf(hours).wet).toBe(false);
-    expect(afternoonHalf(hours).wet).toBe(true);
+    expect(pm.wet).toBe(true);
+    expect(pm.rainedOut).toBe(true);
+    expect(pm.witness?.hour).toBe(14);
+    expect(pm.witness?.precipMm).toBe(2);
+  });
+
+  it("does not rain out a Yuma afternoon that only drizzles at 5pm", () => {
+    const hours = [
+      ...[7, 8, 9, 10, 11, 12, 13, 14, 15, 16].map((h) => hour(h, { tempF: 88 })),
+      hour(17, { precipMm: 0.5, weatherCode: 53, precipProbability: 1, tempF: 100 }),
+      hour(18, { precipMm: 0.4, weatherCode: 51, precipProbability: 5, tempF: 98 }),
+    ];
+    const am = morningHalf(hours);
+    const pm = afternoonHalf(hours);
+    expect(am.wet).toBe(false);
+    expect(pm.wet).toBe(true);
+    expect(pm.rainedOut).toBe(false);
+    expect(pm.witness?.hour).toBe(17);
+    expect(pm.witness?.precipMm).toBe(0.5);
+    const dots = mapDotColors({
+      amWet: am.wet,
+      pmWet: pm.wet,
+      amRainedOut: am.rainedOut,
+      pmRainedOut: pm.rainedOut,
+      amScore: am.score,
+      pmScore: pm.score,
+      score: am.score,
+      hoursOpen: 7,
+    });
+    expect(dots.split).toBe(false);
+    expect(dots.left).not.toBe("#ef4444");
+    expect(dots.right).not.toBe("#ef4444");
+  });
+
+  it("does not wet an afternoon on probability or a clear-sky trace", () => {
+    const pop = [13, 14, 15, 16, 17, 18].map((h) =>
+      hour(h, { precipProbability: 80, precipMm: 0, weatherCode: 0 }),
+    );
+    expect(afternoonHalf(pop).wet).toBe(false);
+    const trace = [13, 14, 15, 16, 17, 18].map((h) =>
+      hour(h, h === 15 ? { precipMm: 0.3, weatherCode: 1, precipProbability: 0 } : {}),
+    );
+    expect(afternoonHalf(trace).wet).toBe(false);
   });
 });
 
@@ -114,16 +157,31 @@ describe("mapDotColors", () => {
     expect(dots.split).toBe(false);
   });
 
-  it("splits AM color and PM red when only the afternoon rains", () => {
+  it("splits AM color and PM red when the afternoon is rained out", () => {
     const dots = mapDotColors({
       amWet: false,
       pmWet: true,
+      pmRainedOut: true,
       amScore: 82,
       score: 82,
+      hoursOpen: 4,
     });
     expect(dots.split).toBe(true);
     expect(dots.right).toBe("#ef4444");
     expect(dots.left).not.toBe("#ef4444");
+  });
+
+  it("does not paint the afternoon red for light drizzle with dry hours left", () => {
+    const dots = mapDotColors({
+      amWet: false,
+      pmWet: true,
+      pmRainedOut: false,
+      amScore: 90,
+      score: 90,
+      hoursOpen: 6,
+    });
+    expect(dots.split).toBe(false);
+    expect(dots.right).not.toBe("#ef4444");
   });
 
   it("splits AM red and PM score when morning drizzle leaves an afternoon window", () => {
@@ -143,5 +201,9 @@ describe("mapDotColors", () => {
 describe("windowLine", () => {
   it("names drizzle that already passed before the paint window", () => {
     expect(windowLine(13, 18, 9)).toBe("1pm–6pm · after 9am drizzle");
+  });
+
+  it("names late light drizzle instead of calling it rain", () => {
+    expect(windowLine(7, 13, 17, true)).toBe("7am–1pm · drizzle 5pm");
   });
 });

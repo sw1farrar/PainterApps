@@ -2,6 +2,7 @@ import { DAY_END, DAY_START, buildCrewPlan, type HourSlot } from "@/lib/paintday
 import {
   afternoonHalf,
   morningHalf,
+  precipDayFields,
   scoreDayFromHours,
 } from "@/lib/paintday/day-score";
 import type { ProductWindow } from "@/lib/paintday/product-window";
@@ -157,6 +158,7 @@ export async function getNwsForecast(
     const day = scoreDayFromHours(dayHours, window);
     const am = morningHalf(dayHours, window);
     const pm = afternoonHalf(dayHours, window);
+    const precip = precipDayFields(dayHours, am, pm, day.crewPlan.rainHour);
     const highs = dayHours.map((h) => h.snapshot.tempF);
     const pops = dayHours.map((h) => h.snapshot.precipProbability);
     return {
@@ -172,8 +174,13 @@ export async function getNwsForecast(
       windowPrecipChance: pops.length ? Math.round(Math.max(...pops)) : 0,
       amScore: am.score,
       pmScore: pm.score,
-      amWet: am.wet,
-      pmWet: pm.wet,
+      amWet: precip.amWet,
+      pmWet: precip.pmWet,
+      amRainedOut: precip.amRainedOut,
+      pmRainedOut: precip.pmRainedOut,
+      rainMm: precip.rainMm,
+      pmRainHour: precip.pmRainHour,
+      pmRainMm: precip.pmRainMm,
       windowHour: day.representativeHour,
     };
   });

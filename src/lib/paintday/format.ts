@@ -29,16 +29,26 @@ export function windowLine(
   startHour: number | null | undefined,
   wrapHour: number | null | undefined,
   rainHour: number | null | undefined,
+  light = false,
 ): string {
   if (startHour == null || wrapHour == null) {
-    return rainHour != null ? `Rain ${formatClock(rainHour)}` : "";
+    if (rainHour == null) return "";
+    return light
+      ? `Drizzle ${formatClock(rainHour)}`
+      : `Rain ${formatClock(rainHour)}`;
   }
   const paint = `${formatClock(startHour)}–${formatClock(wrapHour)}`;
   if (rainHour == null) return paint;
   if (rainHour < startHour) {
     return `${paint} · after ${formatClock(rainHour)} drizzle`;
   }
+  if (light) return `${paint} · drizzle ${formatClock(rainHour)}`;
   return `${paint} · rain ${formatClock(rainHour)}`;
+}
+
+export function mmText(mm: number | null | undefined) {
+  if (mm == null || mm < 0.05) return "";
+  return `${mm.toFixed(1)} mm`;
 }
 
 export function rainLabel(snap: WeatherSnapshot) {

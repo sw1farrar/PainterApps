@@ -23,12 +23,17 @@ function isIceCode(code?: number) {
   );
 }
 
-/** Storm, snow, or ice — wet even at 0 mm. Rain/drizzle codes at 0 mm are not. */
+/**
+ * Hour is NO / a half can turn red.
+ * Storm, snow, and ice count at 0 mm. Coded rain or drizzle counts at 0.2 mm.
+ * Clear, cloudy, or fog with only a trace does not — that is model noise, not rain.
+ */
 export function isHardPrecip(code?: number, precipMm = 0) {
   const kind = precipKind(code);
   if (kind === "storm" || kind === "snow") return true;
   if (isIceCode(code)) return true;
-  return precipMm >= 0.2;
+  if (kind === "rain" || kind === "drizzle") return precipMm >= 0.2;
+  return precipMm >= 1;
 }
 
 /**

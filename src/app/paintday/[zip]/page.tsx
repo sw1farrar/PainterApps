@@ -9,12 +9,13 @@ import { ZipSearch } from "@/components/paintday/ZipSearch";
 import { ClientIntl } from "@/components/i18n/ClientIntl";
 import { currentUnits } from "@/lib/auth/current-units";
 import { currentUserId } from "@/lib/auth/current-user";
-import { hourCall } from "@/lib/paintday/crew-plan";
+import { DAY_END, DAY_START, hourCall } from "@/lib/paintday/crew-plan";
 import { isHardPrecip } from "@/lib/paintday/codes";
 import {
   factorFitCall,
   formatFactorValue,
   formatWeekday,
+  mmText,
   precipVerdict,
   windowLine,
 } from "@/lib/paintday/format";
@@ -64,11 +65,13 @@ function WeatherLink({ href, children }: { href: string; children: string }) {
 
 export default async function ZipPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ zip: string }>;
-  searchParams: Promise<{ coat?: string }>;
+  searchParams: Promise<{ coat?: string; day?: string }>;
 }) {
   const { zip } = await params;
+  const { day: dayQuery } = await searchParams;
   if (!isUsZip(zip)) notFound();
   const [data, userId, units, locale, messages] = await Promise.all([
     getZipPaintDay(zip),
@@ -81,7 +84,9 @@ export default async function ZipPage({
 
   const t = await getTranslations("paintday");
   const { place, forecast } = data;
-  const day = forecastDayForNow(forecast);
+  const today = forecastDayForNow(forecast);
+  const day =
+    (dayQuery && forecast.days.find((d) => d.date === dayQuery)) || today;
   const closedDay = dayIsClosed(day);
   const drizzleDay = afternoonOpenAfterDrizzle(day);
   const rawScore = day?.score ?? forecast.currentScore;
@@ -120,13 +125,22 @@ export default async function ZipPage({
     forecast.current.precipMm ?? 0,
   );
   const verdict = closed ? "no" : precipVerdict(false, score.band);
+  const lightPm = Boolean(day?.pmWet) && !day?.pmRainedOut;
   const windowText = closed
     ? ""
     : windowLine(
         day?.startHour ?? forecast.crewPlan.startHour,
         day?.wrapHour ?? forecast.crewPlan.wrapHour,
         day?.rainHour ?? forecast.crewPlan.rainHour,
+        lightPm,
       );
+  const witnessMm = mmText(day?.pmRainMm ?? day?.rainMm);
+  const selectedIso = day?.date ?? todayIso;
+  const viewingToday = selectedIso === todayIso;
+  const stripHours = forecast.hours.filter(
+    (h) =>
+      h.date === selectedIso && h.hour >= DAY_START && h.hour <= DAY_END,
+  );
   const verdictLabel =
     verdict === "go"
       ? t("verdictGo")
@@ -171,8 +185,9 @@ export default async function ZipPage({
             <p className="truncate text-sm font-semibold">{place.label}</p>
             <p className="truncate text-xs text-muted-foreground">
               {verdictLabel}
+              {!viewingToday && day ? ` · ${formatWeekday(day.date, locale)}` : ""}
               {windowText ? ` · ${windowText}` : ` · ${t("noWindow")}`}
-              {nowCall
+              {viewingToday && nowCall
                 ? ` · ${t("nowCall", { call: nowCall })}${wetNow ? ` · ${t("nowWet")}` : ""}`
                 : ""}
               {` · ${source} · ${pulled}`}
@@ -210,7 +225,9 @@ export default async function ZipPage({
                   {t(`factor.${f.id}` as never)}
                 </p>
                 <p className="truncate text-sm font-semibold tabular-nums">
-                  {formatFactorValue(f.id, snap, units)}
+                  {f.id === "precip" && witnessMm
+                    ? witnessMm
+                    : formatFactorValue(f.id, snap, units)}
                 </p>
                 <p
                   className="text-[11px] font-medium"
@@ -225,7 +242,10 @@ export default async function ZipPage({
 
         <section className="shrink-0">
           <h2 className="sr-only">{t("hourlyTitle")}</h2>
-          <HourlyStrip hours={forecast.todayHours ?? []} nowHour={nowHour} />
+          <HourlyStrip
+            hours={stripHours.length ? stripHours : (forecast.todayHours ?? [])}
+            nowHour={viewingToday ? nowHour : undefined}
+          />
         </section>
 
         <section className="flex min-h-0 min-w-0 flex-1 flex-col">
@@ -245,7 +265,11 @@ export default async function ZipPage({
           </div>
           <div className="relative mt-1 min-h-0 min-w-0 flex-1 overflow-hidden rounded-xl border border-border bg-card">
             <div className="absolute inset-0 px-2 py-1">
-              <ForecastChart days={forecast.days} className="h-full" />
+              <ForecastChart
+                days={forecast.days}
+                className="h-full"
+                activeDate={selectedIso}
+              />
             </div>
           </div>
         </section>

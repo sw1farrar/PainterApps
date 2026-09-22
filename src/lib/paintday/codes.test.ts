@@ -17,6 +17,16 @@ describe("isHardPrecip", () => {
     expect(isHardPrecip(51, 0.2)).toBe(true);
     expect(isHardPrecip(51, 0.4)).toBe(true);
   });
+
+  it("ignores a clear-sky trace and still wets storms at 0 mm", () => {
+    expect(isHardPrecip(0, 0.3)).toBe(false);
+    expect(isHardPrecip(1, 0.9)).toBe(false);
+    expect(isHardPrecip(3, 1)).toBe(true);
+    expect(isHardPrecip(95, 0)).toBe(true);
+    expect(isHardPrecip(61, 0.1)).toBe(false);
+    expect(isHardPrecip(61, 0.2)).toBe(true);
+    expect(isHardPrecip(undefined, 0.4)).toBe(false);
+  });
 });
 
 describe("isSoakingPrecip", () => {

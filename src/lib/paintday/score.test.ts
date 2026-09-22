@@ -82,6 +82,21 @@ describe("scorePaintDay", () => {
     expect(result.band).toBe("do-not-paint");
   });
 
+  it("does not paint a clear-sky trace red", () => {
+    const result = scorePaintDay({
+      precipProbability: 0,
+      precipMm: 0.3,
+      weatherCode: 0,
+      humidity: 20,
+      tempF: 98,
+      dewPointF: 40,
+      windMph: 6,
+      minTempNext48hF: 70,
+    });
+    expect(result.band).not.toBe("do-not-paint");
+    expect(result.total).toBeGreaterThanOrEqual(30);
+  });
+
   it("does not veto a dry 40% PoP hour", () => {
     const result = scorePaintDay({
       precipProbability: 40,

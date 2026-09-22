@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { formatClock } from "@/lib/paintday/crew-plan";
-import { windowLine } from "@/lib/paintday/format";
+import { mmText, windowLine } from "@/lib/paintday/format";
 import {
   mapDotColors,
   scoreColorHex,
@@ -83,6 +83,12 @@ function scoreCollection(points: MapScorePoint[]) {
           hoursOpen: p.hoursOpen ?? 0,
           amWet: p.amWet ? 1 : 0,
           pmWet: p.pmWet ? 1 : 0,
+          amRainedOut: p.amRainedOut ? 1 : 0,
+          pmRainedOut: p.pmRainedOut ? 1 : 0,
+          rainMm: p.rainMm ?? "",
+          pmRainHour: p.pmRainHour ?? "",
+          pmRainMm: p.pmRainMm ?? "",
+          date: p.date,
         },
         geometry: {
           type: "Point" as const,
@@ -291,6 +297,12 @@ export function PaintDayMap({
           hoursOpen: number;
           amWet: number;
           pmWet: number;
+          amRainedOut: number;
+          pmRainedOut: number;
+          rainMm: number | string;
+          pmRainHour: number | string;
+          pmRainMm: number | string;
+          date: string;
         };
         const score = Number(props.score);
         const start =
@@ -307,27 +319,42 @@ export function PaintDayMap({
             : Number(props.rainHour);
         const amWet = Number(props.amWet) === 1;
         const pmWet = Number(props.pmWet) === 1;
+        const pmOut = Number(props.pmRainedOut) === 1;
         const hoursOpen = Number(props.hoursOpen) || 0;
         const closed = amWet && hoursOpen === 0;
         const drizzlePm = amWet && !pmWet && hoursOpen > 0;
-        const window = !closed ? windowLine(start, wrap, rain) : "";
+        const lightPm = pmWet && !pmOut;
+        const pmHourRaw = props.pmRainHour;
+        const pmHour =
+          pmHourRaw === "" || pmHourRaw == null ? rain : Number(pmHourRaw);
+        const pmMmRaw = props.pmRainMm;
+        const pmMm =
+          pmMmRaw === "" || pmMmRaw == null ? Number(props.rainMm) : Number(pmMmRaw);
+        const amount = mmText(Number.isFinite(pmMm) ? pmMm : null);
+        const window = !closed
+          ? windowLine(start, wrap, rain, lightPm)
+          : "";
         const reason = closed
           ? reasonRef.current("do-not-paint-rain")
           : score < 70
             ? reasonRef.current(String(props.summaryKey ?? ""))
             : "";
         const pop = Math.round(Number(props.precipChance));
-        const rainBit = drizzlePm && rain != null
-          ? `Drizzle ${formatClock(rain)} · window ${pop}%`
-          : rain != null
-            ? `Rain ${formatClock(rain)}`
-            : `Window rain ${pop}%`;
+        const rainBit = pmOut && pmHour != null
+          ? `Rain ${formatClock(pmHour)}${amount ? ` · ${amount}` : ""}`
+          : lightPm && pmHour != null
+            ? `Drizzle ${formatClock(pmHour)}${amount ? ` · ${amount}` : ""}`
+            : drizzlePm && rain != null
+              ? `Drizzle ${formatClock(rain)} · window ${pop}%`
+              : rain != null
+                ? `Rain ${formatClock(rain)}`
+                : `Window rain ${pop}%`;
         const headline = closed
           ? `<span style="color:${esc(props.color)};font-size:15px">Morning rain · day closed</span>`
           : drizzlePm
             ? `<span style="color:${esc(props.color)};font-size:20px;letter-spacing:-0.04em">${esc(score)}</span>
               <div style="margin-top:2px;font:500 11px Geist,system-ui,sans-serif;color:var(--muted-foreground)">AM drizzle · PM open</div>`
-          : pmWet
+          : pmOut
             ? `<span style="color:${esc(props.color)};font-size:20px;letter-spacing:-0.04em">${esc(score)}</span>
               <div style="margin-top:2px;font:500 11px Geist,system-ui,sans-serif;color:var(--muted-foreground)">AM open · PM rain</div>`
             : `<span style="color:${esc(props.color)};font-size:20px;letter-spacing:-0.04em">${esc(score)}</span>`;
@@ -361,7 +388,10 @@ export function PaintDayMap({
       });
       map.on("click", "scores-dots", (e) => {
         const zip = e.features?.[0]?.properties?.zip as string | undefined;
-        if (zip) router.push(`/paintday/${zip}`);
+        const date = e.features?.[0]?.properties?.date as string | undefined;
+        if (zip) {
+          router.push(date ? `/paintday/${zip}?day=${date}` : `/paintday/${zip}`);
+        }
       });
 
       ro = new ResizeObserver(() => map?.resize());

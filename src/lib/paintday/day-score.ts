@@ -1,3 +1,4 @@
+import { isSoakingPrecip } from "./codes";
 import {
   AM_END,
   DAY_END,
@@ -123,10 +124,38 @@ export function scoreDayFromHours(
   };
 }
 
-export type DayHalf = {
-  wet: boolean;
-  score: number;
+export type PrecipWitness = {
+  hour: number;
+  precipMm: number;
+  weatherCode?: number;
 };
+
+export type DayHalf = {
+  /** Any hour in the half is hard precip. */
+  wet: boolean;
+  /** Soaking rain, storm, snow, or ice in this half. */
+  soaked: boolean;
+  rainedOut: boolean;
+  score: number;
+  witness: PrecipWitness | null;
+};
+
+function longestDryRun(slots: HourSlot[]) {
+  let best = 0;
+  let run = 0;
+  let prev = -1;
+  for (const slot of slots) {
+    if (slotIsWet(slot)) {
+      run = 0;
+      prev = slot.hour;
+      continue;
+    }
+    run = prev >= 0 && slot.hour === prev + 1 ? run + 1 : 1;
+    prev = slot.hour;
+    if (run > best) best = run;
+  }
+  return best;
+}
 
 export function scoreDayHalf(
   hours: HourSlot[],
@@ -134,11 +163,48 @@ export function scoreDayHalf(
   hi: number,
   window: ProductWindow = LATEX_WINDOW,
 ): DayHalf {
-  const slots = hours.filter((h) => h.hour >= lo && h.hour <= hi);
-  const wet = slots.some(slotIsWet);
-  if (!slots.length) return { wet: false, score: 0 };
+  const slots = hours
+    .filter((h) => h.hour >= lo && h.hour <= hi)
+    .slice()
+    .sort((a, b) => a.hour - b.hour);
+  const wetSlots = slots.filter(slotIsWet);
+  const wet = wetSlots.length > 0;
+  const soaked = wetSlots.some((slot) =>
+    isSoakingPrecip(slot.snapshot.weatherCode, slot.snapshot.precipMm ?? 0),
+  );
+  const rainedOut = wet && (soaked || longestDryRun(slots) < 2);
+  const first = wetSlots[0];
+  const witness = first
+    ? {
+        hour: first.hour,
+        precipMm: first.snapshot.precipMm ?? 0,
+        weatherCode: first.snapshot.weatherCode,
+      }
+    : null;
+  if (!slots.length) {
+    return { wet: false, soaked: false, rainedOut: false, score: 0, witness: null };
+  }
   const scored = scoreDayFromHours(slots, window);
-  return { wet, score: scored.score.total };
+  return { wet, soaked, rainedOut, score: scored.score.total, witness };
+}
+
+export function precipDayFields(
+  dayHours: HourSlot[],
+  am: DayHalf,
+  pm: DayHalf,
+  rainHour: number | null,
+) {
+  const rainSlot =
+    rainHour == null ? undefined : dayHours.find((h) => h.hour === rainHour);
+  return {
+    amWet: am.wet,
+    pmWet: pm.wet,
+    amRainedOut: am.rainedOut,
+    pmRainedOut: pm.rainedOut,
+    rainMm: rainSlot ? (rainSlot.snapshot.precipMm ?? 0) : null,
+    pmRainHour: pm.witness?.hour ?? null,
+    pmRainMm: pm.witness ? pm.witness.precipMm : null,
+  };
 }
 
 export function morningHalf(hours: HourSlot[], window?: ProductWindow) {

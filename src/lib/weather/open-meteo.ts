@@ -2,6 +2,7 @@ import { DAY_END, DAY_START, buildCrewPlan, type HourSlot } from "@/lib/paintday
 import {
   afternoonHalf,
   morningHalf,
+  precipDayFields,
   scoreDayFromHours,
 } from "@/lib/paintday/day-score";
 import type { ProductWindow } from "@/lib/paintday/product-window";
@@ -183,6 +184,12 @@ function forecastFromJson(
       const day = scoreDayFromHours(dayHours, window);
       const am = morningHalf(dayHours, window);
       const pm = afternoonHalf(dayHours, window);
+      const precip = precipDayFields(
+        dayHours,
+        am,
+        pm,
+        day.crewPlan.rainHour,
+      );
       const blockPoP = day.block.length
         ? Math.round(
             Math.max(
@@ -203,8 +210,13 @@ function forecastFromJson(
         windowPrecipChance: blockPoP,
         amScore: am.score,
         pmScore: pm.score,
-        amWet: am.wet,
-        pmWet: pm.wet,
+        amWet: precip.amWet,
+        pmWet: precip.pmWet,
+        amRainedOut: precip.amRainedOut,
+        pmRainedOut: precip.pmRainedOut,
+        rainMm: precip.rainMm,
+        pmRainHour: precip.pmRainHour,
+        pmRainMm: precip.pmRainMm,
         windowHour: day.representativeHour,
       };
     });

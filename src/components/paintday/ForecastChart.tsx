@@ -12,7 +12,7 @@ import {
   Cell,
 } from "recharts";
 import { formatClock } from "@/lib/paintday/crew-plan";
-import { fitCall, formatWeekday, windowLine } from "@/lib/paintday/format";
+import { fitCall, formatWeekday, mmText, windowLine } from "@/lib/paintday/format";
 import {
   afternoonOpenAfterDrizzle,
   dayDisplayTotal,
@@ -41,8 +41,12 @@ type Row = {
   precip: number;
   rainHour: number | null;
   pmWet: boolean;
+  pmRainedOut: boolean;
+  pmRainHour: number | null;
+  pmRainMm: number | null;
   closed: boolean;
   drizzlePm: boolean;
+  active: boolean;
 };
 
 function Tip({
@@ -62,12 +66,24 @@ function Tip({
       : t.has(`summaries.${d.summaryKey}`)
         ? t(`summaries.${d.summaryKey}` as never)
         : "";
+  const witnessHour = d.pmRainHour ?? d.rainHour;
+  const amount = mmText(d.pmRainMm);
   const rainLine =
-    d.drizzlePm && d.rainHour != null
-      ? t("chartDrizzleAt", { hour: formatClock(d.rainHour), n: d.precip })
-      : d.rainHour != null
-        ? t("chartRainAt", { hour: formatClock(d.rainHour) })
-        : t("chartRain", { n: d.precip });
+    d.pmRainedOut && witnessHour != null
+      ? t("chartRainMm", {
+          hour: formatClock(witnessHour),
+          mm: amount || "—",
+        })
+      : d.pmWet && !d.pmRainedOut && witnessHour != null
+        ? t("chartDrizzleMm", {
+            hour: formatClock(witnessHour),
+            mm: amount || "—",
+          })
+        : d.drizzlePm && d.rainHour != null
+          ? t("chartDrizzleAt", { hour: formatClock(d.rainHour), n: d.precip })
+          : d.rainHour != null
+            ? t("chartRainAt", { hour: formatClock(d.rainHour) })
+            : t("chartRain", { n: d.precip });
   return (
     <div className="max-w-xs rounded-xl border border-border bg-card px-3 py-2 text-xs shadow-lg">
       <p className="text-sm font-medium">{d.weekday}</p>
@@ -78,8 +94,10 @@ function Tip({
         <p className="mt-1 text-destructive">{t("amRainDay")}</p>
       ) : d.drizzlePm ? (
         <p className="mt-1">{t("amDrizzlePmOpen")}</p>
-      ) : d.pmWet ? (
+      ) : d.pmRainedOut ? (
         <p className="mt-1">{t("pmRainSplit")}</p>
+      ) : d.pmWet ? (
+        <p className="mt-1">{t("pmDrizzleNote")}</p>
       ) : null}
       {d.window ? <p className="mt-1">{t("paintWindow", { window: d.window })}</p> : null}
       <p className="mt-1 text-muted-foreground">
@@ -93,15 +111,18 @@ function Tip({
 export function ForecastChart({
   days,
   className,
+  activeDate,
 }: {
   days: DailyWindow[];
   className?: string;
+  activeDate?: string;
 }) {
   const locale = useLocale();
   const data: Row[] = days.map((d) => {
     const closed = dayIsClosed(d);
     const drizzlePm = afternoonOpenAfterDrizzle(d);
     const score = dayDisplayTotal(d) ?? d.score.total;
+    const lightPm = Boolean(d.pmWet) && !d.pmRainedOut;
     return {
       date: d.date.slice(5),
       iso: d.date,
@@ -109,13 +130,19 @@ export function ForecastChart({
       score,
       call: closed ? "NO" : fitCall(score),
       summaryKey: d.score.summaryKey,
-      window: closed ? "" : windowLine(d.startHour, d.wrapHour, d.rainHour),
+      window: closed
+        ? ""
+        : windowLine(d.startHour, d.wrapHour, d.rainHour, lightPm),
       highF: Math.round(d.highF ?? d.snapshot.tempF),
       precip: Math.round(d.windowPrecipChance ?? d.precipChance ?? 0),
       rainHour: d.rainHour ?? null,
       pmWet: Boolean(d.pmWet),
+      pmRainedOut: Boolean(d.pmRainedOut),
+      pmRainHour: d.pmRainHour ?? null,
+      pmRainMm: d.pmRainMm ?? null,
       closed,
       drizzlePm,
+      active: d.date === activeDate,
     };
   });
 
@@ -142,7 +169,12 @@ export function ForecastChart({
           />
           <Bar dataKey="score" radius={[6, 6, 2, 2]}>
             {data.map((d) => (
-              <Cell key={d.iso} fill={colorFor(d.closed ? 15 : d.score)} />
+              <Cell
+                key={d.iso}
+                fill={colorFor(d.closed ? 15 : d.score)}
+                stroke={d.active ? "var(--foreground)" : "transparent"}
+                strokeWidth={d.active ? 2 : 0}
+              />
             ))}
           </Bar>
         </BarChart>

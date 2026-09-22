@@ -16,6 +16,13 @@ export type DailyWindow = {
   pmScore?: number;
   amWet?: boolean;
   pmWet?: boolean;
+  /** Half has soaking precip, or no 2-hour dry stretch. */
+  amRainedOut?: boolean;
+  pmRainedOut?: boolean;
+  /** Millimeters at `rainHour`, when that hour exists. */
+  rainMm?: number | null;
+  pmRainHour?: number | null;
+  pmRainMm?: number | null;
   /** Clock hour of the snapshot that produced `score` (paint-window bottleneck). */
   windowHour?: number;
 };

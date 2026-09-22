@@ -17,7 +17,7 @@
  * Weather fetching lives in `lib/weather`.
  */
 
-import { precipKind } from "./codes";
+import { isHardPrecip, precipKind } from "./codes";
 import type { ProductWindow } from "./product-window";
 import { LATEX_WINDOW } from "./product-window";
 
@@ -260,8 +260,7 @@ export function scorePaintDay(
 
   const mm = input.precipMm ?? 0;
   const spread = input.tempF - input.dewPointF;
-  const kind = precipKind(input.weatherCode);
-  const raining = kind === "storm" || kind === "snow" || mm >= 0.2;
+  const raining = isHardPrecip(input.weatherCode, mm);
 
   // Red / do-not-paint is precipitation only. Humidity, dew, wind, and
   // freeze make the hour WAIT, never NO.
