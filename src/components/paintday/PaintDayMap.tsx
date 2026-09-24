@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { formatClock } from "@/lib/paintday/crew-plan";
@@ -126,9 +125,16 @@ function ensureIcons(
 export function PaintDayMap({
   points,
   summaries,
+  onOpen,
 }: {
   points: MapScorePoint[];
   summaries: Record<string, string>;
+  onOpen: (city: {
+    zip: string;
+    date: string;
+    city: string;
+    state: string;
+  }) => void;
 }) {
   const el = useRef<HTMLDivElement>(null);
   const mapRef = useRef<import("maplibre-gl").Map | undefined>(undefined);
@@ -136,7 +142,8 @@ export function PaintDayMap({
   pointsRef.current = points;
   const reasonRef = useRef<(key: string) => string>(() => "");
   reasonRef.current = (key: string) => (key ? (summaries[key] ?? "") : "");
-  const router = useRouter();
+  const onOpenRef = useRef(onOpen);
+  onOpenRef.current = onOpen;
   const { resolvedTheme } = useTheme();
   const dark = resolvedTheme !== "light";
 
@@ -387,11 +394,16 @@ export function PaintDayMap({
         popup?.remove();
       });
       map.on("click", "scores-dots", (e) => {
-        const zip = e.features?.[0]?.properties?.zip as string | undefined;
-        const date = e.features?.[0]?.properties?.date as string | undefined;
-        if (zip) {
-          router.push(date ? `/paintday/${zip}?day=${date}` : `/paintday/${zip}`);
-        }
+        const props = e.features?.[0]?.properties;
+        const zip = props?.zip as string | undefined;
+        if (!zip) return;
+        popup?.remove();
+        onOpenRef.current({
+          zip,
+          date: String(props?.date ?? ""),
+          city: String(props?.city ?? ""),
+          state: String(props?.state ?? ""),
+        });
       });
 
       ro = new ResizeObserver(() => map?.resize());
@@ -405,7 +417,7 @@ export function PaintDayMap({
       popup?.remove();
       map?.remove();
     };
-  }, [dark, router]);
+  }, [dark]);
 
   return (
     <div className="relative overflow-hidden rounded-2xl border border-border">

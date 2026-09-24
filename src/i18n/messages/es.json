@@ -95,6 +95,8 @@
     "searchLabel": "ZIP o ciudad",
     "searchPlaceholder": "ZIP o ciudad en EE. UU.",
     "searchCta": "Ver clima",
+    "close": "Cerrar",
+    "loadingForecast": "Cargando el pronóstico…",
     "mapLegend": "Puntaje PaintDay",
     "scoreLabel": "Mejor ventana",
     "today": "Hoy",

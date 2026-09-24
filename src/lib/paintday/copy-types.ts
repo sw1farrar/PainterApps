@@ -27,6 +27,9 @@ export type HomeMapCopy = {
   mapHeading: string;
   mapPrevDay: string;
   mapNextDay: string;
+  close: string;
+  loadingForecast: string;
+  forecastMiss: string;
   zip: ZipSearchCopy;
   summaries: Record<string, string>;
 };

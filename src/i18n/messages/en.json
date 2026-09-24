@@ -95,6 +95,8 @@
     "searchLabel": "ZIP or city",
     "searchPlaceholder": "ZIP or city in the US",
     "searchCta": "Check weather",
+    "close": "Close",
+    "loadingForecast": "Pulling the forecast…",
     "mapLegend": "PaintDay score",
     "scoreLabel": "Best window fit",
     "today": "Today",

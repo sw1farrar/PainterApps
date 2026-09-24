@@ -45,6 +45,9 @@ export async function homeMapCopy(): Promise<HomeMapCopy> {
     mapHeading: landing("mapHeading"),
     mapPrevDay: landing("mapPrevDay"),
     mapNextDay: landing("mapNextDay"),
+    close: paintday("close"),
+    loadingForecast: paintday("loadingForecast"),
+    forecastMiss: paintday("notFound"),
     zip: {
       searchLabel: paintday("searchLabel"),
       searchPlaceholder: paintday("searchPlaceholder"),

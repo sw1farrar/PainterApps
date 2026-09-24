@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { MapCityEnvelope } from "@/components/paintday/MapCityEnvelope";
 import { ZipSearch } from "@/components/paintday/ZipSearch";
 import { PaintDayMap } from "@/components/paintday/PaintDayMap";
 import type { HomeMapCopy } from "@/lib/paintday/copy-types";
@@ -24,6 +25,12 @@ export function HomeMapBoard({
   copy: HomeMapCopy;
 }) {
   const [day, setDay] = useState(0);
+  const [open, setOpen] = useState<{
+    zip: string;
+    date: string;
+    city: string;
+    state: string;
+  } | null>(null);
   const last = Math.max(0, board.dates.length - 1);
   const labels = useMemo(
     () =>
@@ -104,8 +111,24 @@ export function HomeMapBoard({
         </div>
       </div>
       <div className="mt-4">
-        <PaintDayMap points={points} summaries={copy.summaries} />
+        <PaintDayMap
+          points={points}
+          summaries={copy.summaries}
+          onOpen={setOpen}
+        />
       </div>
+      {open ? (
+        <MapCityEnvelope
+          zip={open.zip}
+          date={open.date}
+          city={open.city}
+          state={open.state}
+          closeLabel={copy.close}
+          loadingLabel={copy.loadingForecast}
+          missLabel={copy.forecastMiss}
+          onClose={() => setOpen(null)}
+        />
+      ) : null}
     </>
   );
 }
