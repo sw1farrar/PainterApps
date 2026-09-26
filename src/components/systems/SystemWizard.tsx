@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { CanImage } from "@/components/systems/CanImage";
+import { QualityMark } from "@/components/systems/QualityMark";
+import { qualityIndex, type ApplicationClass } from "@/lib/systems/quality";
 import { ProductEnvelope } from "@/components/systems/SystemEnvelope";
 import type { Catalog } from "@/lib/systems/corpus-catalog";
 import {
@@ -168,6 +170,8 @@ export function SystemWizard({
   const narrowed =
     apps.length + subs.length + sheens.length + mfrs.length > 0 || voc;
   const listCount = results.length;
+  const grouped =
+    new Set(results.map((row) => qualityIndex(row.product).applicationClass)).size > 1;
 
   useEffect(() => {
     if (!openCoat) return;
@@ -354,16 +358,27 @@ export function SystemWizard({
         <p className="text-sm text-muted-foreground">{t("noResults")}</p>
       ) : (
         <ul className="divide-y divide-border rounded-xl border border-border">
-          {results.map((c) => (
-            <li key={c.product.id}>
-              <ProductRow
-                product={c.product}
-                manufacturer={c.manufacturer}
-                units={units}
-                onOpen={() => showProduct(c.product, c.manufacturer)}
-              />
-            </li>
-          ))}
+          {results.map((c, index) => {
+            const application = qualityIndex(c.product).applicationClass;
+            const previous =
+              index > 0 ? qualityIndex(results[index - 1].product).applicationClass : null;
+            const showClass = grouped && application !== previous;
+            return (
+              <li key={c.product.id}>
+                {showClass ? (
+                  <p className="bg-muted/40 px-3 py-1.5 text-[10px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
+                    {t(`qualityClasses.${application as ApplicationClass}`)}
+                  </p>
+                ) : null}
+                <ProductRow
+                  product={c.product}
+                  manufacturer={c.manufacturer}
+                  units={units}
+                  onOpen={() => showProduct(c.product, c.manufacturer)}
+                />
+              </li>
+            );
+          })}
         </ul>
       )}
 
@@ -413,9 +428,14 @@ function ProductRow({
           {product.sku ? ` · ${product.sku}` : ""}
         </span>
       </span>
-      <span className="shrink-0 text-xs text-muted-foreground">
-        {formatTempRange(product.minTempF, product.maxTempF, units)}
-        <span className="ml-3 underline underline-offset-4">{t("open")}</span>
+      <span className="flex shrink-0 items-center gap-3">
+        <QualityMark product={product} />
+        <span className="text-xs text-muted-foreground">
+          <span className="hidden sm:inline">
+            {formatTempRange(product.minTempF, product.maxTempF, units)}
+          </span>
+          <span className="underline underline-offset-4 sm:ml-3">{t("open")}</span>
+        </span>
       </span>
     </button>
   );

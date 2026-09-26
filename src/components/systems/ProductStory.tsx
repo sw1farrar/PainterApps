@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { EnvelopeSheet } from "@/components/systems/EnvelopeSheet";
+import { QualityMark } from "@/components/systems/QualityMark";
 import { formatTempRange, type UnitSystem } from "@/lib/units";
 import type { TdsProduct } from "@/lib/systems/types";
 
@@ -111,6 +112,7 @@ export function ProductStory({
 
   return (
     <div className="space-y-6">
+      <QualityMark product={product} variant="detail" />
       {hideTitle ? (
         story ? (
           <p className="text-sm leading-relaxed">{story}</p>

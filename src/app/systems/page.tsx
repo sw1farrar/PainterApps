@@ -20,6 +20,7 @@ export default async function SystemsPage() {
   return (
     <div className="mx-auto w-full min-w-0 max-w-5xl px-4 py-4">
       <h1 className="text-lg font-semibold tracking-tight">{t("title")}</h1>
+      <p className="mt-1 max-w-2xl text-sm text-muted-foreground">{t("qualityHint")}</p>
       <div className="mt-3">
         <SystemWizard signedIn={signedIn} units={units} jobs={jobs} />
       </div>

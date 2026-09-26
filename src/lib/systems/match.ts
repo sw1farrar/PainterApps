@@ -1,4 +1,5 @@
 import { CORPUS_CATALOG, type Catalog } from "@/lib/systems/corpus-catalog";
+import { compareByQuality } from "@/lib/systems/quality";
 import type {
   ApplicationType,
   CoatRole,
@@ -140,11 +141,7 @@ export function matchProducts(
     results.push({ product, manufacturer });
   }
 
-  return results.sort((a, b) => {
-    const brand = a.manufacturer.name.localeCompare(b.manufacturer.name);
-    if (brand) return brand;
-    return a.product.name.localeCompare(b.product.name);
-  });
+  return results.sort((a, b) => compareByQuality(a.product, b.product));
 }
 
 /**
