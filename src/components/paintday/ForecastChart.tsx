@@ -17,6 +17,8 @@ import {
   afternoonOpenAfterDrizzle,
   dayDisplayTotal,
   dayIsClosed,
+  morningWasSoaking,
+  windowStartsAfterRain,
 } from "@/lib/paintday/today";
 import { cn } from "@/lib/utils";
 import type { DailyWindow } from "@/lib/weather/types";
@@ -46,6 +48,7 @@ type Row = {
   pmRainMm: number | null;
   closed: boolean;
   drizzlePm: boolean;
+  rainCleared: boolean;
   active: boolean;
 };
 
@@ -61,7 +64,7 @@ function Tip({
   const d = payload[0].payload;
   const summary = d.closed
     ? t("summaries.do-not-paint-rain")
-    : d.drizzlePm
+    : d.drizzlePm || d.rainCleared
       ? ""
       : t.has(`summaries.${d.summaryKey}`)
         ? t(`summaries.${d.summaryKey}` as never)
@@ -79,8 +82,10 @@ function Tip({
             hour: formatClock(witnessHour),
             mm: amount || "—",
           })
-        : d.drizzlePm && d.rainHour != null
-          ? t("chartDrizzleAt", { hour: formatClock(d.rainHour), n: d.precip })
+        : (d.drizzlePm || d.rainCleared) && d.rainHour != null
+          ? d.rainCleared
+            ? t("chartRainAt", { hour: formatClock(d.rainHour) })
+            : t("chartDrizzleAt", { hour: formatClock(d.rainHour), n: d.precip })
           : d.rainHour != null
             ? t("chartRainAt", { hour: formatClock(d.rainHour) })
             : t("chartRain", { n: d.precip });
@@ -92,6 +97,8 @@ function Tip({
       </p>
       {d.closed ? (
         <p className="mt-1 text-destructive">{t("amRainDay")}</p>
+      ) : d.rainCleared ? (
+        <p className="mt-1">{t("amRainPmOpen")}</p>
       ) : d.drizzlePm ? (
         <p className="mt-1">{t("amDrizzlePmOpen")}</p>
       ) : d.pmRainedOut ? (
@@ -121,6 +128,8 @@ export function ForecastChart({
   const data: Row[] = days.map((d) => {
     const closed = dayIsClosed(d);
     const drizzlePm = afternoonOpenAfterDrizzle(d);
+    const afterRain = windowStartsAfterRain(d) || drizzlePm;
+    const rainCleared = afterRain && morningWasSoaking(d);
     const score = dayDisplayTotal(d) ?? d.score.total;
     const lightPm = Boolean(d.pmWet) && !d.pmRainedOut;
     return {
@@ -132,7 +141,7 @@ export function ForecastChart({
       summaryKey: d.score.summaryKey,
       window: closed
         ? ""
-        : windowLine(d.startHour, d.wrapHour, d.rainHour, lightPm),
+        : windowLine(d.startHour, d.wrapHour, d.rainHour, lightPm, rainCleared),
       highF: Math.round(d.highF ?? d.snapshot.tempF),
       precip: Math.round(d.windowPrecipChance ?? d.precipChance ?? 0),
       rainHour: d.rainHour ?? null,
@@ -141,7 +150,8 @@ export function ForecastChart({
       pmRainHour: d.pmRainHour ?? null,
       pmRainMm: d.pmRainMm ?? null,
       closed,
-      drizzlePm,
+      drizzlePm: drizzlePm && !rainCleared,
+      rainCleared,
       active: d.date === activeDate,
     };
   });

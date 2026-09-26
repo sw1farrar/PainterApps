@@ -96,14 +96,36 @@ describe("crew plan", () => {
     expect(plan.secondCoat).toBe(true);
   });
 
-  it("keeps soaking morning rain closed even if afternoon dries", () => {
+  it("opens the afternoon after soaking morning rain clears", () => {
     const slots = [
-      slot(8, 1.2, 80, 61),
+      slot(8, 10.8, 90, 65),
       slot(9, 0.8, 70, 61),
       ...[13, 14, 15, 16, 17, 18].map((h) => slot(h)),
     ];
     const plan = buildCrewPlan(slots);
     expect(plan.rainHour).toBe(8);
+    expect(plan.startHour).toBe(13);
+    expect(plan.wrapHour).toBe(18);
+    expect(plan.hoursOpen).toBe(6);
+  });
+
+  it("opens the hours after rain that runs into the afternoon and then stops", () => {
+    const slots = [
+      ...[7, 8, 9, 10, 11, 12, 13].map((h) => slot(h, 2, 80, 63)),
+      ...[14, 15, 16, 17, 18].map((h) => slot(h)),
+    ];
+    const plan = buildCrewPlan(slots);
+    expect(plan.rainHour).toBe(7);
+    expect(plan.startHour).toBe(14);
+    expect(plan.wrapHour).toBe(18);
+    expect(plan.hoursOpen).toBe(5);
+  });
+
+  it("stays closed when rain lasts through the work day", () => {
+    const slots = [7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18].map((h) =>
+      slot(h, 1.5, 80, 63),
+    );
+    const plan = buildCrewPlan(slots);
     expect(plan.hoursOpen).toBe(0);
     expect(plan.startHour).toBeNull();
   });

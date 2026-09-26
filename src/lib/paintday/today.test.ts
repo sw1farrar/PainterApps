@@ -4,6 +4,7 @@ import {
   DRIZZLE_CAUTION_CAP,
   dayDisplayTotal,
   dayFitTotal,
+  dayIsClosed,
   forecastDayForNow,
   localIsoDate,
 } from "./today";
@@ -43,5 +44,20 @@ describe("forecastDayForNow", () => {
     const forecast = { timezone: "UTC", days: [day] } as Forecast;
     expect(dayDisplayTotal(day)).toBe(DRIZZLE_CAUTION_CAP);
     expect(dayFitTotal(forecast)).toBe(DRIZZLE_CAUTION_CAP);
+  });
+
+  it("caps a cleared downpour at orange instead of closing the day", () => {
+    const day = {
+      score: { total: 91 },
+      amWet: true,
+      pmWet: false,
+      amRainedOut: true,
+      hoursOpen: 6,
+      rainHour: 8,
+      startHour: 13,
+      rainMm: 10.8,
+    };
+    expect(dayIsClosed(day)).toBe(false);
+    expect(dayDisplayTotal(day)).toBe(DRIZZLE_CAUTION_CAP);
   });
 });

@@ -14,7 +14,7 @@ export function forecastDayForNow(forecast: Forecast): DailyWindow | undefined {
   return forecast.days.find((d) => d.date === iso) ?? forecast.days[0];
 }
 
-/** Soaking AM rain with no remaining window. Light AM drizzle with hoursOpen > 0 stays open. */
+/** Morning rain and no hours left. A later dry window stays open. */
 export function dayIsClosed(
   day?: { amWet?: boolean; hoursOpen?: number } | null,
 ) {
@@ -28,6 +28,29 @@ export function afternoonOpenAfterDrizzle(
   return Boolean(day?.amWet) && !day?.pmWet && (day?.hoursOpen ?? 0) > 0;
 }
 
+/** The work window starts after precip has already fallen. */
+export function windowStartsAfterRain(
+  day?: {
+    rainHour?: number | null;
+    startHour?: number | null;
+    hoursOpen?: number;
+  } | null,
+) {
+  return (
+    day?.rainHour != null &&
+    day.startHour != null &&
+    day.rainHour < day.startHour &&
+    (day.hoursOpen ?? 0) > 0
+  );
+}
+
+/** Morning water was real rain (soaked the half or ≥1 mm), not light drizzle. */
+export function morningWasSoaking(
+  day?: { amRainedOut?: boolean; rainMm?: number | null } | null,
+) {
+  return Boolean(day?.amRainedOut) || (day?.rainMm ?? 0) >= 1;
+}
+
 export const AM_RAIN_CLOSED_CAP = 22;
 /** Orange WAIT — morning drizzle is not a green GO day. */
 export const DRIZZLE_CAUTION_CAP = 40;
@@ -36,19 +59,26 @@ type DayScoreInput = {
   amWet?: boolean;
   pmWet?: boolean;
   hoursOpen?: number;
+  rainHour?: number | null;
+  startHour?: number | null;
   score?: { total: number };
 } | null;
 
-/** Displayed day-fit: closed rain stays red, AM drizzle is capped orange. */
+/**
+ * Displayed day-fit. No hours left stays red.
+ * A window that opens after rain — drizzle or a downpour that cleared — is orange, not green and not solid red.
+ */
 export function dayDisplayTotal(day?: DayScoreInput) {
   const total = day?.score?.total;
   if (total == null) return null;
   if (dayIsClosed(day)) return Math.min(total, AM_RAIN_CLOSED_CAP);
-  if (afternoonOpenAfterDrizzle(day)) return Math.min(total, DRIZZLE_CAUTION_CAP);
+  if (windowStartsAfterRain(day) || afternoonOpenAfterDrizzle(day)) {
+    return Math.min(total, DRIZZLE_CAUTION_CAP);
+  }
   return total;
 }
 
-/** Day-fit total used on the map, ZIP hero, and portal — soaking AM rain closes the day. */
+/** Day-fit total used on the map, ZIP hero, and portal. */
 export function dayFitTotal(forecast: Forecast) {
   const day = forecastDayForNow(forecast);
   if (!day) return null;

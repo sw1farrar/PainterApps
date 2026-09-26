@@ -6,6 +6,7 @@ import {
   WEATHER_REVALIDATE_SECONDS,
   weatherCacheBucket,
 } from "@/lib/weather/cache";
+import { PM_START } from "./crew-plan";
 
 export const RAIN_RED = "#ef4444";
 
@@ -18,10 +19,11 @@ export function scoreColorHex(score: number) {
 }
 
 /**
- * Map glyph. Red is a rain-out, not a single light hour.
- * Soaking morning, or no hours left: solid red.
+ * Map glyph. Red is a rain-out with no paint window left.
+ * No hours left: solid red.
  * Morning precip with an open afternoon: left red, right the afternoon score.
- * Afternoon rained out: left the morning score, right red.
+ * Afternoon rained out, morning window: left the morning score, right red.
+ * Rain that clears and still leaves a work window: split toward that window.
  * Late light drizzle does not paint the afternoon red.
  */
 export function mapDotColors(point: {
@@ -33,27 +35,42 @@ export function mapDotColors(point: {
   pmScore?: number;
   score: number;
   hoursOpen?: number;
+  startHour?: number | null;
 }) {
   const hoursOpen = point.hoursOpen ?? 0;
   const amOut = point.amRainedOut ?? Boolean(point.amWet && hoursOpen === 0);
   const pmOut = point.pmRainedOut ?? Boolean(point.pmWet);
-  if (amOut && (pmOut || hoursOpen === 0)) {
+  const morningBad = Boolean(point.amWet) || amOut;
+
+  if (hoursOpen === 0 && (morningBad || pmOut)) {
     return { left: RAIN_RED, right: RAIN_RED, split: false };
   }
-  if (point.amWet && hoursOpen === 0) {
+  if (morningBad && pmOut && hoursOpen < 2) {
     return { left: RAIN_RED, right: RAIN_RED, split: false };
   }
-  if (point.amWet && pmOut) {
-    return { left: RAIN_RED, right: RAIN_RED, split: false };
-  }
-  if (point.amWet && !pmOut) {
+  if (morningBad && !pmOut) {
     return {
       left: RAIN_RED,
       right: scoreColorHex(point.pmScore || point.score),
       split: true,
     };
   }
-  if (pmOut) {
+  if (pmOut && !morningBad) {
+    return {
+      left: scoreColorHex(point.amScore || point.score),
+      right: RAIN_RED,
+      split: true,
+    };
+  }
+  if (morningBad && pmOut) {
+    const afternoonWindow = (point.startHour ?? -1) >= PM_START;
+    if (afternoonWindow) {
+      return {
+        left: RAIN_RED,
+        right: scoreColorHex(point.pmScore || point.score),
+        split: true,
+      };
+    }
     return {
       left: scoreColorHex(point.amScore || point.score),
       right: RAIN_RED,
@@ -200,7 +217,7 @@ async function loadMapBoard(): Promise<MapBoard> {
 
 const loadMapBoardCached = unstable_cache(
   async (_bucket: number) => loadMapBoard(),
-  ["paintday-map-v6"],
+  ["paintday-map-v7"],
   { revalidate: WEATHER_REVALIDATE_SECONDS },
 );
 

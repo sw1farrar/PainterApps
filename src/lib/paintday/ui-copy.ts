@@ -58,6 +58,8 @@ export async function homeMapCopy(): Promise<HomeMapCopy> {
       "excellent-exterior": paintday("summaries.excellent-exterior"),
       "good-exterior": paintday("summaries.good-exterior"),
       "risky-rain": paintday("summaries.risky-rain"),
+      "risky-drizzle": paintday("summaries.risky-drizzle"),
+      "risky-am-rain": paintday("summaries.risky-am-rain"),
       "risky-humidity": paintday("summaries.risky-humidity"),
       "risky-temp": paintday("summaries.risky-temp"),
       "risky-dew": paintday("summaries.risky-dew"),

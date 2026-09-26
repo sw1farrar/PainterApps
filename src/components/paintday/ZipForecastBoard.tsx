@@ -24,6 +24,8 @@ import {
   dayIsClosed,
   forecastDayForNow,
   localIsoDate,
+  morningWasSoaking,
+  windowStartsAfterRain,
 } from "@/lib/paintday/today";
 import {
   weatherBugDetailsUrl,
@@ -71,6 +73,8 @@ export function ZipForecastBoard({
     (dayQuery && forecast.days.find((d) => d.date === dayQuery)) || today;
   const closedDay = dayIsClosed(day);
   const drizzleDay = afternoonOpenAfterDrizzle(day);
+  const afterRain = windowStartsAfterRain(day) || drizzleDay;
+  const rainCleared = afterRain && morningWasSoaking(day);
   const rawScore = day?.score ?? forecast.currentScore;
   const shownTotal = dayDisplayTotal(day) ?? rawScore.total;
   const score = closedDay
@@ -80,12 +84,12 @@ export function ZipForecastBoard({
         band: "do-not-paint" as const,
         summaryKey: "do-not-paint-rain",
       }
-    : drizzleDay
+    : afterRain
       ? {
           ...rawScore,
           total: shownTotal,
           band: bandForScore(shownTotal),
-          summaryKey: "risky-drizzle",
+          summaryKey: rainCleared ? "risky-am-rain" : "risky-drizzle",
         }
       : rawScore;
   const snap = day?.snapshot ?? forecast.current;
@@ -115,6 +119,7 @@ export function ZipForecastBoard({
         day?.wrapHour ?? forecast.crewPlan.wrapHour,
         day?.rainHour ?? forecast.crewPlan.rainHour,
         lightPm,
+        rainCleared,
       );
   const witnessMm = mmText(day?.pmRainMm ?? day?.rainMm);
   const selectedIso = day?.date ?? todayIso;
@@ -208,7 +213,7 @@ export function ZipForecastBoard({
                 {t(`factor.${f.id}` as never)}
               </p>
               <p className="truncate text-sm font-semibold tabular-nums">
-                {f.id === "precip" && witnessMm
+                {f.id === "precip" && closed && witnessMm
                   ? witnessMm
                   : formatFactorValue(f.id, snap, units)}
               </p>

@@ -326,10 +326,18 @@ export function PaintDayMap({
             : Number(props.rainHour);
         const amWet = Number(props.amWet) === 1;
         const pmWet = Number(props.pmWet) === 1;
+        const amOut = Number(props.amRainedOut) === 1;
         const pmOut = Number(props.pmRainedOut) === 1;
         const hoursOpen = Number(props.hoursOpen) || 0;
         const closed = amWet && hoursOpen === 0;
-        const drizzlePm = amWet && !pmWet && hoursOpen > 0;
+        const drizzlePm = amWet && !pmWet && !amOut && hoursOpen > 0;
+        const rainCleared =
+          !closed &&
+          amOut &&
+          rain != null &&
+          start != null &&
+          rain < start &&
+          hoursOpen > 0;
         const lightPm = pmWet && !pmOut;
         const pmHourRaw = props.pmRainHour;
         const pmHour =
@@ -339,7 +347,7 @@ export function PaintDayMap({
           pmMmRaw === "" || pmMmRaw == null ? Number(props.rainMm) : Number(pmMmRaw);
         const amount = mmText(Number.isFinite(pmMm) ? pmMm : null);
         const window = !closed
-          ? windowLine(start, wrap, rain, lightPm)
+          ? windowLine(start, wrap, rain, lightPm, rainCleared)
           : "";
         const reason = closed
           ? reasonRef.current("do-not-paint-rain")
@@ -351,6 +359,8 @@ export function PaintDayMap({
           ? `Rain ${formatClock(pmHour)}${amount ? ` · ${amount}` : ""}`
           : lightPm && pmHour != null
             ? `Drizzle ${formatClock(pmHour)}${amount ? ` · ${amount}` : ""}`
+            : rainCleared && rain != null
+              ? `Rain ${formatClock(rain)} · window ${pop}%`
             : drizzlePm && rain != null
               ? `Drizzle ${formatClock(rain)} · window ${pop}%`
               : rain != null
@@ -358,6 +368,9 @@ export function PaintDayMap({
                 : `Window rain ${pop}%`;
         const headline = closed
           ? `<span style="color:${esc(props.color)};font-size:15px">Morning rain · day closed</span>`
+          : rainCleared
+            ? `<span style="color:${esc(props.color)};font-size:20px;letter-spacing:-0.04em">${esc(score)}</span>
+              <div style="margin-top:2px;font:500 11px Geist,system-ui,sans-serif;color:var(--muted-foreground)">AM rain · PM open</div>`
           : drizzlePm
             ? `<span style="color:${esc(props.color)};font-size:20px;letter-spacing:-0.04em">${esc(score)}</span>
               <div style="margin-top:2px;font:500 11px Geist,system-ui,sans-serif;color:var(--muted-foreground)">AM drizzle · PM open</div>`
@@ -459,7 +472,7 @@ export function PaintDayMap({
                   "linear-gradient(90deg, #ef4444 0 50%, #14b8a6 50% 100%)",
               }}
             />
-            AM drizzle | PM
+            AM rain | PM
           </span>
           <span className="inline-flex items-center gap-1">
             <i

@@ -1,4 +1,4 @@
-import { isHardPrecip, isSoakingPrecip } from "./codes";
+import { isHardPrecip } from "./codes";
 import type { ProductWindow } from "./product-window";
 import { LATEX_WINDOW } from "./product-window";
 import type { PaintDayScore, WeatherSnapshot } from "./score";
@@ -92,13 +92,8 @@ function openUntilRain(
   );
 }
 
-function amIsSoaking(today: HourSlot[]) {
-  return today.some(
-    (s) =>
-      s.hour <= AM_END &&
-      slotIsWet(s) &&
-      isSoakingPrecip(s.snapshot.weatherCode, s.snapshot.precipMm ?? 0),
-  );
+function betterPlan(best: CrewPlan, next: CrewPlan) {
+  return next.hoursOpen > best.hoursOpen ? next : best;
 }
 
 export function buildCrewPlan(
@@ -115,20 +110,40 @@ export function buildCrewPlan(
     rainHour,
   );
   if (before.hoursOpen >= RECOAT_HOURS || rainHour == null) return before;
-  if (amIsSoaking(today)) return before;
 
+  let best = before;
+
+  // Morning precip, drizzle or soaking, does not close a dry afternoon.
+  // Resume at 1pm so the damp late morning is not the paint window.
   const lastAmWet = [...today]
     .reverse()
     .find((s) => s.hour <= AM_END && slotIsWet(s));
-  if (!lastAmWet) return before;
+  if (lastAmWet) {
+    const resumeHour = Math.max(lastAmWet.hour + 1, PM_START, startFloor);
+    const nextRain = today.find((s) => s.hour >= resumeHour && slotIsWet(s));
+    best = betterPlan(
+      best,
+      planFromOpen(
+        openUntilRain(today, resumeHour, nextRain?.hour ?? null, window),
+        rainHour,
+      ),
+    );
+  }
 
-  const resumeHour = Math.max(lastAmWet.hour + 1, PM_START);
-  const nextRain = today.find((s) => s.hour >= resumeHour && slotIsWet(s));
-  const after = planFromOpen(
-    openUntilRain(today, resumeHour, nextRain?.hour ?? null, window),
-    rainHour,
-  );
-  return after.hoursOpen > before.hoursOpen ? after : before;
+  // Rain that runs past noon and then stops. Hours after the last wet
+  // hour are open when they outlast the pre-rain window.
+  const lastWet = [...today].reverse().find(slotIsWet);
+  if (lastWet && lastWet.hour < DAY_END) {
+    const resumeHour = Math.max(lastWet.hour + 1, startFloor);
+    if (resumeHour >= PM_START && resumeHour <= DAY_END) {
+      best = betterPlan(
+        best,
+        planFromOpen(openUntilRain(today, resumeHour, null, window), rainHour),
+      );
+    }
+  }
+
+  return best;
 }
 
 export function formatClock(hour: number) {

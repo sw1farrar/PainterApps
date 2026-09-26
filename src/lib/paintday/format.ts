@@ -30,6 +30,7 @@ export function windowLine(
   wrapHour: number | null | undefined,
   rainHour: number | null | undefined,
   light = false,
+  soakingBefore = false,
 ): string {
   if (startHour == null || wrapHour == null) {
     if (rainHour == null) return "";
@@ -40,7 +41,8 @@ export function windowLine(
   const paint = `${formatClock(startHour)}–${formatClock(wrapHour)}`;
   if (rainHour == null) return paint;
   if (rainHour < startHour) {
-    return `${paint} · after ${formatClock(rainHour)} drizzle`;
+    const kind = soakingBefore ? "rain" : "drizzle";
+    return `${paint} · after ${formatClock(rainHour)} ${kind}`;
   }
   if (light) return `${paint} · drizzle ${formatClock(rainHour)}`;
   return `${paint} · rain ${formatClock(rainHour)}`;
