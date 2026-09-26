@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import {
   Bar,
@@ -12,7 +13,13 @@ import {
   Cell,
 } from "recharts";
 import { formatClock } from "@/lib/paintday/crew-plan";
-import { fitCall, formatWeekday, mmText, windowLine } from "@/lib/paintday/format";
+import {
+  fitCall,
+  formatDow,
+  formatWeekday,
+  mmText,
+  windowLine,
+} from "@/lib/paintday/format";
 import {
   afternoonOpenAfterDrizzle,
   dayDisplayTotal,
@@ -31,8 +38,40 @@ function colorFor(score: number) {
   return "#ef4444";
 }
 
+function DayTick({
+  x = 0,
+  y = 0,
+  date,
+  dow,
+}: {
+  x?: number;
+  y?: number;
+  date?: string;
+  dow?: string;
+}) {
+  return (
+    <text
+      x={x}
+      y={y}
+      textAnchor="middle"
+      fill="var(--muted-foreground)"
+      fontSize={11}
+    >
+      <tspan x={x} dy={11}>
+        {dow}
+      </tspan>
+      {date ? (
+        <tspan x={x} dy={12}>
+          {date}
+        </tspan>
+      ) : null}
+    </text>
+  );
+}
+
 type Row = {
   date: string;
+  dow: string;
   iso: string;
   weekday: string;
   score: number;
@@ -125,6 +164,18 @@ export function ForecastChart({
   activeDate?: string;
 }) {
   const locale = useLocale();
+  const frame = useRef<HTMLDivElement>(null);
+  const [width, setWidth] = useState(800);
+  const showDate = width >= 680;
+  useEffect(() => {
+    const el = frame.current;
+    if (!el) return;
+    const apply = () => setWidth(el.clientWidth);
+    apply();
+    const observer = new ResizeObserver(apply);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
   const data: Row[] = days.map((d) => {
     const closed = dayIsClosed(d);
     const drizzlePm = afternoonOpenAfterDrizzle(d);
@@ -134,6 +185,7 @@ export function ForecastChart({
     const lightPm = Boolean(d.pmWet) && !d.pmRainedOut;
     return {
       date: d.date.slice(5),
+      dow: formatDow(d.date, locale),
       iso: d.date,
       weekday: formatWeekday(d.date, locale),
       score,
@@ -157,15 +209,24 @@ export function ForecastChart({
   });
 
   return (
-    <div className={cn("h-56 w-full min-w-0 max-w-full", className)}>
+    <div ref={frame} className={cn("h-56 w-full min-w-0 max-w-full", className)}>
       <ResponsiveContainer width="100%" height="100%">
-        <BarChart data={data} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
+        <BarChart data={data} margin={{ top: 4, right: 4, left: -20, bottom: 8 }}>
           <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
           <XAxis
             dataKey="date"
-            tick={{ fontSize: 11, fill: "var(--muted-foreground)" }}
+            interval={0}
+            height={showDate ? 32 : 18}
             axisLine={false}
             tickLine={false}
+            tick={(props) => (
+              <DayTick
+                x={props.x}
+                y={props.y}
+                date={showDate ? props.payload?.value : undefined}
+                dow={data.find((row) => row.date === props.payload?.value)?.dow}
+              />
+            )}
           />
           <YAxis
             domain={[0, 100]}

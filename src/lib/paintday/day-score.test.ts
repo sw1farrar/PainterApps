@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { scorePaintDay } from "./score";
 import type { HourSlot } from "./crew-plan";
-import { windowLine } from "./format";
+import { formatDow, windowLine } from "./format";
 import { RAIN_RED, mapDotColors } from "./map-scores";
 import { afternoonHalf, morningHalf, scoreDayFromHours } from "./day-score";
 import { DRIZZLE_CAUTION_CAP, dayDisplayTotal, dayIsClosed } from "./today";
@@ -271,6 +271,13 @@ describe("mapDotColors", () => {
     expect(dots.split).toBe(true);
     expect(dots.left).toBe("#ef4444");
     expect(dots.right).not.toBe("#ef4444");
+  });
+});
+
+describe("formatDow", () => {
+  it("uses the short weekday in UTC", () => {
+    expect(formatDow("2026-09-26", "en-US")).toBe("Sat");
+    expect(formatDow("2026-09-28", "en-US")).toBe("Mon");
   });
 });
 

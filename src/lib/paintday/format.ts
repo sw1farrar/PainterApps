@@ -2,13 +2,29 @@ import { formatClock } from "./crew-plan";
 import type { ScoreBand, ScoreFactorId, WeatherSnapshot } from "./score";
 import { fToC, type UnitSystem } from "@/lib/units";
 
-export function formatWeekday(isoDate: string, locale: string) {
+function utcDate(isoDate: string) {
   const [y, m, d] = isoDate.split("-").map(Number);
-  if (!y || !m || !d) return isoDate;
-  return new Date(Date.UTC(y, m - 1, d)).toLocaleDateString(locale, {
+  if (!y || !m || !d) return null;
+  return new Date(Date.UTC(y, m - 1, d));
+}
+
+export function formatWeekday(isoDate: string, locale: string) {
+  const date = utcDate(isoDate);
+  if (!date) return isoDate;
+  return date.toLocaleDateString(locale, {
     weekday: "short",
     month: "short",
     day: "numeric",
+    timeZone: "UTC",
+  });
+}
+
+/** Chart axis label, e.g. Mon. */
+export function formatDow(isoDate: string, locale: string) {
+  const date = utcDate(isoDate);
+  if (!date) return "";
+  return date.toLocaleDateString(locale, {
+    weekday: "short",
     timeZone: "UTC",
   });
 }
