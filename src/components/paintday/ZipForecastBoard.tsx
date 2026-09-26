@@ -228,6 +228,7 @@ export function ZipForecastBoard({
         <HourlyStrip
           hours={stripHours.length ? stripHours : (forecast.todayHours ?? [])}
           nowHour={viewingToday ? nowHour : undefined}
+          units={units}
         />
       </section>
 
