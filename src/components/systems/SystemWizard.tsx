@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { CanImage } from "@/components/systems/CanImage";
-import { QualityMark } from "@/components/systems/QualityMark";
+import { QualityFacts, QualityMark } from "@/components/systems/QualityMark";
 import { qualityIndex, type ApplicationClass } from "@/lib/systems/quality";
 import { ProductEnvelope } from "@/components/systems/SystemEnvelope";
 import type { Catalog } from "@/lib/systems/corpus-catalog";
@@ -395,6 +395,16 @@ export function SystemWizard({
   );
 }
 
+function lightDescription(text?: string) {
+  const clean = text?.replace(/\s+/g, " ").trim();
+  if (!clean) return "";
+  const sentence = clean.split(/(?<=[.!?])\s+/)[0] ?? clean;
+  if (sentence.length <= 168) return sentence;
+  const cut = sentence.slice(0, 165);
+  const lastSpace = cut.lastIndexOf(" ");
+  return `${(lastSpace > 90 ? cut.slice(0, lastSpace) : cut).trimEnd()}…`;
+}
+
 function ProductRow({
   product,
   manufacturer,
@@ -407,34 +417,46 @@ function ProductRow({
   onOpen: () => void;
 }) {
   const t = useTranslations("systems");
+  const summary = lightDescription(product.description);
+  const meta = [
+    product.kind === "primer"
+      ? t("primer")
+      : product.kind === "topcoat"
+        ? t("topcoat")
+        : product.kind,
+    product.sku,
+    formatTempRange(product.minTempF, product.maxTempF, units),
+  ].filter(Boolean);
   return (
     <button
       type="button"
       onClick={onOpen}
-      className="flex w-full items-center gap-3 px-3 py-2 text-left transition hover:bg-muted/50"
+      className="group flex w-full items-start gap-3.5 px-3.5 py-3.5 text-left transition hover:bg-muted/40"
     >
-      <CanImage src={product.canImageUrl} alt={product.name} size="sm" />
+      <CanImage src={product.canImageUrl} alt={product.name} size="md" className="mt-0.5" />
       <span className="min-w-0 flex-1">
-        <span className="block text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
-          {manufacturer.name}
-        </span>
-        <span className="block text-sm font-medium leading-tight">{product.name}</span>
-        <span className="mt-0.5 block text-xs text-muted-foreground">
-          {product.kind === "primer"
-            ? t("primer")
-            : product.kind === "topcoat"
-              ? t("topcoat")
-              : product.kind}
-          {product.sku ? ` · ${product.sku}` : ""}
-        </span>
-      </span>
-      <span className="flex shrink-0 items-center gap-3">
-        <QualityMark product={product} />
-        <span className="text-xs text-muted-foreground">
-          <span className="hidden sm:inline">
-            {formatTempRange(product.minTempF, product.maxTempF, units)}
+        <span className="flex items-start justify-between gap-3">
+          <span className="min-w-0">
+            <span className="block text-[10px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
+              {manufacturer.name}
+            </span>
+            <span className="mt-0.5 block text-[15px] font-medium leading-snug tracking-tight">
+              {product.name}
+            </span>
           </span>
-          <span className="underline underline-offset-4 sm:ml-3">{t("open")}</span>
+          <QualityMark product={product} />
+        </span>
+        {summary ? (
+          <span className="mt-1.5 block text-xs leading-relaxed text-muted-foreground">
+            {summary}
+          </span>
+        ) : null}
+        <QualityFacts product={product} />
+        <span className="mt-2 flex items-center gap-2 text-[11px] text-muted-foreground">
+          <span className="min-w-0 truncate">{meta.join(" · ")}</span>
+          <span className="ml-auto shrink-0 underline-offset-4 group-hover:underline">
+            {t("open")}
+          </span>
         </span>
       </span>
     </button>

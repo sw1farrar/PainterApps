@@ -50,6 +50,59 @@ function claimLabel(
   return t(`qualityClaims.${claim.id as Exclude<QualityClaimId, "warranty">}`);
 }
 
+export function QualityFacts({ product }: { product: TdsProduct }) {
+  const t = useTranslations("systems");
+  const locale = useLocale();
+  const index = qualityIndex(product);
+  const chips: Array<{ key: string; label: string; tone: "lead" | "note" }> = [];
+  if (index.solidsPct != null) {
+    chips.push({
+      key: "solids",
+      tone: "lead",
+      label: t("qualitySolids", {
+        n: index.solidsPct.toLocaleString(locale, { maximumFractionDigits: 1 }),
+      }),
+    });
+  }
+  if (index.resin) {
+    chips.push({
+      key: "resin",
+      tone: "lead",
+      label: t(`qualityResins.${index.resin}`),
+    });
+  }
+  const notes = index.claims.filter(
+    (claim) => claim.id === "contractorLine" || claim.id === "extender",
+  );
+  const features = index.claims
+    .filter((claim) => claim.id !== "contractorLine" && claim.id !== "extender")
+    .slice(0, 3);
+  for (const claim of features) {
+    chips.push({ key: claim.id, tone: "note", label: claimLabel(t, claim) });
+  }
+  for (const claim of notes) {
+    chips.push({ key: claim.id, tone: "note", label: claimLabel(t, claim) });
+  }
+  if (!chips.length) return null;
+  return (
+    <span className="mt-2 flex flex-wrap gap-1">
+      {chips.map((chip) => (
+        <span
+          key={chip.key}
+          className={cn(
+            "rounded-full px-2 py-0.5 text-[11px] leading-4",
+            chip.tone === "lead"
+              ? "bg-primary/10 font-medium text-primary"
+              : "bg-muted text-muted-foreground",
+          )}
+        >
+          {chip.label}
+        </span>
+      ))}
+    </span>
+  );
+}
+
 export function QualityMark({
   product,
   variant = "row",
