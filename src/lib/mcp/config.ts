@@ -19,5 +19,5 @@ export function getMcpResourceUrl(): string {
 }
 
 export const MCP_SERVER_NAME = "painterapps";
-export const MCP_SERVER_VERSION = "0.5.0";
+export const MCP_SERVER_VERSION = "0.6.0";
 export const MCP_RESOURCE_NAME = "PainterApps";

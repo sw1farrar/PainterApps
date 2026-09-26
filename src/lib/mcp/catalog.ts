@@ -9,6 +9,11 @@ import {
 } from "@/lib/systems/catalog";
 import { matchSystems } from "@/lib/systems/match";
 import {
+  applicationClass,
+  compareByQuality,
+  qualityMcp,
+} from "@/lib/systems/quality";
+import {
   PRODUCT_PATCH_KEYS,
   productPatchFromArgs,
   productRowToMcp,
@@ -70,13 +75,28 @@ function bool(args: Record<string, unknown>, key: string) {
   return undefined;
 }
 
+const QUALITY_READ_ONLY = new Set([
+  "quality",
+  "quality_score",
+  "quality_claims",
+  "quality_resin",
+  "application_class",
+]);
+
 function extraAttrs(args: Record<string, unknown>) {
   const extra: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(args)) {
-    if (key === "can_image_base64") continue;
+    if (key === "can_image_base64" || QUALITY_READ_ONLY.has(key)) continue;
     if (!PRODUCT_PATCH_KEYS.has(key) && value !== undefined) extra[key] = value;
   }
   return extra;
+}
+
+function productForMcp(row: Record<string, unknown>) {
+  return {
+    ...productRowToMcp(row),
+    quality: qualityMcp(productFromRow(row)),
+  };
 }
 
 function imageExt(bytes: Uint8Array) {
@@ -177,16 +197,24 @@ export async function deleteManufacturer(userId: string, id: string) {
   return { deleted: id };
 }
 
-export async function listProducts(args: Record<string, unknown>) {
-  const catalog = await loadCatalog();
-  let rows = catalog.products;
+export function selectProducts(
+  products: TdsProduct[],
+  args: Record<string, unknown>,
+) {
+  let rows = products;
   const q = String(args.query ?? "").toLowerCase().trim();
   const kind = args.kind ? String(args.kind) : "";
   const mfr = args.manufacturer_id ? String(args.manufacturer_id) : "";
+  const application = args.application_class
+    ? String(args.application_class)
+    : "";
   if (kind) rows = rows.filter((p) => p.kind === kind);
   if (mfr) rows = rows.filter((p) => p.manufacturerId === mfr);
   if (args.exterior === true) rows = rows.filter((p) => p.exterior);
   if (args.interior === true) rows = rows.filter((p) => p.interior);
+  if (application) {
+    rows = rows.filter((p) => applicationClass(p) === application);
+  }
   if (q) {
     rows = rows.filter(
       (p) =>
@@ -196,14 +224,25 @@ export async function listProducts(args: Record<string, unknown>) {
         p.id.toLowerCase().includes(q),
     );
   }
-  return rows.slice(0, 80).map((p) => ({
-    id: p.id,
-    name: p.name,
-    sku: p.sku,
-    manufacturer_id: p.manufacturerId,
-    kind: p.kind,
-    can_image_url: p.canImageUrl ?? null,
-  }));
+  return [...rows].sort(compareByQuality).slice(0, 80).map((p) => {
+    const quality = qualityMcp(p);
+    return {
+      id: p.id,
+      name: p.name,
+      sku: p.sku,
+      manufacturer_id: p.manufacturerId,
+      kind: p.kind,
+      interior: p.interior,
+      exterior: p.exterior,
+      can_image_url: p.canImageUrl ?? null,
+      quality,
+    };
+  });
+}
+
+export async function listProducts(args: Record<string, unknown>) {
+  const catalog = await loadCatalog();
+  return selectProducts(catalog.products, args);
 }
 
 export async function getProduct(id: string) {
@@ -214,7 +253,7 @@ export async function getProduct(id: string) {
     byId.data ??
     (await db.from("tds_products").select("*").eq("sku", id).maybeSingle()).data;
   if (!row) throw new McpToolError("Product not found.");
-  return productRowToMcp(row as Record<string, unknown>);
+  return productForMcp(row as Record<string, unknown>);
 }
 
 export async function upsertProduct(
@@ -269,7 +308,7 @@ export async function upsertProduct(
     .select("*")
     .single();
   if (error) throw new McpToolError(error.message);
-  return productRowToMcp(data as Record<string, unknown>);
+  return productForMcp(data as Record<string, unknown>);
 }
 
 export async function patchProduct(
@@ -312,7 +351,7 @@ export async function patchProduct(
       : null,
   );
   if (!Object.keys(patch).length) {
-    return productRowToMcp(existing.data as Record<string, unknown>);
+    return productForMcp(existing.data as Record<string, unknown>);
   }
   const { data, error } = await admin()
     .from("tds_products")
@@ -321,7 +360,7 @@ export async function patchProduct(
     .select("*")
     .single();
   if (error) throw new McpToolError(error.message);
-  return productRowToMcp(data as Record<string, unknown>);
+  return productForMcp(data as Record<string, unknown>);
 }
 
 export async function deleteProduct(userId: string, id: string) {

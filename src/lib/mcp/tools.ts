@@ -286,7 +286,7 @@ const MCP_TOOLS: McpToolDefinition[] = [
   {
     name: "list_products",
     description:
-      "List products (id, name, sku, manufacturer_id, kind). Optional filters: manufacturer_id, kind, interior, exterior.",
+      "List products ordered by quality within each application (exterior finishes, interior finishes, trim, floors, primers). Each row includes a computed quality object: score 0–10 (10 best), application_class, resin, solids_pct, and claims. Optional filters: manufacturer_id, kind, interior, exterior, application_class, query.",
     inputSchema: {
       type: "object",
       properties: {
@@ -295,6 +295,11 @@ const MCP_TOOLS: McpToolDefinition[] = [
         manufacturer_id: { type: "string" },
         exterior: { type: "boolean" },
         interior: { type: "boolean" },
+        application_class: {
+          type: "string",
+          description:
+            "exterior-topcoat | interior-topcoat | trim | floor | primer | other",
+        },
       },
       additionalProperties: false,
     },
@@ -303,7 +308,7 @@ const MCP_TOOLS: McpToolDefinition[] = [
   {
     name: "get_product",
     description:
-      "Get one product by id (or SKU). Returns all typed TDS columns plus attrs overflow.",
+      "Get one product by id (or SKU). Returns all typed TDS columns, attrs overflow, and a computed quality object (score, application_class, resin, solids_pct, claims). Quality is read-only.",
     inputSchema: {
       type: "object",
       properties: { id: { type: "string" } },
@@ -342,6 +347,10 @@ const MCP_TOOLS: McpToolDefinition[] = [
         description: { type: "string" },
         features: { type: "array", items: { type: "string" } },
         benefits: { type: "array", items: { type: "string" } },
+        volume_solids_pct: { type: "number" },
+        weight_solids_pct: { type: "number" },
+        resin_type: { type: "string" },
+        vehicle_type: { type: "string" },
         can_image_url: { type: "string" },
         can_image_base64: { type: "string" },
         attrs: { type: "object" },
@@ -354,7 +363,7 @@ const MCP_TOOLS: McpToolDefinition[] = [
   {
     name: "update_product",
     description:
-      "Patch a product by id (editors / platform_admin). Only provided fields change. Set description, features, and benefits for the Systems product envelope. Typed TDS columns plus notes, tds_*, attrs. Extra keys merge into attrs. Never invents values.",
+      "Patch a product by id (editors / platform_admin). Only provided fields change. Set description, features, benefits, volume_solids_pct, and resin_type — those drive the computed quality score returned on list and get. Typed TDS columns plus notes, tds_*, attrs. Extra keys merge into attrs. Never invents values. quality and quality_score are ignored.",
     inputSchema: {
       type: "object",
       properties: {

@@ -318,6 +318,18 @@ export function qualityIndex(product: TdsProduct): QualityIndex {
   };
 }
 
+/** Read-only quality block for MCP. Not a stored column. */
+export function qualityMcp(product: TdsProduct) {
+  const index = qualityIndex(product);
+  return {
+    score: index.score,
+    application_class: index.applicationClass,
+    resin: index.resin,
+    solids_pct: index.solidsPct,
+    claims: index.claims,
+  };
+}
+
 /** Like applications stay together. Within a class, highest quality is first. */
 export function compareByQuality(a: TdsProduct, b: TdsProduct): number {
   const qa = qualityIndex(a);
