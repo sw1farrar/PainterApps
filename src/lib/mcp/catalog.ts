@@ -92,6 +92,15 @@ function extraAttrs(args: Record<string, unknown>) {
   return extra;
 }
 
+export function normalizeQualityPatch(patch: Record<string, unknown>) {
+  if (!("quality_score" in patch) || patch.quality_score == null) return;
+  const n = Number(patch.quality_score);
+  if (!Number.isFinite(n) || n < 0 || n > 10) {
+    throw new McpToolError("quality_score must be a number from 0 to 10.");
+  }
+  patch.quality_score = Math.round(n * 10) / 10;
+}
+
 function productForMcp(row: Record<string, unknown>) {
   return {
     ...productRowToMcp(row),
@@ -276,6 +285,7 @@ export async function upsertProduct(
   if (!manufacturerId) throw new McpToolError("manufacturer_id is required.");
   const id = idHint || slugId(`${manufacturerId}-${name}`);
   const patch = productPatchFromArgs(args);
+  normalizeQualityPatch(patch);
   const extra = extraAttrs(args);
   const attrs = {
     ...(prev?.attrs ?? {}),
@@ -325,6 +335,7 @@ export async function patchProduct(
     .maybeSingle();
   if (!existing.data) throw new McpToolError("Product not found.");
   const patch = productPatchFromArgs(args);
+  normalizeQualityPatch(patch);
   delete patch.id;
   const extra = extraAttrs(args);
   if (Object.keys(extra).length || args.attrs) {

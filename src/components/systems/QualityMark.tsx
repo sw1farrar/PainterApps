@@ -2,9 +2,10 @@
 
 import { useLocale, useTranslations } from "next-intl";
 import {
-  qualityIndex,
-  type QualityClaimId,
-  type QualityIndex as QualityResult,
+  applicationClass,
+  resinName,
+  storedScore,
+  volumeSolidsPct,
 } from "@/lib/systems/quality";
 import type { TdsProduct } from "@/lib/systems/types";
 import { cn } from "@/lib/utils";
@@ -16,13 +17,15 @@ function formatScore(score: number, locale: string) {
   });
 }
 
-function Steps({
-  score,
-  size,
-}: {
-  score: number;
-  size: "sm" | "md";
-}) {
+function shortFeature(text: string) {
+  const clean = text.replace(/\s+/g, " ").trim();
+  if (clean.length <= 42) return clean;
+  const cut = clean.slice(0, 39);
+  const lastSpace = cut.lastIndexOf(" ");
+  return `${(lastSpace > 18 ? cut.slice(0, lastSpace) : cut).trimEnd()}…`;
+}
+
+function Steps({ score, size }: { score: number; size: "sm" | "md" }) {
   const filled = Math.round(score);
   return (
     <span className="flex gap-0.5" aria-hidden>
@@ -40,48 +43,26 @@ function Steps({
   );
 }
 
-function claimLabel(
-  t: ReturnType<typeof useTranslations<"systems">>,
-  claim: QualityResult["claims"][number],
-) {
-  if (claim.id === "warranty") {
-    return t("qualityClaims.warranty", { years: claim.years ?? 0 });
-  }
-  return t(`qualityClaims.${claim.id as Exclude<QualityClaimId, "warranty">}`);
-}
-
 export function QualityFacts({ product }: { product: TdsProduct }) {
   const t = useTranslations("systems");
   const locale = useLocale();
-  const index = qualityIndex(product);
   const chips: Array<{ key: string; label: string; tone: "lead" | "note" }> = [];
-  if (index.solidsPct != null) {
+  const solids = volumeSolidsPct(product);
+  if (solids != null) {
     chips.push({
       key: "solids",
       tone: "lead",
       label: t("qualitySolids", {
-        n: index.solidsPct.toLocaleString(locale, { maximumFractionDigits: 1 }),
+        n: solids.toLocaleString(locale, { maximumFractionDigits: 1 }),
       }),
     });
   }
-  if (index.resin) {
-    chips.push({
-      key: "resin",
-      tone: "lead",
-      label: t(`qualityResins.${index.resin}`),
-    });
-  }
-  const notes = index.claims.filter(
-    (claim) => claim.id === "contractorLine" || claim.id === "extender",
-  );
-  const features = index.claims
-    .filter((claim) => claim.id !== "contractorLine" && claim.id !== "extender")
-    .slice(0, 3);
-  for (const claim of features) {
-    chips.push({ key: claim.id, tone: "note", label: claimLabel(t, claim) });
-  }
-  for (const claim of notes) {
-    chips.push({ key: claim.id, tone: "note", label: claimLabel(t, claim) });
+  const resin = resinName(product);
+  if (resin) chips.push({ key: "resin", tone: "lead", label: resin });
+  for (const feature of (product.features ?? []).slice(0, 3)) {
+    const label = shortFeature(feature);
+    if (!label) continue;
+    chips.push({ key: label, tone: "note", label });
   }
   if (!chips.length) return null;
   return (
@@ -112,9 +93,10 @@ export function QualityMark({
 }) {
   const t = useTranslations("systems");
   const locale = useLocale();
-  const index = qualityIndex(product);
-  if (index.score == null) return null;
-  const label = formatScore(index.score, locale);
+  const score = storedScore(product);
+  if (score == null) return null;
+  const label = formatScore(score, locale);
+  const summary = product.qualitySummary?.trim();
 
   if (variant === "row") {
     return (
@@ -126,40 +108,23 @@ export function QualityMark({
           {t("quality")}
         </span>
         <span className="text-sm font-semibold tabular-nums leading-none">{label}</span>
-        <Steps score={index.score} size="sm" />
+        <Steps score={score} size="sm" />
       </span>
     );
   }
-
-  const solids =
-    index.solidsPct == null
-      ? null
-      : t("qualitySolids", {
-          n: index.solidsPct.toLocaleString(locale, { maximumFractionDigits: 1 }),
-        });
-  const resin = index.resin ? t(`qualityResins.${index.resin}`) : null;
-  const pinned = index.claims.filter(
-    (claim) => claim.id === "contractorLine" || claim.id === "extender",
-  );
-  const rest = index.claims
-    .filter((claim) => claim.id !== "contractorLine" && claim.id !== "extender")
-    .slice(0, 4);
-  const factors = [solids, resin, ...pinned.map((claim) => claimLabel(t, claim)), ...rest.map((claim) => claimLabel(t, claim))]
-    .filter(Boolean)
-    .join(" · ");
 
   return (
     <div>
       <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
         {t("qualityIndex")}
         {" · "}
-        {t(`qualityClasses.${index.applicationClass}`)}
+        {t(`qualityClasses.${applicationClass(product)}`)}
       </p>
       <p className="mt-1 flex items-center gap-3">
         <span className="text-2xl font-semibold tabular-nums leading-none">{label}</span>
-        <Steps score={index.score} size="md" />
+        <Steps score={score} size="md" />
       </p>
-      <p className="mt-2 text-sm text-muted-foreground">{factors}</p>
+      {summary ? <p className="mt-2 text-sm text-muted-foreground">{summary}</p> : null}
     </div>
   );
 }

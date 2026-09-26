@@ -286,7 +286,7 @@ const MCP_TOOLS: McpToolDefinition[] = [
   {
     name: "list_products",
     description:
-      "List products ordered by quality within each application (exterior finishes, interior finishes, trim, floors, primers). Each row includes a computed quality object: score 0–10 (10 best), application_class, resin, solids_pct, and claims. Optional filters: manufacturer_id, kind, interior, exterior, application_class, query.",
+      "List products ordered like the Products page: same job together, highest researched quality_score first. Unrated products come last. Each row includes quality.score, quality.summary, and application_class. The app does not calculate the score — set it with update_product after research. Optional filters: manufacturer_id, kind, interior, exterior, application_class, query.",
     inputSchema: {
       type: "object",
       properties: {
@@ -308,7 +308,7 @@ const MCP_TOOLS: McpToolDefinition[] = [
   {
     name: "get_product",
     description:
-      "Get one product by id (or SKU). Returns all typed TDS columns, attrs overflow, and a computed quality object (score, application_class, resin, solids_pct, claims). Quality is read-only.",
+      "Get one product by id (or SKU). Returns typed TDS columns, attrs, and quality { score, summary, application_class }. score is null until research sets quality_score.",
     inputSchema: {
       type: "object",
       properties: { id: { type: "string" } },
@@ -351,6 +351,14 @@ const MCP_TOOLS: McpToolDefinition[] = [
         weight_solids_pct: { type: "number" },
         resin_type: { type: "string" },
         vehicle_type: { type: "string" },
+        quality_score: {
+          type: "number",
+          description: "Researched rank from 0 to 10, one decimal. 10 is best. Compare only within the same application.",
+        },
+        quality_summary: {
+          type: "string",
+          description: "One sentence on why this rank, from the research. Not a slogan.",
+        },
         can_image_url: { type: "string" },
         can_image_base64: { type: "string" },
         attrs: { type: "object" },
@@ -363,7 +371,7 @@ const MCP_TOOLS: McpToolDefinition[] = [
   {
     name: "update_product",
     description:
-      "Patch a product by id (editors / platform_admin). Only provided fields change. Set description, features, benefits, volume_solids_pct, and resin_type — those drive the computed quality score returned on list and get. Typed TDS columns plus notes, tds_*, attrs. Extra keys merge into attrs. Never invents values. quality and quality_score are ignored.",
+      "Patch a product by id (editors / platform_admin). Only provided fields change. Set quality_score (0–10) and quality_summary after researching the product against others that do the same job. Also set description, features, benefits, volume_solids_pct, and resin_type from the technical data sheet. Typed TDS columns plus notes, tds_*, attrs. Extra keys merge into attrs. Never invents values.",
     inputSchema: {
       type: "object",
       properties: {
@@ -414,6 +422,15 @@ const MCP_TOOLS: McpToolDefinition[] = [
         washable_after_days: { type: "number" },
         vehicle_type: { type: "string" },
         resin_type: { type: "string" },
+        quality_score: {
+          type: "number",
+          description:
+            "Researched rank from 0 to 10, one decimal. 10 is best. Compare only within the same application.",
+        },
+        quality_summary: {
+          type: "string",
+          description: "One sentence on why this rank, from the research. Not a slogan.",
+        },
         weight_per_gallon_lbs: { type: "number" },
         viscosity: { type: "string" },
         flash_point: { type: "string" },

@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { CanImage } from "@/components/systems/CanImage";
 import { QualityFacts, QualityMark } from "@/components/systems/QualityMark";
-import { qualityIndex, type ApplicationClass } from "@/lib/systems/quality";
+import { applicationClass, type ApplicationClass } from "@/lib/systems/quality";
 import { ProductEnvelope } from "@/components/systems/SystemEnvelope";
 import type { Catalog } from "@/lib/systems/corpus-catalog";
 import {
@@ -171,7 +171,7 @@ export function SystemWizard({
     apps.length + subs.length + sheens.length + mfrs.length > 0 || voc;
   const listCount = results.length;
   const grouped =
-    new Set(results.map((row) => qualityIndex(row.product).applicationClass)).size > 1;
+    new Set(results.map((row) => applicationClass(row.product))).size > 1;
 
   useEffect(() => {
     if (!openCoat) return;
@@ -359,9 +359,8 @@ export function SystemWizard({
       ) : (
         <ul className="divide-y divide-border rounded-xl border border-border">
           {results.map((c, index) => {
-            const application = qualityIndex(c.product).applicationClass;
-            const previous =
-              index > 0 ? qualityIndex(results[index - 1].product).applicationClass : null;
+            const application = applicationClass(c.product);
+            const previous = index > 0 ? applicationClass(results[index - 1].product) : null;
             const showClass = grouped && application !== previous;
             return (
               <li key={c.product.id}>
@@ -417,7 +416,7 @@ function ProductRow({
   onOpen: () => void;
 }) {
   const t = useTranslations("systems");
-  const summary = lightDescription(product.description);
+  const summary = lightDescription(product.qualitySummary || product.description);
   const meta = [
     product.kind === "primer"
       ? t("primer")

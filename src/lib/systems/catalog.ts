@@ -48,6 +48,11 @@ export function productFromRow(row: Record<string, unknown>): TdsProduct {
     description: row.description ? String(row.description) : undefined,
     features: asStringArray(row.features),
     benefits: asStringArray(row.benefits),
+    qualityScore:
+      row.quality_score != null && row.quality_score !== ""
+        ? Number(row.quality_score)
+        : null,
+    qualitySummary: row.quality_summary ? String(row.quality_summary) : undefined,
     canImageUrl: canImagePublicUrl(
       row.can_image_path ? String(row.can_image_path) : null,
       String(row.can_image_url ?? ""),

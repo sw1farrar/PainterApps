@@ -113,6 +113,10 @@ export type TdsProduct = {
   description?: string;
   features?: string[];
   benefits?: string[];
+  /** Researched 0–10 rank. Null until a researcher sets it. */
+  qualityScore?: number | null;
+  /** One sentence on why the rank sits where it does. */
+  qualitySummary?: string;
   canImageUrl?: string | null;
   attrs?: Record<string, unknown>;
   specs?: Record<string, unknown>;

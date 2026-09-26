@@ -252,7 +252,7 @@
     "solids": "Solids",
     "quality": "Quality",
     "qualityIndex": "Quality index",
-    "qualityHint": "Scored against products for the same job. 10 is best — volume solids, resin, and the features that set one apart. Primers rank with primers, finishes with finishes.",
+    "qualityHint": "Ratings are researched for each job. 10 is best. Primers rank with primers, finishes with finishes.",
     "qualityAria": "Quality {score} out of 10",
     "qualitySolids": "{n}% volume solids",
     "qualityClaims": {

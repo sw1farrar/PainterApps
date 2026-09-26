@@ -20,6 +20,8 @@ export const PRODUCT_FIELD_GROUPS: Array<{
       { key: "description", kind: "text", label: "What it does" },
       { key: "features", kind: "text[]", label: "Features" },
       { key: "benefits", kind: "text[]", label: "Benefits" },
+      { key: "quality_score", kind: "number", label: "Quality score" },
+      { key: "quality_summary", kind: "text", label: "Quality summary" },
     ],
   },
   {
