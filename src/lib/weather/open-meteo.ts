@@ -98,9 +98,10 @@ const FORECAST_QUERY = {
   timezone: "auto",
 } as const;
 
-function sleep(ms: number) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
+/** One stalled Open-Meteo call must not hold the homepage until the platform kills it. */
+const FETCH_TIMEOUT_MS = 12_000;
+const FETCH_BUDGET_MS = 45_000;
+const FETCH_CONCURRENCY = 3;
 
 let coolUntil = 0;
 
@@ -124,7 +125,15 @@ async function fetchOpenMeteo(params: URLSearchParams): Promise<unknown | null> 
   const key = process.env.OPENMETEO_API_KEY;
   if (key) params.set("apikey", key);
   const url = `${openMeteoOrigin()}/v1/forecast?${params.toString()}`;
-  const res = await fetch(url, { cache: "no-store" });
+  let res: Response;
+  try {
+    res = await fetch(url, {
+      cache: "no-store",
+      signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
+    });
+  } catch {
+    return null;
+  }
   if (res.status === 429) {
     const retryAfter = Number(res.headers.get("retry-after"));
     coolOff(
@@ -256,59 +265,77 @@ export class OpenMeteoProvider implements WeatherProvider {
     chunkSize = 20,
   ): Promise<Array<Forecast | null>> {
     const out: Array<Forecast | null> = Array(points.length).fill(null);
-    if (!openMeteoAvailable()) return out;
+    if (!openMeteoAvailable() || points.length === 0) return out;
+    const chunks: Array<{ index: number; points: typeof points }> = [];
     for (let i = 0; i < points.length; i += chunkSize) {
-      const chunk = points.slice(i, i + chunkSize);
-      const params = new URLSearchParams({
-        latitude: chunk.map((p) => p.lat).join(","),
-        longitude: chunk.map((p) => p.lng).join(","),
-        ...FORECAST_QUERY,
-      });
-      try {
-        const json = await fetchOpenMeteo(params);
-        if (!json) break;
-        const rows = Array.isArray(json)
-          ? (json as OpenMeteoResponse[])
-          : [json as OpenMeteoResponse];
-        if (rows.length === chunk.length) {
-          rows.forEach((row, j) => {
-            try {
-              out[i + j] = forecastFromJson(row, window);
-            } catch {
-              out[i + j] = null;
-            }
-          });
-        } else {
-          const used = new Set<number>();
-          chunk.forEach((point, j) => {
-            let best = -1;
-            let bestD = Infinity;
-            rows.forEach((row, ri) => {
-              if (used.has(ri)) return;
-              if (row.latitude == null || row.longitude == null) return;
-              const d = Math.hypot(
-                row.latitude - point.lat,
-                row.longitude - point.lng,
-              );
-              if (d < bestD) {
-                bestD = d;
-                best = ri;
-              }
-            });
-            if (best < 0 || bestD > 1) return;
-            used.add(best);
-            try {
-              out[i + j] = forecastFromJson(rows[best], window);
-            } catch {
-              out[i + j] = null;
-            }
-          });
-        }
-      } catch {
-        continue;
-      }
-      if (i + chunkSize < points.length) await sleep(200);
+      chunks.push({ index: i, points: points.slice(i, i + chunkSize) });
     }
+    const started = Date.now();
+    let cursor = 0;
+    let stop = false;
+
+    const fill = (offset: number, chunk: typeof points, json: unknown) => {
+      const rows = Array.isArray(json)
+        ? (json as OpenMeteoResponse[])
+        : [json as OpenMeteoResponse];
+      if (rows.length === chunk.length) {
+        rows.forEach((row, j) => {
+          try {
+            out[offset + j] = forecastFromJson(row, window);
+          } catch {
+            out[offset + j] = null;
+          }
+        });
+        return;
+      }
+      const used = new Set<number>();
+      chunk.forEach((point, j) => {
+        let best = -1;
+        let bestD = Infinity;
+        rows.forEach((row, ri) => {
+          if (used.has(ri)) return;
+          if (row.latitude == null || row.longitude == null) return;
+          const d = Math.hypot(row.latitude - point.lat, row.longitude - point.lng);
+          if (d < bestD) {
+            bestD = d;
+            best = ri;
+          }
+        });
+        if (best < 0 || bestD > 1) return;
+        used.add(best);
+        try {
+          out[offset + j] = forecastFromJson(rows[best], window);
+        } catch {
+          out[offset + j] = null;
+        }
+      });
+    };
+
+    const worker = async () => {
+      while (!stop && Date.now() - started < FETCH_BUDGET_MS) {
+        if (!openMeteoAvailable()) {
+          stop = true;
+          return;
+        }
+        const mine = cursor++;
+        const chunk = chunks[mine];
+        if (!chunk) return;
+        const params = new URLSearchParams({
+          latitude: chunk.points.map((p) => p.lat).join(","),
+          longitude: chunk.points.map((p) => p.lng).join(","),
+          ...FORECAST_QUERY,
+        });
+        const json = await fetchOpenMeteo(params);
+        if (!json) {
+          if (!openMeteoAvailable()) stop = true;
+          continue;
+        }
+        fill(chunk.index, chunk.points, json);
+      }
+    };
+
+    const workers = Math.min(FETCH_CONCURRENCY, chunks.length);
+    await Promise.all(Array.from({ length: workers }, () => worker()));
     return out;
   }
 }
